@@ -1,0 +1,140 @@
+{
+  "version": 4,
+  "targets": {
+    "net9.0": {
+      "DomainLayer/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/DomainLayer.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/DomainLayer.dll": {}
+        }
+      },
+      "ServiceAbstraction/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "DomainLayer": "1.0.0",
+          "Shared": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/ServiceAbstraction.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/ServiceAbstraction.dll": {}
+        }
+      },
+      "Shared/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "DomainLayer": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Shared.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Shared.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "DomainLayer/1.0.0": {
+      "type": "project",
+      "path": "../../Core/DomainLayer/DomainLayer.csproj",
+      "msbuildProject": "../../Core/DomainLayer/DomainLayer.csproj"
+    },
+    "ServiceAbstraction/1.0.0": {
+      "type": "project",
+      "path": "../../Core/ServiceAbstraction/ServiceAbstraction.csproj",
+      "msbuildProject": "../../Core/ServiceAbstraction/ServiceAbstraction.csproj"
+    },
+    "Shared/1.0.0": {
+      "type": "project",
+      "path": "../../Shared/Shared.csproj",
+      "msbuildProject": "../../Shared/Shared.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net9.0": [
+      "ServiceAbstraction >= 1.0.0",
+      "Shared >= 1.0.0"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\Microsoft\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "G:\\P_G\\REMS\\Back\\Infrastructure\\Presentation\\Presentation.csproj",
+      "projectName": "Presentation",
+      "projectPath": "G:\\P_G\\REMS\\Back\\Infrastructure\\Presentation\\Presentation.csproj",
+      "packagesPath": "C:\\Users\\Microsoft\\.nuget\\packages\\",
+      "outputPath": "G:\\P_G\\REMS\\Back\\Infrastructure\\Presentation\\obj\\",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "C:\\Users\\Microsoft\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net9.0"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net9.0": {
+          "framework": "net9.0",
+          "targetAlias": "net9.0",
+          "projectReferences": {
+            "G:\\P_G\\REMS\\Back\\Core\\ServiceAbstraction\\ServiceAbstraction.csproj": {
+              "projectPath": "G:\\P_G\\REMS\\Back\\Core\\ServiceAbstraction\\ServiceAbstraction.csproj"
+            },
+            "G:\\P_G\\REMS\\Back\\Shared\\Shared.csproj": {
+              "projectPath": "G:\\P_G\\REMS\\Back\\Shared\\Shared.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "10.0.300"
+    },
+    "frameworks": {
+      "net9.0": {
+        "framework": "net9.0",
+        "targetAlias": "net9.0",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}
