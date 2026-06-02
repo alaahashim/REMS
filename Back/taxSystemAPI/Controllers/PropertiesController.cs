@@ -75,6 +75,28 @@ namespace Presentation.Controllers
         }
 
 
+        // ✅ جديد: 3.1- Get Property By ID
+        // =========================
+        [HttpGet("{id}")]
+        public async Task<IActionResult>
+            GetPropertyById(int id)
+        {
+            var result =
+                await service
+                .PropertyService
+                .GetPropertyByIdAsync(id);
+
+            if (result is null)
+                return NotFound(new
+                {
+                    success = false,
+                    message = "العقار غير موجود"
+                });
+
+            return Ok(result);
+        }
+
+
         // =========================
         // 4- Get Units
         // =========================
@@ -116,6 +138,27 @@ namespace Presentation.Controllers
         }
 
 
+        // ✅ جديد: 5.1- Update Property
+        // =========================
+        [HttpPut("{id}")]
+        public async Task<IActionResult>
+            UpdateProperty(
+            int id,
+            [FromBody]
+            UpdatePropertyDto dto)
+        {
+            await service
+                .PropertyService
+                .UpdatePropertyAsync(id, dto);
+
+            return Ok(new
+            {
+                success = true,
+                message = "تم تحديث بيانات العقار"
+            });
+        }
+
+
         // =========================
         // 6- Update Status
         // =========================
@@ -138,6 +181,45 @@ namespace Presentation.Controllers
                 success = true,
                 message =
                     "تم تحديث حالة العقار"
+            });
+        }
+
+
+        // ✅ جديد: 6.1- Update Unit
+        // =========================
+        [HttpPut("unit/{unitId}")]
+        public async Task<IActionResult>
+            UpdateUnit(
+            int unitId,
+            [FromBody]
+            UnitDto dto)
+        {
+            await service
+                .PropertyService
+                .UpdateUnitAsync(unitId, dto);
+
+            return Ok(new
+            {
+                success = true,
+                message = "تم تحديث بيانات الوحدة"
+            });
+        }
+
+
+        // ✅ جديد: 6.2- Delete Unit
+        // =========================
+        [HttpDelete("unit/{unitId}")]
+        public async Task<IActionResult>
+            DeleteUnit(int unitId)
+        {
+            await service
+                .PropertyService
+                .DeleteUnitAsync(unitId);
+
+            return Ok(new
+            {
+                success = true,
+                message = "تم حذف الوحدة"
             });
         }
     }

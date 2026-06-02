@@ -34,6 +34,7 @@ G:\P_G\REMS\Back\Infrastructure\Persistance\obj\Debug\net9.0\Persistance.Generat
 G:\P_G\REMS\Back\Infrastructure\Persistance\obj\Debug\net9.0\Persistance.AssemblyInfoInputs.cache
 G:\P_G\REMS\Back\Infrastructure\Persistance\obj\Debug\net9.0\Persistance.AssemblyInfo.cs
 G:\P_G\REMS\Back\Infrastructure\Persistance\obj\Debug\net9.0\Persistance.csproj.CoreCompileInputs.cache
+G:\P_G\REMS\Back\Infrastructure\Persistance\obj\Debug\net9.0\Persistance.sourcelink.json
 G:\P_G\REMS\Back\Infrastructure\Persistance\obj\Debug\net9.0\Persista.3F568332.Up2Date
 G:\P_G\REMS\Back\Infrastructure\Persistance\obj\Debug\net9.0\Persistance.dll
 G:\P_G\REMS\Back\Infrastructure\Persistance\obj\Debug\net9.0\refint\Persistance.dll

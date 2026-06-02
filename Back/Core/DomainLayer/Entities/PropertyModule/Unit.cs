@@ -22,5 +22,6 @@ namespace Core.DomainLayer.Entities
 
         // Navigation
         public Property Property { get; set; }
-    }
+public ICollection<RoleAssignment> Assignments { get; set; }
+    = new HashSet<RoleAssignment>();    }
 }

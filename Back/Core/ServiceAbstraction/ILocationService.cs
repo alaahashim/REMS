@@ -12,5 +12,9 @@ namespace Core.ServiceAbstraction
 
         Task<IEnumerable<StreetDto>>
             GetStreetsAsync(int centerId);
+
+        // ✅ جديد: الحصول على الأحياء
+        Task<IEnumerable<NeighborhoodDto>>
+            GetNeighborhoodsAsync(int centerId);
     }
 }

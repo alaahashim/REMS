@@ -9,9 +9,15 @@ namespace Persistence.Data
         public DbSet<Governorate> Governorates { get; set; }
         public DbSet<Center> Centers { get; set; }
         public DbSet<Street> Streets { get; set; }
+        
+        public DbSet<Neighborhood> Neighborhoods { get; set; }
+        
         public DbSet<Property> Properties { get; set; }
 
         public DbSet<Unit> Units { get; set; }
+        public DbSet<Owner> Owners { get; set; }
+
+         public DbSet<RoleAssignment> RoleAssignments { get; set; }
         #endregion
        
         protected override void OnModelCreating(ModelBuilder modelBuilder)

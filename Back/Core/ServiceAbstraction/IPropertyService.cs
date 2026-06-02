@@ -10,10 +10,22 @@ namespace Core.ServiceAbstraction
 
         Task<IEnumerable<PropertyDto>> GetPropertiesAsync();
 
+        // ✅ جديد: الحصول على عقار بـ ID
+        Task<PropertyDto> GetPropertyByIdAsync(int propertyId);
+
         Task<IEnumerable<UnitDto>> GetUnitsAsync(int? propertyId);
+
+        // ✅ جديد: تحديث العقار بشكل شامل
+        Task UpdatePropertyAsync(int id, UpdatePropertyDto dto);
+
+        Task UpdatePropertyStatusAsync(int id, string status);
 
         Task DeletePropertyAsync(int propertyId);
 
-        Task UpdatePropertyStatusAsync(int id, string status);
+        // ✅ جديد: تحديث وحدة محددة
+        Task UpdateUnitAsync(int unitId, UnitDto dto);
+
+        // ✅ جديد: حذف وحدة محددة
+        Task DeleteUnitAsync(int unitId);
     }
 }

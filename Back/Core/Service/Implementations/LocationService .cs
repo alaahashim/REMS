@@ -65,5 +65,28 @@ namespace Core.Service.Implementations
                 Name = s.Name
             });
         }
+
+        // ✅ جديد: الحصول على الأحياء
+        public async Task<IEnumerable<NeighborhoodDto>>
+            GetNeighborhoodsAsync(int centerId)
+        {
+            var repo = _unitOfWork
+                .GetRepository<Neighborhood, int>();
+
+            var data = await repo.GetAllAsync();
+
+            // تصفية حسب CenterId
+            var neighborhoods = data
+                .Where(n => n.CenterId == centerId)
+                .Select(n => new NeighborhoodDto
+                {
+                    Id = n.Id,
+                    CenterId = n.CenterId,
+                    Name = n.Name,
+                    Zone = n.Zone
+                });
+
+            return neighborhoods;
+        }
     }
 }

@@ -31,6 +31,7 @@ G:\P_G\REMS\Back\Infrastructure\Presentation\obj\Debug\net9.0\Presentation.Gener
 G:\P_G\REMS\Back\Infrastructure\Presentation\obj\Debug\net9.0\Presentation.AssemblyInfoInputs.cache
 G:\P_G\REMS\Back\Infrastructure\Presentation\obj\Debug\net9.0\Presentation.AssemblyInfo.cs
 G:\P_G\REMS\Back\Infrastructure\Presentation\obj\Debug\net9.0\Presentation.csproj.CoreCompileInputs.cache
+G:\P_G\REMS\Back\Infrastructure\Presentation\obj\Debug\net9.0\Presentation.sourcelink.json
 G:\P_G\REMS\Back\Infrastructure\Presentation\obj\Debug\net9.0\Presenta.BC777DBE.Up2Date
 G:\P_G\REMS\Back\Infrastructure\Presentation\obj\Debug\net9.0\Presentation.dll
 G:\P_G\REMS\Back\Infrastructure\Presentation\obj\Debug\net9.0\refint\Presentation.dll

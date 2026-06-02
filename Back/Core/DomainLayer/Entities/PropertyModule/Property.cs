@@ -28,5 +28,6 @@ namespace Core.DomainLayer.Entities
 
     public ICollection<Unit> Units { get; set; }
         = new HashSet<Unit>();
-}
+public ICollection<RoleAssignment> Assignments { get; set; }
+    = new HashSet<RoleAssignment>();}
 }

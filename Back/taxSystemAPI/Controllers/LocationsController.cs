@@ -47,5 +47,17 @@ namespace Presentation.Controllers
 
             return Ok(result);
         }
+
+        // ✅ جديد: الحصول على الأحياء
+        [HttpGet("neighborhoods/{centerId}")]
+        public async Task<IActionResult>
+            GetNeighborhoods(int centerId)
+        {
+            var result =
+                await _locationService
+                .GetNeighborhoodsAsync(centerId);
+
+            return Ok(result);
+        }
     }
 }

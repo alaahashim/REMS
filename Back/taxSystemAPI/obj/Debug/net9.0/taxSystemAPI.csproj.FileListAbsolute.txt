@@ -342,6 +342,7 @@ G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\taxSystemAPI.AssemblyInfo.cs
 G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\taxSystemAPI.csproj.CoreCompileInputs.cache
 G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\taxSystemAPI.MvcApplicationPartsAssemblyInfo.cs
 G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\taxSystemAPI.MvcApplicationPartsAssemblyInfo.cache
+G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\taxSystemAPI.sourcelink.json
 G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\rjimswa.dswa.cache.json
 G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
@@ -356,4 +357,3 @@ G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\refint\taxSystemAPI.dll
 G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\taxSystemAPI.pdb
 G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\taxSystemAPI.genruntimeconfig.cache
 G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\ref\taxSystemAPI.dll
-G:\P_G\REMS\Back\taxSystemAPI\obj\Debug\net9.0\swae.build.ex.cache

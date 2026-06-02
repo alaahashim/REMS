@@ -5,7 +5,7 @@ using Core.ServiceAbstraction;
 using Core.DomainLayer.Contracts;
 using Core.Service.Implementations;
 using AutoMapper;
-using Service.MappingProfiles;
+using Core.Service.MappingProfiles;
 
 var builder = WebApplication.CreateBuilder(args);
 

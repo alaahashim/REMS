@@ -1,0 +1,27 @@
+using Core.DomainLayer.Entities.Common;
+using Core.DomainLayer.Entities;
+public class RoleAssignment : BaseEntity<int>
+{
+    public int OwnerId { get; set; }
+
+    public Owner? Owner { get; set; }
+
+    public int? PropertyId { get; set; }
+
+    public Property?Property { get; set; }
+
+    public int? UnitId { get; set; }
+
+    public Unit? Unit { get; set; }
+
+    public string RoleType { get; set; }= null!;
+
+public string ShareType { get; set; }= null!;
+public double SharePercentage { get; set; }
+    public DateOnly StartDate { get; set; }
+
+    public DateOnly? EndDate { get; set; }
+
+    public bool IsActive { get; set; }
+
+}

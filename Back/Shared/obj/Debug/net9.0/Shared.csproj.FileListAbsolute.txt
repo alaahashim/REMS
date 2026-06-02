@@ -23,6 +23,7 @@ G:\P_G\REMS\Back\Shared\obj\Debug\net9.0\Shared.GeneratedMSBuildEditorConfig.edi
 G:\P_G\REMS\Back\Shared\obj\Debug\net9.0\Shared.AssemblyInfoInputs.cache
 G:\P_G\REMS\Back\Shared\obj\Debug\net9.0\Shared.AssemblyInfo.cs
 G:\P_G\REMS\Back\Shared\obj\Debug\net9.0\Shared.csproj.CoreCompileInputs.cache
+G:\P_G\REMS\Back\Shared\obj\Debug\net9.0\Shared.sourcelink.json
 G:\P_G\REMS\Back\Shared\obj\Debug\net9.0\Shared.csproj.Up2Date
 G:\P_G\REMS\Back\Shared\obj\Debug\net9.0\Shared.dll
 G:\P_G\REMS\Back\Shared\obj\Debug\net9.0\refint\Shared.dll

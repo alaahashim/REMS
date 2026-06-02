@@ -16,6 +16,7 @@ G:\P_G\REMS\Back\Core\DomainLayer\obj\Debug\net9.0\DomainLayer.GeneratedMSBuildE
 G:\P_G\REMS\Back\Core\DomainLayer\obj\Debug\net9.0\DomainLayer.AssemblyInfoInputs.cache
 G:\P_G\REMS\Back\Core\DomainLayer\obj\Debug\net9.0\DomainLayer.AssemblyInfo.cs
 G:\P_G\REMS\Back\Core\DomainLayer\obj\Debug\net9.0\DomainLayer.csproj.CoreCompileInputs.cache
+G:\P_G\REMS\Back\Core\DomainLayer\obj\Debug\net9.0\DomainLayer.sourcelink.json
 G:\P_G\REMS\Back\Core\DomainLayer\obj\Debug\net9.0\DomainLayer.dll
 G:\P_G\REMS\Back\Core\DomainLayer\obj\Debug\net9.0\refint\DomainLayer.dll
 G:\P_G\REMS\Back\Core\DomainLayer\obj\Debug\net9.0\DomainLayer.pdb

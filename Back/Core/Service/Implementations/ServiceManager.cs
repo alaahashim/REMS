@@ -1,7 +1,6 @@
 using AutoMapper;
 using Core.DomainLayer.Contracts;
 using Core.ServiceAbstraction;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 
 namespace Core.Service.Implementations
@@ -9,7 +8,6 @@ namespace Core.Service.Implementations
     public class ServiceManager(
         IUnitOfWork unitOfWork,
         IMapper mapper,
-       // UserManager<ApplicationUser> userManager,
         IConfiguration configuration
     ) : IServiceManager
     {
@@ -19,11 +17,11 @@ namespace Core.Service.Implementations
         private readonly Lazy<IPropertyService> _lazyPropertyService =
             new(() => new PropertyService(unitOfWork, mapper));
 
-        // لو عندك AuthenticationService
-        /*
-        private readonly Lazy<IAuthenticationService> _lazyAuthenticationService =
-            new(() => new AuthenticationService(userManager, configuration, mapper));
-        */
+        private readonly Lazy<IAssignmentService> _lazyAssignmentService =
+            new(() => new AssignmentService(unitOfWork, mapper));
+
+private readonly Lazy<IOwnerService>_lazyOwnerService =
+        new(() => new OwnerService( unitOfWork, mapper));
 
         public ILocationService LocationService
             => _lazyLocationService.Value;
@@ -31,9 +29,10 @@ namespace Core.Service.Implementations
         public IPropertyService PropertyService
             => _lazyPropertyService.Value;
 
-        /*
-        public IAuthenticationService AuthenticationService
-            => _lazyAuthenticationService.Value;
-        */
+        public IAssignmentService AssignmentService
+            => _lazyAssignmentService.Value;
+
+       public IOwnerService OwnerService
+                  => _lazyOwnerService.Value;
     }
 }

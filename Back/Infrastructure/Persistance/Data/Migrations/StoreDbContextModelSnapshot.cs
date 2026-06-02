@@ -69,6 +69,35 @@ namespace Persistance.Data.Migrations
                     b.ToTable("Governorates");
                 });
 
+            modelBuilder.Entity("Core.DomainLayer.Entities.Neighborhood", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CenterId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Zone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CenterId");
+
+                    b.ToTable("Neighborhoods");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Property", b =>
                 {
                     b.Property<int>("Id")
@@ -199,6 +228,106 @@ namespace Persistance.Data.Migrations
                     b.ToTable("Units");
                 });
 
+            modelBuilder.Entity("Owner", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NationalId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("OwnerType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NationalId")
+                        .IsUnique();
+
+                    b.ToTable("Owners");
+                });
+
+            modelBuilder.Entity("RoleAssignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PropertyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RoleType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("SharePercentage")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ShareType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("UnitId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("PropertyId");
+
+                    b.HasIndex("UnitId");
+
+                    b.ToTable("RoleAssignments");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Center", b =>
                 {
                     b.HasOne("Core.DomainLayer.Entities.Governorate", "Governorate")
@@ -208,6 +337,17 @@ namespace Persistance.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Governorate");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.Neighborhood", b =>
+                {
+                    b.HasOne("Core.DomainLayer.Entities.Center", "Center")
+                        .WithMany()
+                        .HasForeignKey("CenterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Center");
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Street", b =>
@@ -232,6 +372,31 @@ namespace Persistance.Data.Migrations
                     b.Navigation("Property");
                 });
 
+            modelBuilder.Entity("RoleAssignment", b =>
+                {
+                    b.HasOne("Owner", "Owner")
+                        .WithMany("Assignments")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.DomainLayer.Entities.Property", "Property")
+                        .WithMany("Assignments")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Core.DomainLayer.Entities.Unit", "Unit")
+                        .WithMany("Assignments")
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Property");
+
+                    b.Navigation("Unit");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Center", b =>
                 {
                     b.Navigation("Streets");
@@ -244,7 +409,19 @@ namespace Persistance.Data.Migrations
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Property", b =>
                 {
+                    b.Navigation("Assignments");
+
                     b.Navigation("Units");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.Unit", b =>
+                {
+                    b.Navigation("Assignments");
+                });
+
+            modelBuilder.Entity("Owner", b =>
+                {
+                    b.Navigation("Assignments");
                 });
 #pragma warning restore 612, 618
         }
