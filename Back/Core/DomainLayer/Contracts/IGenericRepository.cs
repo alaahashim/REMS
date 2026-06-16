@@ -24,5 +24,7 @@ namespace Core.DomainLayer.Contracts
         void Update(TEntity entity);
 
         void Remove(TEntity entity);
+           Task<TEntity?> FirstOrDefaultAsync(
+            ISpecifications<TEntity, Tkey> specifications);
     }
 }

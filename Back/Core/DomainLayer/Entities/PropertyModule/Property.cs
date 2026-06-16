@@ -6,14 +6,13 @@ namespace Core.DomainLayer.Entities
 {
     public string BuildingNo { get; set; }
 
-    public string OwnerName { get; set; }
 
     public int GovernorateId { get; set; }
 
     public int CenterId { get; set; }
 
     public int StreetId { get; set; }
-
+    public int NeighborhoodId { get; set; }
     public string CurrentPropertyNo { get; set; }
 
     public string? OldPropertyNo { get; set; }

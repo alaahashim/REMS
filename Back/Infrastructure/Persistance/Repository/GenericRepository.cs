@@ -19,70 +19,55 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<TEntity>> GetAllAsync()
         {
-            return await _dbContext
-                .Set<TEntity>()
-                .ToListAsync();
+            return await _dbContext .Set<TEntity>().ToListAsync();
         }
 
         public async Task<TEntity?> GetByIdAsync(Tkey id)
         {
-            return await _dbContext
-                .Set<TEntity>()
-                .FindAsync(id);
+            return await _dbContext.Set<TEntity>().FindAsync(id);
         }
 
         public async Task<IEnumerable<TEntity>>
             GetAllAsync(
             ISpecifications<TEntity, Tkey> specifications)
         {
-            return await SpecificationEvaluator
-                .CreateQuery(
-                    _dbContext.Set<TEntity>(),
-                    specifications)
-                .ToListAsync();
+            return await SpecificationEvaluator .CreateQuery(  _dbContext.Set<TEntity>(), specifications).ToListAsync();
         }
 
         public async Task<TEntity?>
-            GetByIdAsync(
-            ISpecifications<TEntity, Tkey> specifications)
+            GetByIdAsync( ISpecifications<TEntity, Tkey> specifications)
         {
-            return await SpecificationEvaluator
-                .CreateQuery(
-                    _dbContext.Set<TEntity>(),
-                    specifications)
-                .FirstOrDefaultAsync();
+            return await SpecificationEvaluator.CreateQuery( _dbContext.Set<TEntity>(), specifications).FirstOrDefaultAsync();
         }
 
         public async Task<int>
-            CountAsync(
-            ISpecifications<TEntity, Tkey> specifications)
+            CountAsync(ISpecifications<TEntity, Tkey> specifications)
         {
             return await SpecificationEvaluator
-                .CreateQuery(
-                    _dbContext.Set<TEntity>(),
-                    specifications)
-                .CountAsync();
+                .CreateQuery(  _dbContext.Set<TEntity>(),specifications).CountAsync();
         }
 
         public async Task AddAsync(TEntity entity)
         {
-            await _dbContext
-                .Set<TEntity>()
-                .AddAsync(entity);
+            await _dbContext.Set<TEntity>().AddAsync(entity);
         }
 
         public void Update(TEntity entity)
         {
-            _dbContext
-                .Set<TEntity>()
-                .Update(entity);
+            _dbContext.Set<TEntity>().Update(entity);
         }
 
         public void Remove(TEntity entity)
         {
-            _dbContext
-                .Set<TEntity>()
-                .Remove(entity);
+            _dbContext .Set<TEntity>().Remove(entity);
         }
+        public async Task<TEntity?>
+    FirstOrDefaultAsync(
+    ISpecifications<TEntity, Tkey> specifications)
+{
+    return await SpecificationEvaluator
+        .CreateQuery(
+            _dbContext.Set<TEntity>(),specifications).FirstOrDefaultAsync();
+}
     }
 }

@@ -2,9 +2,7 @@ namespace Shared.DTOS
 {
   public class CreatePropertyWithUnitsDto
 {
-    public string OwnerName { get; set; }
 
-    public string OwnerNationalId { get; set; }
 
     public int GovernorateId { get; set; }
 

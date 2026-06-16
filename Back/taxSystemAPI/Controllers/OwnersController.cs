@@ -1,3 +1,4 @@
+using System;
 using Core.ServiceAbstraction;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOS;
@@ -43,16 +44,30 @@ public class OwnersController(
         [FromBody]
         CreateOwnerDto dto)
     {
-        var id =
-            await service
-            .OwnerService
-            .CreateOwnerAsync(dto);
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        return Ok(new
+        try
         {
-            Success = true,
-            OwnerId = id
-        });
+            var id =
+                await service
+                .OwnerService
+                .CreateOwnerAsync(dto);
+
+            return Ok(new
+            {
+                Success = true,
+                OwnerId = id
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
     }
 
     [HttpPut("{id}")]

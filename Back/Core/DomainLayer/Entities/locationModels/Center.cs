@@ -4,7 +4,7 @@ namespace Core.DomainLayer.Entities
 {
     public class Center : BaseEntity<int>
     {
-        public string Name { get; set; }
+        public string Name { get; set; }=null!;
 
         public int GovernorateId { get; set; }
 

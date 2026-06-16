@@ -1,0 +1,89 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* --- تحسينات الحكومةية (Gov Style) --- */
+
+/* الرأس الرسمي */
+.official-header {
+    background: linear-gradient(90deg, #003366 0%, #004080 100%); /* أزرق غامق رسمي */
+    border-bottom: 4px solid #cda434; /* خط ذهبي */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.emblem-placeholder {
+    box-shadow: 0 0 10px rgba(205, 164, 52, 0.5);
+}
+
+/* جعل الجداول تبدو أكثر رسمية */
+.table thead th {
+    background-color: #003366 !important; /* رأس الجدول أزرق */
+    color: white !important;
+    border-bottom: 2px solid #cda434;
+    text-align: center;
+    font-weight: 700;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 64, 128, 0.05); /* تظليل خفيف باللون الرسمي */
+}
+
+/* تصميم الإيصال (Receipt) */
+.receipt-box {
+    border: 2px dashed #004080;
+    background: #fff;
+    padding: 20px;
+    position: relative;
+}
+.receipt-box::before {
+    content: "ايصال رسمي";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #004080;
+    color: #cda434;
+    padding: 2px 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 10px;
+}

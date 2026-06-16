@@ -4,7 +4,7 @@ namespace Core.DomainLayer.Entities
 {
     public class Governorate : BaseEntity<int>
     {
-        public string Name { get; set; }
+        public string Name { get; set; }=null!;
 
         public ICollection<Center> Centers { get; set; }
             = new HashSet<Center>();

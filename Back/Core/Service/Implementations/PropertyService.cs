@@ -10,134 +10,46 @@ namespace Core.Service.Implementations
         IUnitOfWork unitOfWork,
         IMapper mapper) : IPropertyService
     {
-        public async Task<int> AddPropertyAsync(
-    CreatePropertyWithUnitsDto dto)
+      public async Task<int> AddPropertyAsync(CreatePropertyWithUnitsDto dto)
 {
-    var propertyRepo =
-        unitOfWork.GetRepository<Property, int>();
+    var propertyRepo = unitOfWork.GetRepository<Property, int>();
+    var unitRepo = unitOfWork.GetRepository<Unit, int>();
 
-    var unitRepo =
-        unitOfWork.GetRepository<Unit, int>();
-
-    var ownerRepo =
-        unitOfWork.GetRepository<Owner, int>();
-
-    var assignmentRepo =
-        unitOfWork.GetRepository<RoleAssignment, int>();
-
-
-    // =========================
-    // Create Property
-    // =========================
-
-    var property =
-        mapper.Map<Property>(dto);
+    var property = mapper.Map<Property>(dto);
 
     await propertyRepo.AddAsync(property);
-
     await unitOfWork.SaveChangesAsync();
-
-
-    // =========================
-    // Create Units
-    // =========================
 
     foreach (var unitDto in dto.Units)
     {
-        var unit =
-            mapper.Map<Unit>(unitDto);
+        var unit = mapper.Map<Unit>(unitDto);
 
-        unit.PropertyId =
-            property.Id;
+        unit.PropertyId = property.Id;
+
+        // ⚠️ قيم افتراضية لتوافق الفرونت
+        unit.Status = string.IsNullOrEmpty(unit.Status) ? "New" : unit.Status;
+        unit.UnitNumber = unit.UnitNumber ?? $"U-{Guid.NewGuid().ToString()[..6]}";
 
         await unitRepo.AddAsync(unit);
     }
 
     await unitOfWork.SaveChangesAsync();
 
-
-    // =========================
-    // Auto Create Owner
-    // =========================
-
-    if (!string.IsNullOrWhiteSpace(dto.OwnerName)
-        &&
-        !string.IsNullOrWhiteSpace(dto.OwnerNationalId))
-    {
-        var owners =
-            await ownerRepo.GetAllAsync();
-
-        var owner =
-            owners.FirstOrDefault(x =>
-                x.NationalId ==
-                dto.OwnerNationalId);
-
-        if (owner is null)
-        {
-            owner = new Owner
-            {
-                FullName = dto.OwnerName,
-                NationalId = dto.OwnerNationalId,
-                IsActive = true,
-                OwnerType = "Individual"
-            };
-
-            await ownerRepo.AddAsync(owner);
-
-            await unitOfWork.SaveChangesAsync();
-        }
-
-
-        // =========================
-        // Auto Assignment
-        // =========================
-
-        var assignment =
-            new RoleAssignment
-            {
-                OwnerId = owner.Id,
-
-                PropertyId =
-                    property.Id,
-
-                UnitId = null,
-
-                RoleType = "Owner",
-
-                ShareType = "Full",
-
-                SharePercentage = 100,
-
-                StartDate =
-                    DateOnly.FromDateTime(
-                        DateTime.UtcNow),
-
-                IsActive = true
-            };
-
-        await assignmentRepo
-            .AddAsync(assignment);
-
-        await unitOfWork.SaveChangesAsync();
-    }
-
     return property.Id;
 }
-        public async Task AddUnitAsync(UnitDto dto)
-        {
-            var repo =
-                unitOfWork.GetRepository<Unit, int>();
+       public async Task AddUnitAsync(UnitDto dto)
+{
+    var repo = unitOfWork.GetRepository<Unit, int>();
 
-            var unit =
-                mapper.Map<Unit>(dto);
+    var unit = mapper.Map<Unit>(dto);
 
-            await repo.AddAsync(unit);
+    unit.Status = string.IsNullOrEmpty(dto.Status) ? "New" : dto.Status;
+    unit.UnitNumber = dto.UnitNumber ?? $"U-{Guid.NewGuid().ToString()[..6]}";
 
-            await unitOfWork.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<PropertyDto>>
-            GetPropertiesAsync()
+    await repo.AddAsync(unit);
+    await unitOfWork.SaveChangesAsync();
+} 
+        public async Task<IEnumerable<PropertyDto>>GetPropertiesAsync()
         {
             var repo =
                 unitOfWork.GetRepository<Property, int>();
@@ -150,52 +62,34 @@ namespace Core.Service.Implementations
                 (properties);
         }
 
-        public async Task<PropertyDto?>
-            GetPropertyByIdAsync(int propertyId)
+        public async Task<PropertyDto?> GetPropertyByIdAsync(int propertyId)
         {
-            var repo =
-                unitOfWork.GetRepository<Property, int>();
+            var repo = unitOfWork.GetRepository<Property, int>();
 
-            var property =
-                await repo.GetByIdAsync(propertyId);
+            var property = await repo.GetByIdAsync(propertyId);
 
-            return property is null
-                ? null
-                : mapper.Map<PropertyDto>(property);
+            return property is null? null: mapper.Map<PropertyDto>(property);
         }
 
-        public async Task<IEnumerable<UnitDto>>
-            GetUnitsAsync(int? propertyId)
+        public async Task<IEnumerable<UnitDto>> GetUnitsAsync(int? propertyId)
         {
-            var repo =
-                unitOfWork.GetRepository<Unit, int>();
+            var repo = unitOfWork.GetRepository<Unit, int>();
 
-            var units =
-                await repo.GetAllAsync();
+            var units = await repo.GetAllAsync();
 
             if (propertyId.HasValue)
             {
-                units = units
-                    .Where(x =>
-                        x.PropertyId ==
-                        propertyId.Value)
-                    .ToList();
+                units = units.Where(x =>x.PropertyId ==propertyId.Value) .ToList();
             }
 
-            return mapper.Map<
-                IEnumerable<UnitDto>>
-                (units);
+            return mapper.Map<IEnumerable<UnitDto>>(units);
         }
 
-        public async Task UpdatePropertyAsync(
-            int id,
-            UpdatePropertyDto dto)
+        public async Task UpdatePropertyAsync( int id,UpdatePropertyDto dto)
         {
-            var repo =
-                unitOfWork.GetRepository<Property, int>();
+            var repo =  unitOfWork.GetRepository<Property, int>();
 
-            var property =
-                await repo.GetByIdAsync(id);
+            var property = await repo.GetByIdAsync(id);
 
             if (property is null)
                 return;
@@ -207,15 +101,11 @@ namespace Core.Service.Implementations
             await unitOfWork.SaveChangesAsync();
         }
 
-        public async Task UpdatePropertyStatusAsync(
-            int id,
-            string status)
+        public async Task UpdatePropertyStatusAsync( int id, string status)
         {
-            var repo =
-                unitOfWork.GetRepository<Property, int>();
+            var repo = unitOfWork.GetRepository<Property, int>();
 
-            var property =
-                await repo.GetByIdAsync(id);
+            var property =await repo.GetByIdAsync(id);
 
             if (property is null)
                 return;
@@ -226,46 +116,44 @@ namespace Core.Service.Implementations
 
             await unitOfWork.SaveChangesAsync();
         }
+public async Task UpdateUnitStatusAsync( int unitId,string status)
+{
+    var repo = unitOfWork.GetRepository<Unit, int>();
+    var unit = await repo.GetByIdAsync(unitId);
 
+    if (unit is null)
+        return;
+    unit.Status = status;
+    repo.Update(unit);
+    await unitOfWork.SaveChangesAsync();
+}
         public async Task DeletePropertyAsync(
             int propertyId)
         {
-            var propertyRepo =
-                unitOfWork.GetRepository<Property, int>();
+            var propertyRepo = unitOfWork.GetRepository<Property, int>();
 
-            var unitRepo =
-                unitOfWork.GetRepository<Unit, int>();
+            var unitRepo = unitOfWork.GetRepository<Unit, int>();
 
-            var assignmentRepo =
-                unitOfWork.GetRepository<RoleAssignment, int>();
+            var assignmentRepo =unitOfWork.GetRepository<RoleAssignment,int>();
 
-            var property =
-                await propertyRepo
-                    .GetByIdAsync(propertyId);
+            var property =await propertyRepo .GetByIdAsync(propertyId);
 
             if (property is null)
-                return;
+             return;
 
-            var assignments =
-                await assignmentRepo
-                    .GetAllAsync();
+var assignments =
+    await assignmentRepo.GetAllAsync();
 
-            foreach (var assignment in assignments
-                .Where(x =>
-                    x.PropertyId ==
-                    propertyId))
-            {
-                assignmentRepo.Remove(
-                    assignment);
-            }
+foreach(var item in assignments
+        .Where(x => x.PropertyId == propertyId))
+{
+    assignmentRepo.Remove(item);
+}
+      
 
-            var units =
-                await unitRepo.GetAllAsync();
+            var units =await unitRepo.GetAllAsync();
 
-            foreach (var unit in units
-                .Where(x =>
-                    x.PropertyId ==
-                    propertyId))
+            foreach (var unit in units.Where(x => x.PropertyId == propertyId))
             {
                 unitRepo.Remove(unit);
             }
@@ -275,28 +163,21 @@ namespace Core.Service.Implementations
             await unitOfWork.SaveChangesAsync();
         }
 
-        public async Task UpdateUnitAsync(
-            int unitId,
-            UnitDto dto)
-        {
-            var repo =
-                unitOfWork.GetRepository<Unit, int>();
+       public async Task UpdateUnitAsync(int unitId, UnitDto dto)
+{
+    var repo = unitOfWork.GetRepository<Unit, int>();
 
-            var unit =
-                await repo.GetByIdAsync(unitId);
+    var unit = await repo.GetByIdAsync(unitId);
 
-            if (unit is null)
-                return;
+    if (unit is null) return;
 
-            mapper.Map(dto, unit);
+    mapper.Map(dto, unit);
 
-            repo.Update(unit);
+    repo.Update(unit);
+    await unitOfWork.SaveChangesAsync();
+}
 
-            await unitOfWork.SaveChangesAsync();
-        }
-
-        public async Task DeleteUnitAsync(
-            int unitId)
+        public async Task DeleteUnitAsync( int unitId)
         {
             var repo =
                 unitOfWork.GetRepository<Unit, int>();

@@ -21,8 +21,10 @@ namespace Core.Service.MappingProfiles
 
             #region Unit
 
-            CreateMap<Unit, UnitDto>()
-                .ReverseMap();
+          CreateMap<UnitDto, Unit>()
+    .ForMember(d => d.UnitNumber, opt => opt.Ignore())
+    .ForMember(d => d.FinishingType, opt => opt.Ignore())
+    .ForMember(d => d.Status, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.Status) ? "New" : src.Status));
 
             #endregion
 

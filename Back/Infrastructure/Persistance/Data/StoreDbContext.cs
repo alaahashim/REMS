@@ -1,4 +1,5 @@
 using Core.DomainLayer.Entities;
+using Infrastructure.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 namespace Persistence.Data
@@ -23,6 +24,8 @@ namespace Persistence.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+            LocationSeedData.Seed(modelBuilder);
+
         }
     }
 }

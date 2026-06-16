@@ -19,7 +19,7 @@ namespace Core.ServiceAbstraction
         Task UpdatePropertyAsync(int id, UpdatePropertyDto dto);
 
         Task UpdatePropertyStatusAsync(int id, string status);
-
+        Task UpdateUnitStatusAsync(int unitId, string status);
         Task DeletePropertyAsync(int propertyId);
 
         // ✅ جديد: تحديث وحدة محددة
