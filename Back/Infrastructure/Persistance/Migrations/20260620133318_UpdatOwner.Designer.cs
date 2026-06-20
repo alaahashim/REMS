@@ -9,11 +9,11 @@ using Persistence.Data;
 
 #nullable disable
 
-namespace Persistance.Data.Migrations
+namespace Persistance.Migrations
 {
     [DbContext(typeof(StoreDbContext))]
-    [Migration("20260602094521_Ownership")]
-    partial class Ownership
+    [Migration("20260620133318_UpdatOwner")]
+    partial class UpdatOwner
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -49,6 +49,106 @@ namespace Persistance.Data.Migrations
                     b.HasIndex("GovernorateId");
 
                     b.ToTable("Centers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 1,
+                            Name = "مدينة نصر"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 1,
+                            Name = "المعادي"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 1,
+                            Name = "حلوان"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 2,
+                            Name = "الدقي"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 2,
+                            Name = "الهرم"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 3,
+                            Name = "سيدي جابر"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 3,
+                            Name = "العجمي"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 4,
+                            Name = "أسيوط"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 4,
+                            Name = "البداري"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 4,
+                            Name = "ديروط"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 4,
+                            Name = "القوصية"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 5,
+                            Name = "المنيا"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 6,
+                            Name = "سوهاج"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            GovernorateId = 7,
+                            Name = "قنا"
+                        });
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Governorate", b =>
@@ -70,6 +170,50 @@ namespace Persistance.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Governorates");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "القاهرة"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "الجيزة"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "الإسكندرية"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "أسيوط"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "المنيا"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "سوهاج"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "قنا"
+                        });
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Neighborhood", b =>
@@ -99,6 +243,56 @@ namespace Persistance.Data.Migrations
                     b.HasIndex("CenterId");
 
                     b.ToTable("Neighborhoods");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "الحي السابع",
+                            Zone = "A"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "الحي الثامن",
+                            Zone = "B"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "الحي العاشر",
+                            Zone = "C"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "غرب البلد",
+                            Zone = "A"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "شرق البلد",
+                            Zone = "B"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "الأربعين",
+                            Zone = "C"
+                        });
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Property", b =>
@@ -133,20 +327,14 @@ namespace Persistance.Data.Migrations
                     b.Property<int>("GovernorateId")
                         .HasColumnType("int");
 
-                    b.Property<string>("OldPropertyNo")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("NeighborhoodId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("OwnerName")
-                        .IsRequired()
+                    b.Property<string>("OldPropertyNo")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PlanningNo")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("StreetId")
                         .HasColumnType("int");
@@ -180,6 +368,50 @@ namespace Persistance.Data.Migrations
                     b.HasIndex("CenterId");
 
                     b.ToTable("Streets");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "شارع النصر"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "شارع عباس العقاد"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "شارع مكرم عبيد"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "شارع الجمهورية"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "شارع الهلالي"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "شارع يسري راغب"
+                        });
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Unit", b =>
@@ -241,8 +473,7 @@ namespace Persistance.Data.Migrations
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -262,8 +493,7 @@ namespace Persistance.Data.Migrations
 
                     b.Property<string>("OwnerType")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
                         .IsRequired()
@@ -271,9 +501,6 @@ namespace Persistance.Data.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NationalId")
-                        .IsUnique();
 
                     b.ToTable("Owners");
                 });
@@ -289,8 +516,8 @@ namespace Persistance.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -303,21 +530,22 @@ namespace Persistance.Data.Migrations
 
                     b.Property<string>("RoleType")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("SharePercentage")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<double>("SharePercentage")
+                        .HasColumnType("float");
 
                     b.Property<string>("ShareType")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
 
-                    b.Property<int?>("UnitId")
+                    b.Property<int>("UnitId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UnitId1")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -327,6 +555,8 @@ namespace Persistance.Data.Migrations
                     b.HasIndex("PropertyId");
 
                     b.HasIndex("UnitId");
+
+                    b.HasIndex("UnitId1");
 
                     b.ToTable("RoleAssignments");
                 });
@@ -380,22 +610,24 @@ namespace Persistance.Data.Migrations
                     b.HasOne("Owner", "Owner")
                         .WithMany("Assignments")
                         .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.DomainLayer.Entities.Property", null)
+                        .WithMany("Assignments")
+                        .HasForeignKey("PropertyId");
+
+                    b.HasOne("Core.DomainLayer.Entities.Unit", "Unit")
+                        .WithMany()
+                        .HasForeignKey("UnitId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Core.DomainLayer.Entities.Property", "Property")
+                    b.HasOne("Core.DomainLayer.Entities.Unit", null)
                         .WithMany("Assignments")
-                        .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("Core.DomainLayer.Entities.Unit", "Unit")
-                        .WithMany("Assignments")
-                        .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("UnitId1");
 
                     b.Navigation("Owner");
-
-                    b.Navigation("Property");
 
                     b.Navigation("Unit");
                 });

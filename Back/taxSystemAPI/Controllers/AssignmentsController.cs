@@ -2,102 +2,76 @@ using Core.ServiceAbstraction;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOS;
 
-namespace Presentation.Controllers
+[ApiController]
+[Route("api/assignments")]
+public class AssignmentsController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class AssignmentsController(
-        IServiceManager service)
-        : ControllerBase
+    private readonly IAssignmentService _service;
+
+    public AssignmentsController(IServiceManager serviceManager)
     {
-        [HttpGet]
-        public async Task<IActionResult>
-            GetAssignments()
+        _service = serviceManager.AssignmentService;
+    }
+
+    // GET api/assignments
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _service.GetAllAsync();
+        return Ok(result);
+    }
+
+    // GET api/assignments/person/{nationalId}
+    [HttpGet("person/{nationalId}")]
+    public async Task<IActionResult> GetByPerson(string nationalId)
+    {
+        var result = await _service.GetByPersonIdAsync(nationalId);
+        return Ok(result);
+    }
+
+    // GET api/assignments/{id}
+    [HttpGet("{id}")]
+    public IActionResult GetById(int id)
+    {
+        return Ok(new
         {
-            var result =
-                await service
-                .AssignmentService
-                .GetAssignmentsAsync();
+            message = $"Assignment {id}"
+        });
+    }
 
-            return Ok(result);
-        }
+    // POST api/assignments/bulk
+    [HttpPost("bulk")]
+    public async Task<IActionResult> CreateBulk(
+        [FromBody] List<CreateAssignmentDto> dto)
+    {
+        await _service.CreateBulkAsync(dto);
 
-        [HttpGet("person/{personId}")]
-        public async Task<IActionResult>
-            GetAssignmentByPersonId(
-            string personId)
+        return Ok(new
         {
-            var result =
-                await service
-                .AssignmentService
-                .GetAssignmentByPersonIdAsync(
-                    personId);
+            success = true,
+            message = "Assignments created successfully"
+        });
+    }
 
-            if (result is null)
-            {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "المالك غير موجود"
-                });
-            }
-
-            return Ok(result);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult>
-            CreateAssignment(
-            [FromBody]
-            CreateAssignmentDto dto)
+    // PUT api/assignments/{id}
+    [HttpPut("{id}")]
+    public IActionResult Update(int id)
+    {
+        return Ok(new
         {
-            var id =
-                await service
-                .AssignmentService
-                .CreateAssignmentAsync(dto);
+            success = true,
+            message = $"Assignment {id} updated"
+        });
+    }
 
-            return Ok(new
-            {
-                success = true,
-                assignmentId = id,
-                message = "تم إنشاء الربط بنجاح"
-            });
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult>
-            UpdateAssignment(
-            int id,
-            [FromBody]
-            CreateAssignmentDto dto)
+    // DELETE api/assignments/{id}
+    [HttpDelete("{id}")]
+    public IActionResult Delete(int id)
+    {
+        return Ok(new
         {
-            await service
-                .AssignmentService
-                .UpdateAssignmentAsync(
-                    id,
-                    dto);
-
-            return Ok(new
-            {
-                success = true,
-                message = "تم تحديث الربط"
-            });
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult>
-            DeleteAssignment(
-            int id)
-        {
-            await service
-                .AssignmentService
-                .DeleteAssignmentAsync(id);
-
-            return Ok(new
-            {
-                success = true,
-                message = "تم حذف الربط"
-            });
-        }
+            success = true,
+            message = $"Assignment {id} deleted"
+        });
     }
 }

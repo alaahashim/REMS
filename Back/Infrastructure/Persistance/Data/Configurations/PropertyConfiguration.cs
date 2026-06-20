@@ -13,9 +13,7 @@ namespace Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasMaxLength(50);
 
-            builder.Property(p => p.Status)
-                .IsRequired()
-                .HasMaxLength(50);
+    
 
             builder.HasMany(p => p.Units)
                 .WithOne(u => u.Property)

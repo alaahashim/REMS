@@ -6,6 +6,7 @@ using Core.DomainLayer.Contracts;
 using Core.Service.Implementations;
 using AutoMapper;
 using Core.Service.MappingProfiles;
+using Presentation.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
+var mapperConfig = builder.Services.BuildServiceProvider()
+    .GetRequiredService<IMapper>();
 
 // =========================
 // DB Context
@@ -63,9 +66,7 @@ builder.Services.AddScoped(
     typeof(GenericRepository<,>)
 );
 
-builder.Services.AddScoped<
-    ILocationService,
-    LocationService>();
+
 
 
 var app = builder.Build();
@@ -73,6 +74,7 @@ var app = builder.Build();
 
 // =========================
 // Middleware
+app.UseMiddleware<ExceptionMiddleware>();
 // =========================
 
 app.UseSwagger();

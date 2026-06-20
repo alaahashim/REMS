@@ -1,22 +1,8 @@
 using Shared.DTOS;
 
-namespace Core.ServiceAbstraction
+public interface IAssignmentService
 {
-    public interface IAssignmentService
-    {
-        Task<IEnumerable<AssignmentDto>>
-            GetAssignmentsAsync();
-
-        Task<AssignmentDto?>
-            GetAssignmentByPersonIdAsync(string personId);
-
-        Task<int>
-            CreateAssignmentAsync(CreateAssignmentDto dto);
-
-        Task UpdateAssignmentAsync(
-            int assignmentId,
-            CreateAssignmentDto dto);
-
-        Task DeleteAssignmentAsync(int assignmentId);
-    }
+    Task<List<AssignmentDto>> GetAllAsync();
+    Task<List<AssignmentDto>> GetByPersonIdAsync(string nationalId);
+    Task CreateBulkAsync(List<CreateAssignmentDto> dto);
 }

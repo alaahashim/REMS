@@ -17,8 +17,8 @@ namespace Core.Service.Implementations
         private readonly Lazy<IPropertyService> _lazyPropertyService =
             new(() => new PropertyService(unitOfWork, mapper));
 
-        private readonly Lazy<IAssignmentService> _lazyAssignmentService =
-            new(() => new AssignmentService(unitOfWork, mapper));
+       private readonly Lazy<IAssignmentService> _lazyAssignmentService =
+           new(() => new AssignmentService(unitOfWork, mapper));
 
 private readonly Lazy<IOwnerService>_lazyOwnerService =
         new(() => new OwnerService( unitOfWork, mapper));
@@ -29,10 +29,10 @@ private readonly Lazy<IOwnerService>_lazyOwnerService =
         public IPropertyService PropertyService
             => _lazyPropertyService.Value;
 
-        public IAssignmentService AssignmentService
-            => _lazyAssignmentService.Value;
+       public IAssignmentService AssignmentService
+           => _lazyAssignmentService.Value;
 
-       public IOwnerService OwnerService
-                  => _lazyOwnerService.Value;
+      public IOwnerService OwnerService
+                => _lazyOwnerService.Value;
     }
 }

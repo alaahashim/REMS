@@ -23,7 +23,7 @@ namespace Persistence.Data
        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+modelBuilder.ApplyConfigurationsFromAssembly(typeof(StoreDbContext).Assembly);
             LocationSeedData.Seed(modelBuilder);
 
         }

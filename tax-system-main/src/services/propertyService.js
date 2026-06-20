@@ -28,7 +28,7 @@ export const createProperty = async (
 
     unitType: u.unitType,
 
-    status: "Active"
+    status: u.status
   }));
 
   const dto = {
@@ -44,7 +44,7 @@ export const createProperty = async (
 
     planningNo: "",
 
-    buildYear: new Date().getFullYear(),
+    buildYear: Number(propertyData.buildYear),
 
     description: propertyData.description,
 
