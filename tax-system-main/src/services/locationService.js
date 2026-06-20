@@ -2,7 +2,7 @@
 
 import axios from "axios";
 
-const API_URL = "https://localhost:5179/api/Locations";
+const API_URL = "http://localhost:5179/api/Locations";
 
 export const getGovernorates = async () => {
   const res = await axios.get(`${API_URL}/governorates`);

@@ -1,97 +1,46 @@
-using System;
-using Core.ServiceAbstraction;
 using Microsoft.AspNetCore.Mvc;
+using Core.ServiceAbstraction;
 using Shared.DTOS;
 
-namespace Presentation.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class OwnersController(
-    IServiceManager service)
-    : ControllerBase
+namespace Presentation.Controllers
 {
-    [HttpGet]
-    public async Task<IActionResult>
-        GetOwners()
+    [ApiController]
+    [Route("api/[controller]")]
+    public class OwnersController(IServiceManager service) : ControllerBase
     {
-        var result =
-            await service
-            .OwnerService
-            .GetOwnersAsync();
-
-        return Ok(result);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult>
-        GetOwner(int id)
-    {
-        var result =
-            await service
-            .OwnerService
-            .GetOwnerByIdAsync(id);
-
-        if (result is null)
-            return NotFound();
-
-        return Ok(result);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult>
-        CreateOwner(
-        [FromBody]
-        CreateOwnerDto dto)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        try
+        // GET: api/owners?search=ahmed
+        [HttpGet]
+        public async Task<IActionResult> GetOwners([FromQuery] string? search)
         {
-            var id =
-                await service
-                .OwnerService
-                .CreateOwnerAsync(dto);
+            var result = await service.OwnerService.GetAllAsync(search);
+            return Ok(result);
+        }
+
+        // GET: api/owners/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetOwnerById(int id)
+        {
+            var result = await service.OwnerService.GetByIdAsync(id);
+
+            if (result is null)
+                return NotFound();
+
+            return Ok(result);
+        }
+
+        // POST: api/owners
+        [HttpPost]
+        public async Task<IActionResult> AddOwner([FromBody] CreateOwnerDto dto)
+        {
+            var id = await service.OwnerService.CreateAsync(dto);
 
             return Ok(new
             {
-                Success = true,
-                OwnerId = id
+                success = true,
+                ownerId = id
             });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new
-            {
-                Success = false,
-                Message = ex.Message
-            });
-        }
-    }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult>
-        UpdateOwner(
-        int id,
-        [FromBody]
-        UpdateOwnerDto dto)
-    {
-        await service
-            .OwnerService
-            .UpdateOwnerAsync(id, dto);
-
-        return Ok();
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult>
-        DeleteOwner(int id)
-    {
-        await service
-            .OwnerService
-            .DeleteOwnerAsync(id);
-
-        return Ok();
+  
     }
 }

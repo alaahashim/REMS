@@ -13,7 +13,9 @@ const AddProperty = () => {
     neighborhoodId: '',
     streetId: '',
     buildingNo: '',
-    description: ''
+    buildYear: '',
+    description: '',
+
   });
 
   const [governorates, setGovernorates] = useState([]);
@@ -65,9 +67,11 @@ const AddProperty = () => {
     if (name === 'isSingleOwner') {
         setIsSingleOwner(checked);
         if(checked) {
-            setUnits([{ unitType: 'Villa/House', floor: 1, area: 0, usage: 'Residential' }]);
+            setUnits([{ unitType: 'Villa/House', floor: 1, area: 0, usage: 'Residential',    status: 'Available'
+ }]);
         } else {
-            setUnits([{ unitType: 'Apartment', floor: 1, area: 0, usage: 'Residential' }]);
+            setUnits([{ unitType: 'Apartment', floor: 1, area: 0, usage: 'Residential',    status: 'Available'
+ }]);
         }
     } else if (name === 'governorateId') {
         setPropertyData({ ...propertyData, [name]: value, centerId: '', neighborhoodId: '', streetId: '' });
@@ -85,7 +89,8 @@ const AddProperty = () => {
   };
 
   const addUnitRow = () => {
-    setUnits([...units, { unitType: 'Apartment', floor: units.length + 1, area: 0, usage: 'Residential' }]);
+    setUnits([...units, { unitType: 'Apartment', floor: units.length + 1, area: 0, usage: 'Residential',    status: 'Available'
+ }]);
   };
 
   const removeUnitRow = (index) => {
@@ -116,7 +121,8 @@ const AddProperty = () => {
             unitType: 'Villa/House', 
             floor: 1, 
             area: Number(totalArea), 
-            usage: units[0]?.usage || 'Residential'
+            usage: units[0]?.usage || 'Residential',
+            status: units[0]?.status || 'Available'
         }];
       } else {
         unitsToSave = units.map(u => ({
@@ -193,6 +199,46 @@ const AddProperty = () => {
                       </Form.Select>
                     </Form.Group>
                   </Col>
+          <Col md={4}>
+  <Form.Group className="mb-3">
+    <Form.Label className="text-primary fw-bold">
+      سنة البناء
+    </Form.Label>
+
+    <Form.Select
+      name="buildYear"
+      value={propertyData.buildYear}
+      onChange={handlePropertyChange}
+    >
+      <option value="">اختر سنة البناء</option>
+
+      {Array.from(
+        { length: new Date().getFullYear() - 1900 + 1 },
+        (_, i) => 1900 + i
+      ).reverse().map((year) => (
+        <option key={year} value={year}>
+          {year}
+        </option>
+      ))}
+    </Form.Select>
+  </Form.Group>
+</Col>
+<Col md={8}>
+  <Form.Group className="mb-3">
+    <Form.Label className="text-primary fw-bold">
+      وصف العقار
+    </Form.Label>
+
+    <Form.Control
+      as="textarea"
+      rows={2}
+      name="description"
+      value={propertyData.description}
+      onChange={handlePropertyChange}
+      placeholder="اكتب وصف العقار..."
+    />
+  </Form.Group>
+</Col>
                 </Row>
 
                 <Row>
@@ -233,6 +279,7 @@ const AddProperty = () => {
                                 <th>الدور</th>
                                 <th>المساحة (م²)</th>
                                 <th>الاستخدام</th>
+                                <th>الحالة</th>
                                 <th style={{width: '80px'}}>حذف</th>
                             </tr>
                             </thead>
@@ -258,6 +305,21 @@ const AddProperty = () => {
                                             <option value="Commercial">تجاري</option>
                                         </Form.Select>
                                     </td>
+                                    <td>
+                              <Form.Select
+                                 size="sm"
+                                 value={unit.status}
+                                 onChange={(e) =>
+                                 handleUnitChange( index,'status', e.target.value )}>
+    <option value="Available">
+      متوفر
+    </option>
+
+    <option value="Occupied">
+      مشغول
+    </option>
+  </Form.Select>
+</td>
                                     <td className="text-center">
                                         {units.length > 1 && (
                                             <Button variant="outline-danger" size="sm" onClick={() => removeUnitRow(index)}>

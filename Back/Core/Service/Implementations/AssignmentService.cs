@@ -1,126 +1,226 @@
 using AutoMapper;
 using Core.DomainLayer.Contracts;
-using Core.Service.Specifications;
-using Core.ServiceAbstraction;
+using Core.DomainLayer.Entities;
+using Core.DomainLayer.Exceptions;
 using Shared.DTOS;
 
-namespace Core.Service.Implementations
+namespace Core.Service.Implementations{
+
+public class AssignmentService : IAssignmentService
 {
-    public class AssignmentService( IUnitOfWork unitOfWork, IMapper mapper) : IAssignmentService
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public AssignmentService(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        public async Task<IEnumerable<AssignmentDto>>
-            GetAssignmentsAsync()
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    // ─────────────────────────────
+    // GET ALL ASSIGNMENTS
+    // ─────────────────────────────
+    public async Task<List<AssignmentDto>> GetAllAsync()
+    {
+        var repo = _unitOfWork.GetRepository<RoleAssignment, int>();
+        var spec = new AssignmentsWithIncludesSpec();
+
+        var data = await repo.GetAllAsync(spec);
+
+        // لو لا توجد بيانات، رجعي List فاضية بدل Exception
+        if (data == null || !data.Any())
+            return new List<AssignmentDto>();
+
+        return _mapper.Map<List<AssignmentDto>>(data);
+    }
+
+    // ─────────────────────────────
+    // GET ASSIGNMENTS BY PERSON ID
+    // ─────────────────────────────
+    public async Task<List<AssignmentDto>> GetByPersonIdAsync(string nationalId)
+    {
+        if (string.IsNullOrWhiteSpace(nationalId))
         {
-            var repo =
-                unitOfWork
-                .GetRepository<RoleAssignment, int>();
-
-            var assignments =
-                await repo.GetAllAsync(
-                    new AssignmentWithOwnerSpecification());
-
-            return mapper.Map<
-                IEnumerable<AssignmentDto>>
-                (assignments);
+            throw new ValidationException(new List<string>
+            {
+                "الرقم القومي مطلوب"
+            });
         }
 
-        public async Task<AssignmentDto?> GetAssignmentByPersonIdAsync( string personId)
+        var repo = _unitOfWork.GetRepository<RoleAssignment, int>();
+        var spec = new AssignmentsByNationalIdSpec(nationalId.Trim());
+
+        var data = await repo.GetAllAsync(spec);
+
+        // لو الشخص ليس له ربطات، رجعي List فاضية
+        if (data == null || !data.Any())
+            return new List<AssignmentDto>();
+
+        return _mapper.Map<List<AssignmentDto>>(data);
+    }
+
+    // ─────────────────────────────
+    // CREATE BULK ASSIGNMENTS
+    // ─────────────────────────────
+    public async Task CreateBulkAsync(List<CreateAssignmentDto> dtoList)
+    {
+        // 1) Validation على مستوى القائمة
+        if (dtoList == null || !dtoList.Any())
         {
-            var repo =
-                unitOfWork
-                .GetRepository<RoleAssignment, int>();
-
-            var assignment =
-                await repo.GetByIdAsync(
-                    new AssignmentWithOwnerSpecification(
-                        personId));
-
-            return assignment is null
-                ? null
-                : mapper.Map<AssignmentDto>(
-                    assignment);
+            throw new ValidationException(new List<string>
+            {
+                "قائمة الربط لا يمكن أن تكون فارغة"
+            });
         }
 
-        public async Task<int> CreateAssignmentAsync( CreateAssignmentDto dto)
+        var ownerRepo = _unitOfWork.GetRepository<Owner, int>();
+        var assignmentRepo = _unitOfWork.GetRepository<RoleAssignment, int>();
+        var propertyRepo = _unitOfWork.GetRepository<Property, int>();
+        var unitRepo = _unitOfWork.GetRepository<Unit, int>();
+
+        // تحميل الملاك الحاليين مرة واحدة فقط بدل GetAllAsync داخل كل loop
+        var existingOwners = (await ownerRepo.GetAllAsync()).ToList();
+
+        foreach (var dto in dtoList)
         {
-            var ownerRepo =
-                unitOfWork
-                .GetRepository<Owner, int>();
+            // 2) Validation لكل DTO
+            ValidateAssignmentDto(dto);
 
-            var assignmentRepo =
-                unitOfWork
-                .GetRepository<RoleAssignment, int>();
+            // 3) التأكد أن العقار موجود
+            var property = await propertyRepo.GetByIdAsync(dto.PropertyId);
+            if (property == null)
+            {
+                throw new NotFoundException($"العقار رقم {dto.PropertyId} غير موجود");
+            }
 
-            var owners =
-                await ownerRepo.GetAllAsync();
+            // 4) التأكد أن الوحدة موجودة
+            var unit = await unitRepo.GetByIdAsync(dto.UnitId);
+            if (unit == null)
+            {
+                throw new NotFoundException($"الوحدة رقم {dto.UnitId} غير موجودة");
+            }
 
-            var owner = owners.FirstOrDefault(x => x.NationalId == dto.PersonId);
+            // 5) التأكد أن الوحدة تتبع العقار المختار
+            if (unit.PropertyId != dto.PropertyId)
+            {
+                throw new BusinessException(
+                    $"الوحدة رقم {dto.UnitId} لا تتبع العقار رقم {dto.PropertyId}"
+                );
+            }
 
-            if (owner is null)
+            // 6) البحث عن المالك الحالي
+            var owner = existingOwners.FirstOrDefault(x => x.NationalId == dto.PersonId.Trim());
+
+            // 7) لو المالك غير موجود → أنشئيه
+            if (owner == null)
             {
                 owner = new Owner
                 {
-                    NationalId = dto.PersonId,
-                    FullName = dto.Name,
+                    NationalId = dto.PersonId.Trim(),
+                    FullName = dto.PersonName.Trim(),
+                    Phone = dto.ContactPhone?.Trim() ?? string.Empty,
+                    Address = dto.Address?.Trim() ?? string.Empty,
                     OwnerType = "Individual",
                     IsActive = true
                 };
 
                 await ownerRepo.AddAsync(owner);
-
-                await unitOfWork.SaveChangesAsync();
+                existingOwners.Add(owner); // حتى لا يتكرر داخل نفس الطلب
             }
 
-            var assignment = mapper.Map<RoleAssignment>(dto);
+            // 8) Business Rule إضافية (اختيارية لكن مفيدة)
+            // منع تكرار نفس الربط لنفس المالك ونفس الوحدة ونفس الدور لو كان Active
+            var existingAssignments = await assignmentRepo.GetAllAsync();
+            bool duplicateAssignment = existingAssignments.Any(a =>
+                a.OwnerId == owner.Id &&
+                a.UnitId == dto.UnitId &&
+                a.RoleType == dto.RoleType &&
+                a.IsActive);
 
-            assignment.OwnerId = owner.Id;
+            if (duplicateAssignment)
+            {
+                throw new BusinessException(
+                    $"يوجد بالفعل ربط نشط لهذا المالك على الوحدة رقم {dto.UnitId} بنفس الدور"
+                );
+            }
 
-            assignment.IsActive = true;
+            // 9) إنشاء الربط
+            var assignment = new RoleAssignment
+            {
+                Owner = owner,
+                UnitId = dto.UnitId,
+                RoleType = dto.RoleType.Trim(),
+                ShareType = dto.ShareType.Trim(),
+                SharePercentage = dto.SharePercentage,
+                StartDate = dto.OwnershipStartDate,
+                EndDate = dto.OwnershipEndDate,
+                IsActive = dto.IsActive
+            };
 
-            await assignmentRepo
-                .AddAsync(assignment);
-
-            await unitOfWork.SaveChangesAsync();
-
-            return assignment.Id;
+            await assignmentRepo.AddAsync(assignment);
         }
 
-        public async Task UpdateAssignmentAsync( int assignmentId, CreateAssignmentDto dto)
-        {
-            var repo =unitOfWork.GetRepository<RoleAssignment, int>();
-
-            var assignment =  await repo.GetByIdAsync( assignmentId);
-
-            if (assignment is null)
-                return;
-
-            mapper.Map(
-                dto,
-                assignment);
-
-            repo.Update(assignment);
-
-            await unitOfWork.SaveChangesAsync();
-        }
-
-        public async Task
-            DeleteAssignmentAsync(
-            int assignmentId)
-        {
-            var repo =
-                unitOfWork
-                .GetRepository<RoleAssignment, int>();
-
-            var assignment =
-                await repo.GetByIdAsync(
-                    assignmentId);
-
-            if (assignment is null)
-                return;
-
-            repo.Remove(assignment);
-
-            await unitOfWork.SaveChangesAsync();
-        }
+        // 10) حفظ مرة واحدة فقط
+        await _unitOfWork.SaveChangesAsync();
     }
-}
+
+    // ─────────────────────────────
+    // PRIVATE VALIDATION METHOD
+    // ─────────────────────────────
+    private static void ValidateAssignmentDto(CreateAssignmentDto dto)
+    {
+        var errors = new List<string>();
+
+        if (dto == null)
+        {
+            throw new ValidationException(new List<string>
+            {
+                "بيانات الربط غير صالحة"
+            });
+        }
+
+        // بيانات الشخص
+        if (string.IsNullOrWhiteSpace(dto.PersonId))
+            errors.Add("الرقم القومي مطلوب");
+
+        if (string.IsNullOrWhiteSpace(dto.PersonName))
+            errors.Add("اسم المالك مطلوب");
+
+        if (string.IsNullOrWhiteSpace(dto.ContactPhone))
+            errors.Add("رقم الهاتف مطلوب");
+
+        if (string.IsNullOrWhiteSpace(dto.Address))
+            errors.Add("العنوان مطلوب");
+
+        // بيانات العقار والوحدة
+        if (dto.PropertyId <= 0)
+            errors.Add("يجب اختيار عقار صحيح");
+
+        if (dto.UnitId <= 0)
+            errors.Add("يجب اختيار وحدة صحيحة");
+
+        // بيانات الربط
+        if (string.IsNullOrWhiteSpace(dto.RoleType))
+            errors.Add("نوع الدور مطلوب");
+
+        if (string.IsNullOrWhiteSpace(dto.ShareType))
+            errors.Add("نوع الحصة مطلوب");
+
+        // نسبة الحصة
+        if (dto.SharePercentage < 0 || dto.SharePercentage > 100)
+            errors.Add("نسبة الحصة يجب أن تكون بين 0 و 100");
+
+        // التاريخ
+        if (dto.OwnershipStartDate == default)
+            errors.Add("تاريخ بداية الملكية مطلوب");
+
+        if (dto.OwnershipEndDate.HasValue &&
+            dto.OwnershipEndDate.Value < dto.OwnershipStartDate)
+        {
+            errors.Add("تاريخ نهاية الملكية يجب أن يكون بعد تاريخ البداية");
+        }
+
+        if (errors.Any())
+            throw new ValidationException(errors);
+    }
+}}

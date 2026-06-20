@@ -1,0 +1,352 @@
+/* ════════════════════════════════════════════════════
+   LinkOwner.css  —  تصميم صفحة ربط المالك
+   اتجاه RTL ، متوافق مع dark mode عبر CSS variables
+   ════════════════════════════════════════════════════ */
+
+/* ── حاوية الصفحة ───────────────────────────────── */
+.lo-page {
+  padding: 1.5rem 2rem;
+  background: transparent;
+  min-height: 100%;
+}
+
+/* ── رأس الصفحة ─────────────────────────────────── */
+.lo-page-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.lo-page-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1a3a5c;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lo-icon-title {
+  font-size: 1.1rem;
+}
+
+/* ── رسالة التنبيه ──────────────────────────────── */
+.lo-alert {
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+
+/* ── القسم (section card) ───────────────────────── */
+.lo-section {
+  background: #f8f9fa;
+  border: 0.5px solid rgba(0, 0, 0, 0.07);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ── عنوان القسم ────────────────────────────────── */
+.lo-section-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #5a6a7a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 0.65rem;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lo-units-count {
+  margin-right: auto;
+  background: #1a3a5c;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 1px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+/* ── Labels & hints ─────────────────────────────── */
+.lo-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a3a5c;
+  margin-bottom: 0.3rem;
+  display: block;
+}
+
+.lo-req {
+  color: #c0392b;
+  margin-right: 2px;
+}
+
+.lo-hint {
+  font-size: 0.75rem;
+  color: #7a8a9a;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.lo-hint-warn {
+  color: #b45309;
+}
+
+.lo-hint-warn i {
+  margin-left: 3px;
+}
+
+/* ── Inputs ─────────────────────────────────────── */
+.lo-input {
+  font-size: 0.88rem;
+  border-color: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  background: #fff;
+  color: #1a1a2e;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.lo-input:focus {
+  border-color: #1a3a5c;
+  box-shadow: 0 0 0 3px rgba(26, 58, 92, 0.12);
+}
+
+.lo-input-center {
+  text-align: center;
+}
+
+.lo-input-icon {
+  background: #f0f4f8;
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #5a6a7a;
+  font-size: 0.85rem;
+}
+
+.lo-search-btn {
+  border-color: rgba(0, 0, 0, 0.15);
+  font-size: 0.82rem;
+  color: #1a3a5c;
+}
+
+.lo-search-btn:hover {
+  background: #1a3a5c;
+  color: #fff;
+  border-color: #1a3a5c;
+}
+
+/* ══════════════════════════════════════════════════
+   جدول الوحدات
+   ══════════════════════════════════════════════════ */
+
+/* ── رأس الجدول ─────────────────────────────────── */
+.lo-units-header {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  background: #e9eef4;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5a6a7a;
+}
+
+/* ── صف وحدة واحدة ──────────────────────────────── */
+.lo-unit-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  background: #fff;
+  border: 0.5px solid rgba(0, 0, 0, 0.07);
+  border-radius: 10px;
+  padding: 0.75rem 0.75rem 0.5rem;
+  margin-bottom: 0.5rem;
+  transition: border-color 0.15s;
+}
+
+.lo-unit-row:hover {
+  border-color: rgba(26, 58, 92, 0.2);
+}
+
+.lo-unit-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.lo-field-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #7a8a9a;
+  margin-bottom: 0.25rem;
+}
+
+.lo-unit-del {
+  justify-content: flex-end;
+  padding-bottom: 2px;
+}
+
+/* ── زر حذف وحدة ────────────────────────────────── */
+.lo-del-btn {
+  background: none;
+  border: 0.5px solid rgba(192, 57, 43, 0.3);
+  color: #c0392b;
+  border-radius: 7px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lo-del-btn:hover:not(:disabled) {
+  background: #c0392b;
+  color: #fff;
+}
+
+.lo-del-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── تذييل الجدول ───────────────────────────────── */
+.lo-units-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 0.5px dashed rgba(0, 0, 0, 0.1);
+}
+
+/* ── زر إضافة وحدة ──────────────────────────────── */
+.lo-add-btn {
+  background: none;
+  border: 0.5px dashed rgba(26, 58, 92, 0.5);
+  color: #1a3a5c;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lo-add-btn:hover {
+  background: rgba(26, 58, 92, 0.06);
+  border-color: #1a3a5c;
+}
+
+/* ── مجموع الحصص ─────────────────────────────────── */
+.lo-share-total {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #5a6a7a;
+}
+
+.lo-share-value {
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 1px 8px;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.lo-share-ok {
+  color: #1a7a4a;
+  background: #e6f4ec;
+}
+
+.lo-share-err {
+  color: #c0392b;
+  background: #fdecea;
+}
+
+/* ══════════════════════════════════════════════════
+   أزرار الإجراءات (أسفل الصفحة)
+   ══════════════════════════════════════════════════ */
+.lo-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.lo-btn-cancel {
+  font-size: 0.88rem;
+  padding: 8px 22px;
+  border-radius: 8px;
+  background: #f0f4f8;
+  border: 0.5px solid rgba(0, 0, 0, 0.15);
+  color: #5a6a7a;
+}
+
+.lo-btn-cancel:hover {
+  background: #e2e8f0;
+}
+
+.lo-btn-confirm {
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 8px 28px;
+  border-radius: 8px;
+  background: #1a7a4a !important;
+  border: none !important;
+  color: #fff !important;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lo-btn-confirm:hover:not(:disabled) {
+  background: #155f39 !important;
+}
+
+.lo-btn-confirm:disabled {
+  opacity: 0.65;
+}
+
+/* ══════════════════════════════════════════════════
+   Dark mode
+   ══════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  .lo-page-title        { color: #7eb8e8; }
+  .lo-section           { background: #1e2a38; border-color: rgba(255,255,255,0.07); }
+  .lo-section-title     { color: #94adc4; border-color: rgba(255,255,255,0.07); }
+  .lo-label             { color: #7eb8e8; }
+  .lo-input             { background: #162030; color: #dde6f0; border-color: rgba(255,255,255,0.12); }
+  .lo-input:focus       { border-color: #7eb8e8; box-shadow: 0 0 0 3px rgba(126,184,232,0.15); }
+  .lo-input-icon        { background: #1e2a38; color: #7eb8e8; border-color: rgba(255,255,255,0.12); }
+  .lo-units-header      { background: #162030; color: #7eb8e8; }
+  .lo-unit-row          { background: #1a2738; border-color: rgba(255,255,255,0.07); }
+  .lo-field-label       { color: #5a7a9a; }
+  .lo-hint              { color: #5a7a9a; }
+  .lo-add-btn           { color: #7eb8e8; border-color: rgba(126,184,232,0.4); }
+  .lo-share-total       { color: #7a9ab4; }
+  .lo-btn-cancel        { background: #1e2a38; color: #94adc4; border-color: rgba(255,255,255,0.1); }
+  .lo-page-header       { border-color: rgba(255,255,255,0.07); }
+  .lo-units-footer      { border-color: rgba(255,255,255,0.07); }
+}
+
+/* ══════════════════════════════════════════════════
+   Responsive — شاشات صغيرة
+   ══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lo-page          { padding: 1rem; }
+  .lo-unit-row      { flex-wrap: wrap; }
+  .lo-unit-field    { min-width: 140px; }
+  .lo-units-header  { display: none; }
+  .lo-field-label   { display: block !important; }
+}

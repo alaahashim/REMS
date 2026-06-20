@@ -1,23 +1,22 @@
-namespace Shared.DTOS
+
+namespace Shared.DTOS;
+
+public class CreateAssignmentDto
 {
-    public class CreateAssignmentDto
-    {
-        public int PropertyId { get; set; }
+    public string PersonId { get; set; } = null!;
+    public string PersonName { get; set; } = null!;
+    public string ContactPhone { get; set; } = null!;
+    public string Address { get; set; } = null!;
 
-        public int? UnitId { get; set; }
+    public int PropertyId { get; set; }
+    public int UnitId { get; set; }
 
-        public string PersonId { get; set; }
+    public string RoleType { get; set; } = null!;
+    public string ShareType { get; set; } = null!;
+    public double SharePercentage { get; set; }
 
-        public string Name { get; set; }
+    public DateTime OwnershipStartDate { get; set; }
+    public DateTime? OwnershipEndDate { get; set; }
 
-        public string RoleType { get; set; }
-
-        public string ShareType { get; set; }
-
-        public double SharePercentage { get; set; }
-
-        public DateOnly OwnershipStartDate { get; set; }
-
-        public DateOnly? OwnershipEndDate { get; set; }
-    }
+    public bool IsActive { get; set; }
 }
