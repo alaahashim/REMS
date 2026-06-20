@@ -1,51 +1,94 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
-// إنشاء الـ Context
 export const AuthContext = createContext();
 
-// المستخدم الافتراضي
-const DEFAULT_ADMIN = { username: 'admin', password: 'admin', role: 'Admin' };
+const DEFAULT_ADMIN = {
+  id: 'admin-1',
+  username: 'admin',
+  password: 'admin',
+  role: 'Admin',
+  name: 'Administrator',
+  email: 'admin@tax-system.com',
+  phone: '01000000000'
+};
+
+const getStoredAdmin = () => {
+  const stored = localStorage.getItem('tax_admin_profile');
+  return stored ? JSON.parse(stored) : DEFAULT_ADMIN;
+};
+
+const getAllUsers = () => {
+  const storedUsers = JSON.parse(localStorage.getItem('tax_users')) || [];
+  const admin = getStoredAdmin();
+  return [admin, ...storedUsers.filter((u) => u.username !== admin.username)];
+};
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('tax_current_user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
   const [usersList, setUsersList] = useState([]);
 
-  // 1. جلب المستخدمين من LocalStorage
   useEffect(() => {
-    const storedUsers = JSON.parse(localStorage.getItem('tax_users')) || [];
-    const allUsers = [DEFAULT_ADMIN, ...storedUsers];
+    const allUsers = getAllUsers();
     setUsersList(allUsers);
   }, []);
 
-  // 2. دالة تسجيل الدخول
   const login = (username, password) => {
-    const foundUser = usersList.find(u => u.username === username && u.password === password);
+    const allUsers = getAllUsers();
+    const foundUser = allUsers.find(
+      (u) => u.username === username && u.password === password
+    );
 
     if (foundUser) {
-      setUser({ 
-        username: foundUser.username, 
-        role: foundUser.role,
-        id: foundUser.id,
-        name: foundUser.name
-      });
-      return { success: true, user: foundUser };
-    } else {
-      return { success: false, message: 'بيانات الدخول غير صحيحة' };
+      const loggedUser = {
+        ...foundUser,
+        name: foundUser.name || foundUser.username
+      };
+      setUser(loggedUser);
+      localStorage.setItem('tax_current_user', JSON.stringify(loggedUser));
+      return { success: true, user: loggedUser };
     }
+
+    return { success: false, message: 'بيانات الدخول غير صحيحة' };
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('tax_current_user');
+  };
+
+  const updateCurrentUser = (updates) => {
+    if (!user) return;
+
+    const nextUser = {
+      ...user,
+      ...updates,
+      name: updates.name || user.name || user.username
+    };
+
+    setUser(nextUser);
+    localStorage.setItem('tax_current_user', JSON.stringify(nextUser));
+
+    const storedUsers = JSON.parse(localStorage.getItem('tax_users')) || [];
+    const isAdmin = nextUser.role === 'Admin' || nextUser.id === 'admin-1';
+
+    if (isAdmin) {
+      localStorage.setItem('tax_admin_profile', JSON.stringify(nextUser));
+    } else {
+      const updatedStoredUsers = storedUsers.map((u) =>
+        u.id === nextUser.id ? nextUser : u
+      );
+      localStorage.setItem('tax_users', JSON.stringify(updatedStoredUsers));
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateCurrentUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// --- هذا الجزء هو المهم وهو كان ناقص في الكود السابق ---
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);

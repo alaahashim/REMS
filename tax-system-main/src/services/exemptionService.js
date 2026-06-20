@@ -1,31 +1,54 @@
-const API_URL = 'http://localhost:5000/api'; 
-
 const saveToStorage = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+
 const getFromStorage = (key) => {
-  const data = localStorage.getItem(key);
-  return data ? JSON.parse(data) : [];
+  try {
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
 };
 
-// --- GET ---
+const normalizeExemptionData = (data) => {
+  if (data instanceof FormData) {
+    const file = data.get('file');
+
+    return {
+      personId: data.get('personId') || '',
+      propertyId: data.get('propertyId') || '',
+      exemptionType: data.get('exemptionType') || '',
+      clauseNo: data.get('clauseNo') || '',
+      exemptionStartDate: data.get('startDate') || '',
+      exemptionEndDate: data.get('endDate') || '',
+      fileName: file?.name || ''
+    };
+  }
+
+  return data || {};
+};
+
 export const getExemptions = async () => {
   return new Promise((resolve) => {
     setTimeout(() => resolve(getFromStorage('exemptions')), 300);
   });
 };
 
-// --- CREATE (طلب إعفاء) ---
 export const createExemption = async (exemptionData, userId) => {
   return new Promise((resolve, reject) => {
     try {
       const exemptions = getFromStorage('exemptions');
+      const normalizedData = normalizeExemptionData(exemptionData);
+      const now = Date.now();
+
       const newExemption = {
-        id: Date.now(),
-        refNo: `EX-${Date.now()}`,
-        ...exemptionData,
+        id: now,
+        refNo: `EX-${now}`,
+        ...normalizedData,
         createdBy: userId,
         date: new Date().toISOString(),
         status: 'Pending'
       };
+
       exemptions.push(newExemption);
       saveToStorage('exemptions', exemptions);
       resolve(newExemption);
@@ -35,26 +58,34 @@ export const createExemption = async (exemptionData, userId) => {
   });
 };
 
-// --- UPDATE ---
 export const updateExemption = async (id, data) => {
   return new Promise((resolve, reject) => {
     const exemptions = getFromStorage('exemptions');
-    const index = exemptions.findIndex(e => e.id == id);
-    if (index !== -1) {
-      exemptions[index] = { ...exemptions[index], ...data };
-      saveToStorage('exemptions', exemptions);
-      resolve(exemptions[index]);
-    } else {
+    const index = exemptions.findIndex((item) => String(item.id) === String(id));
+
+    if (index === -1) {
       reject(new Error('طلب الإعفاء غير موجود'));
+      return;
     }
+
+    exemptions[index] = { ...exemptions[index], ...data };
+    saveToStorage('exemptions', exemptions);
+    resolve(exemptions[index]);
   });
 };
 
-// --- DELETE ---
+export const updateExemptionStatus = async (id, status, note = '') => {
+  return updateExemption(id, {
+    status,
+    managerNote: note,
+    managerDecisionDate: new Date().toISOString()
+  });
+};
+
 export const deleteExemption = async (id) => {
   return new Promise((resolve) => {
     const exemptions = getFromStorage('exemptions');
-    const filtered = exemptions.filter(e => e.id != id);
+    const filtered = exemptions.filter((item) => String(item.id) !== String(id));
     saveToStorage('exemptions', filtered);
     resolve(true);
   });

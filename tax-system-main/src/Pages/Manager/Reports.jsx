@@ -1,191 +1,247 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Container, Row, Col, Table, Button, ProgressBar, Spinner, Badge } from 'react-bootstrap';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Badge, Button, Card, Col, Container, ProgressBar, Row, Spinner, Table } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { getProperties } from '../../services/propertyService';
-import { getEmployeesPerformance } from '../../utils/performance'; 
+import { getEnrichedUnits } from '../../services/propertyService';
+import { getEmployeesPerformance } from '../../utils/performance';
+import { printDocument } from '../../utils/printDocument';
+
+const readStorage = (key) => {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || [];
+  } catch {
+    return [];
+  }
+};
+
+const money = (value) => `${Math.round(Number(value) || 0).toLocaleString('ar-EG')} ج.م`;
 
 const ManagerReports = () => {
   const navigate = useNavigate();
-  
-  // الخطأ كان هنا: كان ناقص تعريف stats
-  const [employeesStats, setEmployeesStats] = useState([]);
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    totalCollected: 0,
-    totalPending: 0,
-    pendingApproval: 0
-  });
   const [loading, setLoading] = useState(true);
+  const [units, setUnits] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [installments, setInstallments] = useState([]);
+  const [employeesStats, setEmployeesStats] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        // 1. جلب بيانات العقارات
-        const props = await getProperties();
-        
-        let revenue = 0;
-        let collected = 0;
-        let pendingApprovalCount = 0; // التصحيح: تعريف المتغير
-        
-        props.forEach(p => {
-          const tax = Number(p.tax) || 0;
-          if (p.status === 'Approved') {
-            revenue += tax;
-          } else if (p.status === 'Paid') {
-            collected += tax;
-          }
-          
-          // التصحيح: استخدام الاسم الصحيح للمتغير
-          if (p.status === 'Pending_Manager_Approval') pendingApprovalCount++;
-        });
-
-        // 2. تحديث الإحصائيات المالية
-        setStats({
-          totalRevenue: revenue + 500000, // إضافة رقم افتراضي للعرض
-          totalCollected: collected,
-          totalPending: (revenue + 500000) - collected,
-          pendingApproval: pendingApprovalCount
-        });
-
-        // 3. جلب بيانات أداء الموظفين (من الدالة المساعدة)
-        const empStats = getEmployeesPerformance();
-        setEmployeesStats(empStats);
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading reports:", error);
+        const enrichedUnits = await getEnrichedUnits();
+        setUnits(enrichedUnits);
+        setPayments(readStorage('tax_payments'));
+        setInstallments(readStorage('tax_installments'));
+        setEmployeesStats(getEmployeesPerformance());
+      } finally {
         setLoading(false);
       }
     };
+
     loadData();
   }, []);
 
-  const collectionPercentage = stats.totalRevenue > 0 
-    ? Math.round((stats.totalCollected / stats.totalRevenue) * 100) 
-    : 0;
+  const stats = useMemo(() => {
+    const totalCollected = payments.reduce((sum, payment) => sum + Number(payment.paidAmount || 0), 0);
+    const totalDue = installments.reduce((sum, installment) => sum + Number(installment.amount || 0), 0);
+    const totalPending = installments
+      .filter((installment) => installment.status === 'Pending')
+      .reduce((sum, installment) => sum + Number(installment.amount || 0), 0);
+    const pendingApproval = units.filter((unit) => unit.status === 'Pending_Manager').length;
+    const paidInstallments = installments.filter((installment) => installment.status === 'Paid').length;
+    const collectionPercentage = totalDue > 0 ? Math.round((totalCollected / totalDue) * 100) : 0;
+
+    const typeTotals = units.reduce((acc, unit) => {
+      const key = unit.unitType || 'غير محدد';
+      acc[key] = (acc[key] || 0) + Number(unit.tax || 0);
+      return acc;
+    }, {});
+
+    return {
+      totalCollected,
+      totalDue,
+      totalPending,
+      pendingApproval,
+      paidInstallments,
+      collectionPercentage,
+      typeTotals
+    };
+  }, [installments, payments, units]);
+
+  const exportEmployeeReport = () => {
+    const rows = employeesStats.map((employee, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${employee.role}</td>
+        <td>${employee.name}</td>
+        <td>${employee.tasksDone}</td>
+        <td>${employee.score}%</td>
+        <td>${employee.details}</td>
+      </tr>
+    `).join('');
+
+    printDocument(
+      'تقرير أداء الموظفين',
+      `
+        <main class="print-page">
+          <header class="print-header">
+            <div>
+              <h1 class="print-title">تقرير أداء الموظفين</h1>
+              <div class="print-subtitle">تاريخ الإصدار: ${new Date().toLocaleString('ar-EG')}</div>
+            </div>
+          </header>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>القسم</th>
+                <th>الموظف</th>
+                <th>المهام المنجزة</th>
+                <th>الدقة</th>
+                <th>تفاصيل الأداء</th>
+              </tr>
+            </thead>
+            <tbody>${rows || '<tr><td colspan="6">لا توجد بيانات أداء متاحة</td></tr>'}</tbody>
+          </table>
+        </main>
+      `
+    );
+  };
+
+  if (loading) {
+    return <div className="text-center mt-5"><Spinner animation="border" variant="primary" /></div>;
+  }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <button className="btn btn-secondary" onClick={() => navigate('/manager/home')}>
-          <i className="fa-solid fa-arrow-right"></i> عودة للرئيسية
-        </button>
+    <Container fluid className="mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h3 className="section-title mb-1">التقارير المالية</h3>
+          <p className="text-muted mb-0">مؤشرات مبنية على المدفوعات والأقساط والوحدات المسجلة فعليًا</p>
+        </div>
+        <Button variant="secondary" onClick={() => navigate('/manager/home')}>
+          <i className="fa-solid fa-arrow-right me-2"></i>
+          عودة
+        </Button>
       </div>
 
-      <Container fluid>
-        {/* 1. KPI Cards */}
-        <h4 className="fw-bold mb-3 text-primary">نظرة عامة على الأداء المالي</h4>
-        <Row className="g-4 mb-4">
-          <Col md={3}>
-            <Card className="border-0 shadow-sm text-center p-3 border-top border-5 border-primary">
-              <i className="fa-solid fa-chart-line fa-2x text-primary mb-2"></i>
-              <h6 className="text-muted text-uppercase">الإيرادات التقديرية</h6>
-              <h3 className="fw-bold">{Math.round(stats.totalRevenue).toLocaleString()} ج.م</h3>
-            </Card>
-          </Col>
-          <Col md={3}>
-            <Card className="border-0 shadow-sm text-center p-3 border-top border-5 border-success">
-              <i className="fa-solid fa-wallet fa-2x text-success mb-2"></i>
-              <h6 className="text-muted text-uppercase">إجمالي التحصيل</h6>
-              <h3 className="fw-bold text-success">{Math.round(stats.totalCollected).toLocaleString()} ج.م</h3>
-            </Card>
-          </Col>
-          <Col md={3}>
-            <Card className="border-0 shadow-sm text-center p-3 border-top border-5 border-warning">
-              <i className="fa-solid fa-hourglass-half fa-2x text-warning mb-2"></i>
-              <h6 className="text-muted text-uppercase">ديون متأخرة</h6>
-              <h3 className="fw-bold text-warning">{Math.round(stats.totalPending).toLocaleString()} ج.م</h3>
-            </Card>
-          </Col>
-          <Col md={3}>
-            <Card className="border-0 shadow-sm text-center p-3 border-top border-5 border-info">
-              <i className="fa-solid fa-stamp fa-2x text-info mb-2"></i>
-              <h6 className="text-muted text-uppercase">انتظار التوقيع</h6>
-              <h3 className="fw-bold text-info">{stats.pendingApproval} ملف</h3>
-            </Card>
-          </Col>
-        </Row>
+      <Row className="g-3 mb-4">
+        <Col md={3}>
+          <Card className="metric-card h-100">
+            <Card.Body>
+              <div className="metric-icon mb-3"><i className="fa-solid fa-sack-dollar"></i></div>
+              <div className="text-muted">إجمالي المستحق</div>
+              <h4 className="fw-bold mb-0">{money(stats.totalDue)}</h4>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card className="metric-card h-100">
+            <Card.Body>
+              <div className="metric-icon mb-3"><i className="fa-solid fa-wallet"></i></div>
+              <div className="text-muted">إجمالي التحصيل</div>
+              <h4 className="fw-bold text-success mb-0">{money(stats.totalCollected)}</h4>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card className="metric-card h-100">
+            <Card.Body>
+              <div className="metric-icon mb-3"><i className="fa-solid fa-hourglass-half"></i></div>
+              <div className="text-muted">المتبقي للتحصيل</div>
+              <h4 className="fw-bold mb-0">{money(stats.totalPending)}</h4>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card className="metric-card h-100">
+            <Card.Body>
+              <div className="metric-icon mb-3"><i className="fa-solid fa-file-signature"></i></div>
+              <div className="text-muted">بانتظار اعتماد المدير</div>
+              <h4 className="fw-bold mb-0">{stats.pendingApproval} ملف</h4>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
-        {/* 2. Analytics Section */}
-        <Row className="mb-4">
-          <Col md={6}>
-            <Card className="shadow-sm border-0 h-100">
-              <Card.Header className="bg-white fw-bold">نسبة التحصيل (Collection Rate)</Card.Header>
-              <Card.Body>
-                <div className="d-flex justify-content-between mb-2">
-                  <span>تم تحصيله ({collectionPercentage}%)</span>
-                  <span className="fw-bold text-primary">{Math.round(stats.totalCollected).toLocaleString()} ج.م</span>
-                </div>
-                <ProgressBar now={collectionPercentage} variant="primary" style={{ height: '25px' }} />
-                <small className="text-muted mt-2 d-block">الهدف: 85% تحصيل سنوي</small>
-              </Card.Body>
-            </Card>
-          </Col>
-
-          <Col md={6}>
-            <Card className="shadow-sm border-0 h-100">
-              <Card.Header className="bg-white fw-bold">توزيع الديون حسب النوع</Card.Header>
-              <Card.Body>
-                <div className="mb-3">
-                  <div className="d-flex justify-content-between mb-1">
-                    <span>تجاري (Commercial)</span>
-                    <span className="fw-bold text-danger">70%</span>
+      <Row className="g-3 mb-4">
+        <Col lg={6}>
+          <Card className="h-100">
+            <Card.Header className="bg-white fw-bold">نسبة التحصيل</Card.Header>
+            <Card.Body>
+              <div className="d-flex justify-content-between mb-2">
+                <span>{stats.collectionPercentage}% من إجمالي الأقساط</span>
+                <span className="fw-bold">{stats.paidInstallments} قسط مدفوع</span>
+              </div>
+              <ProgressBar now={stats.collectionPercentage} variant="success" style={{ height: 24 }} />
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col lg={6}>
+          <Card className="h-100">
+            <Card.Header className="bg-white fw-bold">توزيع الضريبة حسب نوع الوحدة</Card.Header>
+            <Card.Body>
+              {Object.entries(stats.typeTotals).length === 0 ? (
+                <div className="text-muted text-center py-4">لا توجد وحدات مسجلة</div>
+              ) : Object.entries(stats.typeTotals).map(([type, value]) => {
+                const percent = stats.totalDue > 0 ? Math.round((value / stats.totalDue) * 100) : 0;
+                return (
+                  <div className="mb-3" key={type}>
+                    <div className="d-flex justify-content-between mb-1">
+                      <span>{type}</span>
+                      <span className="fw-bold">{money(value)}</span>
+                    </div>
+                    <ProgressBar now={percent} variant="info" style={{ height: 18 }} />
                   </div>
-                  <ProgressBar now={70} variant="danger" style={{ height: '20px' }} />
-                </div>
-                <div className="mb-3">
-                  <div className="d-flex justify-content-between mb-1">
-                    <span>سكني (Residential)</span>
-                    <span className="fw-bold text-info">30%</span>
-                  </div>
-                  <ProgressBar now={30} variant="info" style={{ height: '20px' }} />
-                </div>
-                <div className="alert alert-light border mt-3 mb-0 p-2 text-center">
-                  <small>ملاحظة: نسبة الديون التجارية في ارتفاع.</small>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+                );
+              })}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
-        {/* 3. Detailed Table */}
-        <Card className="shadow-sm border-0">
-          <Card.Header className="bg-white d-flex justify-content-between align-items-center">
-            <span className="fw-bold">أداء الموظفين (Employee Performance)</span>
-            <Button size="sm" variant="outline-primary">تصدير التقرير PDF</Button>
-          </Card.Header>
-          <Card.Body className="p-0">
-            <Table hover responsive>
-              <thead className="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>القسم</th>
-                  <th>الموظف</th>
-                  <th>عدد المهام المنجزة</th>
-                  <th>الدقة (Accuracy)</th>
-                  <th>الحالة</th>
+      <Card>
+        <Card.Header className="bg-white d-flex justify-content-between align-items-center">
+          <span className="fw-bold">أداء الموظفين</span>
+          <Button size="sm" variant="outline-primary" onClick={exportEmployeeReport}>
+            <i className="fa-solid fa-file-pdf me-2"></i>
+            تصدير التقرير PDF
+          </Button>
+        </Card.Header>
+        <Card.Body className="p-0">
+          <Table hover responsive className="mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>القسم</th>
+                <th>الموظف</th>
+                <th>المهام المنجزة</th>
+                <th>الدقة</th>
+                <th>تفاصيل</th>
+                <th>الحالة</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employeesStats.map((employee, index) => (
+                <tr key={employee.id || index} className="table-action-row">
+                  <td>{index + 1}</td>
+                  <td>{employee.role}</td>
+                  <td className="fw-bold">{employee.name}</td>
+                  <td>{employee.tasksDone}</td>
+                  <td style={{ minWidth: 150 }}>
+                    <ProgressBar now={employee.score} label={`${employee.score}%`} variant={employee.score >= 85 ? 'success' : 'warning'} />
+                  </td>
+                  <td>{employee.details}</td>
+                  <td>
+                    <Badge bg={employee.score >= 85 ? 'success' : employee.tasksDone > 0 ? 'warning' : 'secondary'}>
+                      {employee.score >= 85 ? 'ممتاز' : employee.tasksDone > 0 ? 'يحتاج متابعة' : 'لا توجد بيانات'}
+                    </Badge>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {employeesStats.map((emp, idx) => (
-                  <tr key={idx}>
-                    <td>{idx + 1}</td>
-                    <td>{emp.role}</td>
-                    <td>{emp.name}</td>
-                    <td>{emp.tasksDone}</td>
-                    <td>
-                       <ProgressBar now={emp.score} label={`${emp.score}%`} variant={emp.score > 90 ? 'success' : 'warning'} style={{height:'15px'}} />
-                    </td>
-                    <td><Badge bg={emp.score > 90 ? 'success' : 'warning'}>{emp.score > 90 ? 'نشط جداً' : 'مقبول'}</Badge></td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </Card.Body>
-        </Card>
-
-      </Container>
-    </div>
+              ))}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 };
 

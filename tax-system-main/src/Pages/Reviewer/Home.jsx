@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Table, Button, Spinner, Badge } from 'react-bootstrap';
-//import { getEnrichedUnits } from '../../services/propertyService';
-import { getUnits }
-from '../../services/propertyService';
+import { getEnrichedUnits } from '../../services/propertyService';
+
 const ReviewerHome = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
@@ -13,9 +12,8 @@ const ReviewerHome = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // const data = await getEnrichedUnits();
-        const data = await getUnits();
-    setTasks(data);
+        const data = await getEnrichedUnits();
+        setTasks(data);
       } catch (error) { console.error(error); }
       finally { setLoading(false); }
     };
@@ -91,30 +89,6 @@ const ReviewerHome = () => {
                         <td><small>{task.propertyAddress}</small></td>
                         <td>{task.ownerName}</td>
                         <td><Badge bg="light" text="dark" className="border">{task.usage}</Badge></td>
-                        <td>
-  <small className="text-muted">
-    غير متاح حالياً
-  </small>
-</td>
-
-<td>
-  <span className="text-muted">
-    غير مرتبط بعد
-  </span>
-</td>
-
-<td>
-  <Badge bg="light" text="dark" className="border">
-    {task.usageType}
-  </Badge>
-</td>
-{/*
-////////////////////////////////////////////////////////////////////////
-                          <small className="text-muted">{task.area} م²</small>
-                        </td>
-                        <td><small>{task.propertyAddress}</small></td>
-                        <td>{task.ownerName}</td>
-                        <td><Badge bg="light" text="dark" className="border">{task.usage}</Badge></td>*/}
                         <td>
                             {task.status === 'New' ? <Badge bg="warning">جديد</Badge> : 
                              <Badge bg="success">معتمد</Badge>}

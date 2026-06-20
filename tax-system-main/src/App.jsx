@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'; 
 import { Button } from 'react-bootstrap'; 
 import { ProtectedRoute } from './routes/ProtectedRoute';
@@ -12,6 +12,9 @@ import TopNavbar from './components/Layout/Navbar';
 import Login from './pages/Auth/Login';
 import { Unauthorized } from './pages/Unauthorized';
 import Dashboard from './pages/Shared/Dashboard'; 
+import ProfilePage from './pages/Shared/Profile';
+import NotificationsPage from './pages/Shared/Notifications';
+import SettingsPage from './pages/Shared/Settings';
 
 // Data Entry
 import DataEntryHome from './pages/DataEntry/DataEntryHome'; 
@@ -44,7 +47,8 @@ import UserManagement from './pages/Admin/UserManagement';
 import AuditLogs from './pages/Admin/AuditLogs';
 
 // Committee
-import CommitteeHome from './pages/Committee/Home';
+import CommitteeAppeals from './pages/Committee/Appeals';
+import CommitteeExemptions from './pages/Committee/Exemptions';
 
 // ✅ كومبوننت مساعد (احتفظنا به للمستقبل)
 const UnderConstruction = ({ message }) => {
@@ -58,6 +62,29 @@ const UnderConstruction = ({ message }) => {
 };
 
 function App() {
+  const [settings, setSettings] = useState(() => {
+    const saved = JSON.parse(localStorage.getItem('tax_settings') || '{}');
+    return {
+      emailAlerts: saved.emailAlerts ?? true,
+      darkMode: saved.darkMode ?? false,
+      compactView: saved.compactView ?? false
+    };
+  });
+
+  useEffect(() => {
+    document.body.classList.toggle('dark-mode', settings.darkMode);
+    document.body.classList.toggle('compact-view', settings.compactView);
+  }, [settings]);
+
+  useEffect(() => {
+    const handleSettingsChanged = (event) => {
+      setSettings(event.detail);
+    };
+
+    window.addEventListener('tax-settings-changed', handleSettingsChanged);
+    return () => window.removeEventListener('tax-settings-changed', handleSettingsChanged);
+  }, []);
+
   return (
     <Router>
       <Routes>
@@ -68,14 +95,17 @@ function App() {
         {/* التطبيق الرئيسي */}
         <Route path="/*" element={
           <ProtectedRoute>
-            <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#f4f6f9' }}>
+            <div className="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
               <Sidebar />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <TopNavbar />
                 <main className="content-area p-4" style={{ flex: 1, overflowY: 'auto' }}>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
-                    <Route path="/chatbot" element={<Chatbot />} /> 
+                    <Route path="/chatbot" element={<Chatbot />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
                     
                     {/* مسارات Data Entry */}
                     <Route path="/data-entry/home" element={<DataEntryHome />} />
@@ -108,7 +138,8 @@ function App() {
                     <Route path="/admin/logs" element={<AuditLogs />} />
 
                     {/* مسارات Committee */}
-                    <Route path="/committee/home" element={<CommitteeHome />} />
+                    <Route path="/committee/appeals" element={<CommitteeAppeals />} />
+                    <Route path="/committee/exemptions" element={<CommitteeExemptions />} />
                   </Routes>
                 </main>
               </div>

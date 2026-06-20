@@ -1,25 +1,52 @@
 // src/services/locationService.js
 
-import axios from "axios";
+const GOVERNORATES = [
+  { id: 1, name: 'القاهرة' },
+  { id: 2, name: 'الجيزة' },
+  { id: 3, name: 'الإسكندرية' }
+];
 
-const API_URL = "https://localhost:5179/api/Locations";
+// لاحظ أن govId يجب أن يطابق ID المحافظة
+const CENTERS = [
+  { id: 1, govId: 1, name: 'مدينة نصر' },
+  { id: 2, govId: 1, name: 'التجمع الخامس' },
+  { id: 3, govId: 2, name: 'المهندسين' },
+  { id: 4, govId: 2, name: 'الدقي' }
+];
 
-export const getGovernorates = async () => {
-  const res = await axios.get(`${API_URL}/governorates`);
-  return res.data;
-};
+// لاحظ أن centerId يجب أن يطابق ID المركز
+const STREETS = [
+  { id: 1, centerId: 1, name: 'شارع عباس العقاد' },
+  { id: 2, centerId: 1, name: 'شارع خير الله' },
+  { id: 3, centerId: 2, name: 'التسعين الشمالي' },
+  { id: 4, centerId: 3, name: 'شارع لبنان' }
+];
 
-export const getCenters = async (govId) => {
-  const res = await axios.get(`${API_URL}/centers/${govId}`);
-  return res.data;
-};
+const NEIGHBORHOODS = [
+  { id: 1, centerId: 1, name: 'الحي السكني الأول', zone: 'A' },
+  { id: 2, centerId: 1, name: 'الحي التجاري', zone: 'B' },
+  { id: 3, centerId: 2, name: 'الحي الإداري', zone: 'A' },
+  { id: 4, centerId: 2, name: 'المنطقة السكنية', zone: 'C' },
+  { id: 5, centerId: 3, name: 'الحي التاريخي', zone: 'B' },
+  { id: 6, centerId: 4, name: 'المنطقة الصناعية', zone: 'A' }
+];
 
-export const getStreets = async (centerId) => {
-  const res = await axios.get(`${API_URL}/streets/${centerId}`);
-  return res.data;
-};
+const findById = (collection, id) => collection.find(item => item.id === Number(id)) || null;
 
-export const getNeighborhoods = async (centerId) => {
-  const res = await axios.get(`${API_URL}/neighborhoods/${centerId}`);
-  return res.data;
+export const getGovernorates = () => Promise.resolve(GOVERNORATES);
+export const getCenters = (govId) => Promise.resolve(CENTERS.filter(c => c.govId === Number(govId)));
+export const getStreets = (centerId) => Promise.resolve(STREETS.filter(s => s.centerId === Number(centerId)));
+export const getNeighborhoods = (centerId) => Promise.resolve(NEIGHBORHOODS.filter(n => n.centerId === Number(centerId)));
+
+export const getGovernorateById = (id) => findById(GOVERNORATES, id);
+export const getCenterById = (id) => findById(CENTERS, id);
+export const getStreetById = (id) => findById(STREETS, id);
+export const getNeighborhoodById = (id) => findById(NEIGHBORHOODS, id);
+
+export const getLocationLabel = ({ governorateId, centerId, streetId, neighborhoodId }) => {
+  const gov = getGovernorateById(governorateId)?.name;
+  const center = getCenterById(centerId)?.name;
+  const street = getStreetById(streetId)?.name;
+  const neighborhood = getNeighborhoodById(neighborhoodId)?.name;
+  return [gov, center, neighborhood, street].filter(Boolean).join(' - ');
 };

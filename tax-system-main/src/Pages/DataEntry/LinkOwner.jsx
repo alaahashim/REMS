@@ -13,7 +13,7 @@ const LinkOwner = () => {
     personId: '',
     personName: '',
     contactPhone: '',
-   // contactEmail: '',
+    contactEmail: '',
     shareType: 'Full',
     unitId: '',
     unitLabel: '',
@@ -46,7 +46,7 @@ const LinkOwner = () => {
         ...prev,
         personName: prev.personName || existingAssignment.name || '',
         contactPhone: prev.contactPhone || existingAssignment.contactPhone || '',
-       // contactEmail: prev.contactEmail || existingAssignment.contactEmail || ''
+        contactEmail: prev.contactEmail || existingAssignment.contactEmail || ''
       }));
     }
   };
@@ -56,8 +56,8 @@ const LinkOwner = () => {
       ...formData,
       personId: citizen.id,
       personName: citizen.name,
-      contactPhone: citizen.phone || ''
-     // contactEmail: citizen.email || ''
+      contactPhone: citizen.phone || '',
+      contactEmail: citizen.email || ''
     });
     setShowCitizenModal(false);
   };
@@ -99,7 +99,7 @@ const LinkOwner = () => {
     setMessage({ text: '', type: '' });
 
     try {
-      if (!formData.personId || !formData.personName || !formData.propertyId || !formData.contactPhone /*|| !formData.contactEmail*/) {
+      if (!formData.personId || !formData.personName || !formData.propertyId || !formData.contactPhone || !formData.contactEmail) {
         throw new Error("يجب إدخال الاسم، الرقم القومي، الهاتف، الإيميل، واختيار العقار أولاً");
       }
 
@@ -198,23 +198,34 @@ const LinkOwner = () => {
                     </Form.Group>
                   </Col>
                 </Row>
-              <Row>
-  <Col md={12}>
-    <Form.Group className="mb-3">
-      <Form.Label className="text-primary fw-bold">
-        الهاتف <span className="text-danger">*</span>
-      </Form.Label>
-      <Form.Control
-        type="tel"
-        name="contactPhone"
-        value={formData.contactPhone}
-        onChange={handleInputChange}
-        placeholder="أدخل رقم الهاتف"
-        required
-      />
-    </Form.Group>
-  </Col>
-</Row>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label className="text-primary fw-bold">الهاتف <span className="text-danger">*</span></Form.Label>
+                      <Form.Control
+                        type="tel"
+                        name="contactPhone"
+                        value={formData.contactPhone}
+                        onChange={handleInputChange}
+                        placeholder="أدخل رقم الهاتف"
+                        required
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label className="text-primary fw-bold">الإيميل <span className="text-danger">*</span></Form.Label>
+                      <Form.Control
+                        type="email"
+                        name="contactEmail"
+                        value={formData.contactEmail}
+                        onChange={handleInputChange}
+                        placeholder="أدخل البريد الإلكتروني"
+                        required
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
 
                 {selectedProperty?.units?.length > 0 && (
                   <Row>
