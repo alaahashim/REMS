@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Table, Button, Spinner, Badge, Modal, Form, Alert } from 'react-bootstrap';
 import { Tabs, Tab } from 'react-bootstrap';
-import { getProperties, updatePropertyStatus } from '../../services/propertyService'; 
-import { getAssignments } from '../../services/assignmentService';
+import { updatePropertyStatus } from '../../services/propertyService'; 
 import { getAppeals } from '../../services/appealService'; 
 import { approveCommitteeAppeal } from '../../services/managerService'; 
 import { getEnrichedUnits } from '../../services/propertyService'; 
@@ -43,7 +41,7 @@ const ManagerVerdict = () => {
         // --- جلب بيانات الإعفاءات (الجزء الجديد) ---
         const { getExemptions } = await import('../../services/exemptionService');
         const exemptsData = await getExemptions();
-        setExemptions(exemptsData.filter(e => e.status === 'Pending')); // عرض الطلبات المعلقة فقط
+        setExemptions(exemptsData.filter(e => e.status === 'Pending_Manager_Exemption')); // عرض توصيات اللجنة فقط
         // ------------------------------------------
 
       } catch (error) {
@@ -75,7 +73,7 @@ const ManagerVerdict = () => {
       setShowModal(false);
       const units = await getEnrichedUnits();
       setTasks(units.filter(u => u.status === 'Pending_Manager'));
-    } catch (error) { alert("فشل"); }
+    } catch { alert("فشل"); }
   };
 
   const handleOpenAppeal = (appeal) => {
@@ -97,7 +95,7 @@ const ManagerVerdict = () => {
           const appeals = await getAppeals();
           const pendingAppeals = appeals.filter(a => a.status === 'Pending_Manager_Appeal');
           setCommitteeAppeals(pendingAppeals);
-      } catch (error) { alert("فشل"); }
+      } catch { alert("فشل"); }
   };
 
   // --- دالة التعامل مع قرارات الإعفاء (الجزء الجديد) ---
@@ -116,7 +114,7 @@ const ManagerVerdict = () => {
           // تحديث قائمة الإعفاءات
           const { getExemptions } = await import('../../services/exemptionService');
           const data = await getExemptions();
-          setExemptions(data.filter(e => e.status === 'Pending'));
+          setExemptions(data.filter(e => e.status === 'Pending_Manager_Exemption'));
           
       } catch (error) {
           console.error(error);

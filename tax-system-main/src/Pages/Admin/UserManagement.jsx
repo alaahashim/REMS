@@ -1,144 +1,194 @@
-import React, { useState } from 'react';
-import { Form, Button, Card, Container, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { addNewUser } from '../../services/adminService';
+﻿import React, { useEffect, useState } from 'react';
+import { Badge, Button, Card, Form, Modal, Table } from 'react-bootstrap';
 
 const UserManagement = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ text: '', type: '' });
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    employeeCode: '',
-    jobTitle: '',
-    officeId: '',
-    username: '',
-    password: '',
-    role: 'Data Entry',
-    isActive: true
-  });
+  const [users, setUsers] = useState([]);
+  const [formData, setFormData] = useState({ username: '', password: '', name: '', role: 'Finance' });
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    const storedUsers = JSON.parse(localStorage.getItem('tax_users')) || [];
+    setUsers(storedUsers);
+  }, []);
+
+  const saveUsers = (updatedUsers) => {
+    localStorage.setItem('tax_users', JSON.stringify(updatedUsers));
+    setUsers(updatedUsers);
+  };
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage({ text: '', type: '' });
+    const newUser = { id: Date.now(), ...formData, status: 'Active' };
+    const updatedUsers = [...users, newUser];
+    saveUsers(updatedUsers);
+    setFormData({ username: '', password: '', name: '', role: 'Finance' });
+  };
 
-    try {
-      await addNewUser(formData);
-      setMessage({ text: 'تم إضافة المستخدم بنجاح', type: 'success' });
-      setTimeout(() => navigate('/admin/home'), 1500);
-    } catch (error) {
-      setMessage({ text: 'حدث خطأ', type: 'danger' });
-    } finally {
-      setLoading(false);
-    }
+  const handleToggleStatus = (user) => {
+    const updatedUsers = users.map((u) =>
+      u.id === user.id ? { ...u, status: u.status === 'Active' ? 'Inactive' : 'Active' } : u
+    );
+    saveUsers(updatedUsers);
+  };
+
+  const handleEdit = (user) => {
+    setSelectedUser(user);
+    setShowModal(true);
+  };
+
+  const handleModalSave = () => {
+    const updatedUsers = users.map((u) =>
+      u.id === selectedUser.id ? selectedUser : u
+    );
+    saveUsers(updatedUsers);
+    setShowModal(false);
+  };
+
+  const handleModalChange = (field, value) => {
+    setSelectedUser({ ...selectedUser, [field]: value });
   };
 
   return (
-    <Container fluid className="mt-4">
-      <Row className="justify-content-center">
-        <Col md={10}>
-          <div style={{marginBottom:'20px'}}>
-            <button className="btn btn-secondary" onClick={() => navigate('/admin/home')}>
-              <i className="fa-solid fa-arrow-right"></i> عودة للرئيسية
-            </button>
-          </div>
+    <div>
+      <h1 className="mb-4">إدارة الموظفين</h1>
 
-          <Card className="shadow-sm border-0 border-top border-5 border-dark">
-            <Card.Header className="bg-dark text-white">
-              <h5 className="mb-0"><i className="fa-solid fa-user-plus me-2"></i> إضافة حساب موظف جديد (Employee)</h5>
-            </Card.Header>
-            <Card.Body>
-              
-              {message.text && <Alert variant={message.type}>{message.text}</Alert>}
+      <Card className="mb-4 shadow-sm">
+        <Card.Body>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="username">
+              <Form.Label>اسم المستخدم</Form.Label>
+              <Form.Control
+                type="text"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="password">
+              <Form.Label>كلمة المرور</Form.Label>
+              <Form.Control
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="name">
+              <Form.Label>الاسم</Form.Label>
+              <Form.Control
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="role">
+              <Form.Label>الدور</Form.Label>
+              <Form.Select
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              >
+                <option value="Finance">Finance</option>
+                <option value="Reviewer">Reviewer</option>
+                <option value="DataEntry">DataEntry</option>
+                <option value="Committee">Committee</option>
+                <option value="Manager">Manager</option>
+              </Form.Select>
+            </Form.Group>
+            <Button type="submit">إضافة موظف</Button>
+          </Form>
+        </Card.Body>
+      </Card>
 
-              <Form onSubmit={handleSubmit}>
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>الاسم الثلاثي <span className="text-danger">*</span></Form.Label>
-                      <Form.Control type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>كود الموظف (EmployeeCode) <span className="text-danger">*</span></Form.Label>
-                      <Form.Control type="text" placeholder="مثال: EMP-005" required value={formData.employeeCode} onChange={(e) => setFormData({...formData, employeeCode: e.target.value})} />
-                    </Form.Group>
-                  </Col>
-                </Row>
+      <Card className="shadow-sm">
+        <Card.Header>قائمة الموظفين</Card.Header>
+        <Card.Body>
+          <Table responsive striped bordered hover>
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>اسم المستخدم</th>
+                <th>الدور</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.name}</td>
+                  <td>{user.username}</td>
+                  <td>{user.role}</td>
+                  <td>
+                    <Badge bg={user.status === 'Active' ? 'success' : 'secondary'}>
+                      {user.status || 'Active'}
+                    </Badge>
+                  </td>
+                  <td>
+                    <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleEdit(user)}>
+                      تعديل
+                    </Button>
+                    <Button variant={user.status === 'Active' ? 'outline-danger' : 'outline-success'} size="sm" onClick={() => handleToggleStatus(user)}>
+                      {user.status === 'Active' ? 'إلغاء التفعيل' : 'تفعيل'}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
 
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>المسمى الوظيفي (JobTitle)</Form.Label>
-                      <Form.Control type="text" placeholder="مثال: مراجع ضرائب أول" required value={formData.jobTitle} onChange={(e) => setFormData({...formData, jobTitle: e.target.value})} />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>المأمورية التابعة (OfficeID)</Form.Label>
-                      <Form.Select value={formData.officeId} onChange={(e) => setFormData({...formData, officeId: e.target.value})}>
-                        <option value="">اختر المأمورية...</option>
-                        <option value="1">مأمورية مدينة نصر - القاهرة</option>
-                        <option value="2">مأمورية الدقي - الجيزة</option>
-                        <option value="3">مأمورية الإسكندرية</option>
-                        <option value="99">المركز الرئيسي</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                </Row>
-
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>اسم المستخدم للنظام (Username) <span className="text-danger">*</span></Form.Label>
-                      <Form.Control type="text" required value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>كلمة المرور (Password) <span className="text-danger">*</span></Form.Label>
-                      <Form.Control type="password" required value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
-                    </Form.Group>
-                  </Col>
-                </Row>
-
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>الصلاحية العامة (Role)</Form.Label>
-                      <Form.Select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
-                        <option value="Data Entry">Data Entry (مدخل بيانات)</option>
-                        <option value="Reviewer">Reviewer (مراجع)</option>
-                        <option value="Finance">Finance (مالي)</option>
-                        <option value="Manager">Manager (مدير)</option>
-                        <option value="Admin">Admin (أدمن)</option>
-                        <option value="Committee">Committee (لجان)</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>حالة الحساب (Status)</Form.Label>
-                      <Form.Select value={formData.isActive ? '1' : '0'} onChange={(e) => setFormData({...formData, isActive: e.target.value === '1'})}>
-                        <option value="1">نشط (Active)</option>
-                        <option value="0">معلق (Suspended)</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                </Row>
-
-                <Button variant="primary" type="submit" className="w-100 py-3 fw-bold" disabled={loading}>
-                  {loading ? <Spinner size="sm" animation="border" /> : 'حفظ وإنشاء الحساب'}
-                </Button>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>تعديل موظف</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedUser && (
+            <Form>
+              <Form.Group className="mb-3" controlId="editName">
+                <Form.Label>الاسم</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={selectedUser.name}
+                  onChange={(e) => handleModalChange('name', e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3" controlId="editUsername">
+                <Form.Label>اسم المستخدم</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={selectedUser.username}
+                  onChange={(e) => handleModalChange('username', e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3" controlId="editRole">
+                <Form.Label>الدور</Form.Label>
+                <Form.Select
+                  value={selectedUser.role}
+                  onChange={(e) => handleModalChange('role', e.target.value)}
+                >
+                  <option value="Finance">Finance</option>
+                  <option value="Reviewer">Reviewer</option>
+                  <option value="DataEntry">DataEntry</option>
+                  <option value="Committee">Committee</option>
+                  <option value="Manager">Manager</option>
+                </Form.Select>
+              </Form.Group>
+            </Form>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            إلغاء
+          </Button>
+          <Button variant="primary" onClick={handleModalSave}>
+            حفظ التغييرات
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </div>
   );
 };
 

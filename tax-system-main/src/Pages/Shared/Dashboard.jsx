@@ -6,6 +6,7 @@ import { useDataContext } from '../../context/DataContext';
 // استيراد الخدمات
 import { getUnits, getProperties } from '../../services/propertyService';
 import { getGovernorates, getCenters } from '../../services/locationService';
+import { getSystemLogs } from '../../services/adminService';
 
 // استيراد خدمات الحذف والجلب المباشر
 import { deleteExemption, getExemptions as getExemptionsDirect } from '../../services/exemptionService';
@@ -28,6 +29,7 @@ const Dashboard = () => {
   // بيانات التحويل
   const [governorates, setGovernorates] = useState([]);
   const [centers, setCenters] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -47,17 +49,19 @@ const Dashboard = () => {
         setAppeals(appels);
 
         // 3. جلب البيانات الأخرى
-        const [unitsData, propsData, govData, centerData] = await Promise.all([
+        const [unitsData, propsData, govData, centerData, systemLogs] = await Promise.all([
           getUnits(),
           getProperties(),
           getGovernorates(),
-          getCenters()
+          getCenters(),
+          getSystemLogs()
         ]);
 
         setUnits(unitsData);
         setProperties(propsData);
         setGovernorates(govData);
         setCenters(centerData);
+        setAuditLogs(systemLogs);
 
       } catch (error) {
         console.error("Error loading dashboard:", error);
@@ -164,6 +168,52 @@ const Dashboard = () => {
                 <h3 className="fw-bold mb-0">{loading ? '...' : appeals.length}</h3>
               </div>
               <div className="text-warning opacity-25 fs-1"><i className="fa-solid fa-scale-balanced"></i></div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row className="mb-4">
+        <Col>
+          <Card className="shadow-sm border-0">
+            <Card.Header className="bg-white fw-bold">آخر العمليات على النظام</Card.Header>
+            <Card.Body>
+              {loading ? (
+                <div className="text-center p-5"><Spinner animation="border" /></div>
+              ) : auditLogs.length === 0 ? (
+                <div className="text-center text-muted">لا توجد سجلات عمليات حديثة.</div>
+              ) : (
+                <Table hover responsive className="mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>التاريخ والوقت</th>
+                      <th>الموظف</th>
+                      <th>المستخدم</th>
+                      <th>الإجراء</th>
+                      <th>الجهة</th>
+                      <th>التفاصيل</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditLogs.slice(0, 5).map((log, index) => (
+                      <tr key={log.id || index}>
+                        <td>{index + 1}</td>
+                        <td style={{ fontSize: '0.9rem' }}>{new Date(log.date).toLocaleString('ar-EG')}</td>
+                        <td>{log.employeeName || '-'}</td>
+                        <td>{log.user || '-'}</td>
+                        <td>
+                          <Badge bg={log.action === 'INSERT' ? 'success' : log.action === 'DELETE' ? 'danger' : 'warning'} className="fw-normal">
+                            {log.action}
+                          </Badge>
+                        </td>
+                        <td>{log.entity || log.table || '-'}</td>
+                        <td style={{ fontSize: '0.85rem', maxWidth: '250px' }} className="text-muted">{log.details || log.changeDetails || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
             </Card.Body>
           </Card>
         </Col>

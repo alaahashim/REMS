@@ -1,82 +1,64 @@
-import axios from "axios";
-const API = "http://localhost:5179/api/properties";
+import axios from 'axios';
+import { getGovernorateById, getCenterById, getStreetById, getNeighborhoodById } from './locationService';
 
+// أدوات مساعدة
+const getStorage = (key) => {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || [];
+  } catch (e) {
+    return [];
+  }
+};
+
+const setStorage = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+
+// محاكاة تأخير السيرفر
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// ==========================================
+// 1. دالة جلب الوحدات (لصفحة الـ Dashboard)
+// ==========================================
+export const getUnits = async () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const properties = getStorage('properties');
+      const units = [];
+      properties.forEach(p => {
+        if (p.units && Array.isArray(p.units)) {
+          const governorateName = getGovernorateById(p.governorateId)?.name || '';
+          const centerName = getCenterById(p.centerId)?.name || '';
+          const streetName = getStreetById(p.streetId)?.name || '';
+          const neighborhoodName = getNeighborhoodById(p.neighborhoodId)?.name || '';
+
+          p.units.forEach(u => {
+            units.push({
+              ...u,
+              propertyId: p.id,
+              address: [governorateName, centerName, neighborhoodName, streetName].filter(Boolean).join(' - '),
+              ownerName: p.ownerName,
+              locationZone: p.locationZone || getNeighborhoodById(p.neighborhoodId)?.zone || 'B'
+            });
+          });
+        }
+      });
+      resolve(units);
+    }, 300);
+  });
+};
+
+// ==========================================
+// 2. جلب العقارات
+// ==========================================
 export const getProperties = async () => {
-  const res = await axios.get(API);
-  return res.data;
+  // الوضع المستقبلي: return (await axios.get('http://your-api.com/api/properties')).data;
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(getStorage('properties')), 300);
+  });
 };
 
 export const getPropertyById = async (id) => {
-  const res = await axios.get(`${API}/${id}`);
-  return res.data;
-};
-
-export const createProperty = async (
-  propertyData,
-  units
-) => {
-
-  const unitsDto = units.map((u, index) => ({
-    propertyId: 0,
-    unitNumber: `${index + 1}`,
-    floor: Number(u.floor),
-    area: Number(u.area),
-
-    usageType: u.usage,
-
-    finishingType: "Finished",
-
-    unitType: u.unitType,
-
-    status: u.status
-  }));
-
-  const dto = {
-    governorateId: propertyData.governorateId,
-    centerId: propertyData.centerId,
-    neighborhoodId: propertyData.neighborhoodId,
-    streetId: propertyData.streetId,
-    buildingNo: propertyData.buildingNo,
-
-    currentPropertyNo: "",
-
-    oldPropertyNo: "",
-
-    planningNo: "",
-
-    buildYear: Number(propertyData.buildYear),
-
-    description: propertyData.description,
-
-    units: unitsDto
-  };
-
-  const res = await axios.post(
-    API,
-    dto
-  );
-
-  return res.data;
-};
-
-export const updateProperty = async (
-  id,
-  data
-) => {
-  const res = await axios.put(
-    `${API}/${id}`,
-    data
-  );
-
-  return res.data;
-};
-
-export const deleteProperty = async (
-  propertyId
-) => {
-  await axios.delete(
-    `${API}/${propertyId}`
-  );
+  const properties = getStorage('properties');
+  return properties.find(p => p.id == id);
 };
 
 export const getUnits = async (propertyId) => {
@@ -84,44 +66,112 @@ export const getUnits = async (propertyId) => {
   return res.data;
 };
 
-export const createUnit = async (
-  unitData
-) => {
-  const res = await axios.post(
-    `${API}/unit`,
-    unitData
-  );
+// ==========================================
+// 4. تعديل عقار
+// ==========================================
+export const updateProperty = async (id, updatedData) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const properties = getStorage('properties');
+      const index = properties.findIndex(p => p.id == id);
 
-  return res.data;
+      if (index !== -1) {
+        properties[index] = { ...properties[index], ...updatedData };
+        setStorage('properties', properties);
+        resolve(properties[index]);
+      } else {
+        reject(new Error('العقار غير موجود'));
+      }
+    }, 500);
+  });
 };
 
-export const updateUnitData = async (
-  unitId,
-  unitData
-) => {
-  const res = await axios.put(
-    `${API}/unit/${unitId}`,
-    unitData
-  );
-
-  return res.data;
+// ==========================================
+// 5. حذف عقار
+// ==========================================
+export const deleteProperty = async (id) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      let properties = getStorage('properties');
+      const filtered = properties.filter(p => p.id != id);
+      
+      if (filtered.length === properties.length) {
+        reject(new Error('العقار غير موجود'));
+      } else {
+        setStorage('properties', filtered);
+        resolve(true);
+      }
+    }, 500);
+  });
 };
 
-export const deleteUnit = async (
-  unitId
-) => {
-  await axios.delete(
-    `${API}/unit/${unitId}`
-  );
+// ==========================================
+// 6. دالة مخصصة للمراجعة (Enriched Units)
+// ==========================================
+export const getEnrichedUnits = async () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const properties = getStorage('properties');
+      const assignments = getStorage('assignments');
+      
+      const enrichedUnits = [];
+      
+      properties.forEach(p => {
+        if (p.units) {
+          const governorateName = getGovernorateById(p.governorateId)?.name || '';
+          const centerName = getCenterById(p.centerId)?.name || '';
+          const streetName = getStreetById(p.streetId)?.name || '';
+          const neighborhoodName = p.neighborhoodName || getNeighborhoodById(p.neighborhoodId)?.name || '';
+
+          p.units.forEach(u => {
+            // البحث عن المالكين لهذه الوحدة
+            const owners = assignments.filter(a => a.propertyId == p.id);
+            
+            enrichedUnits.push({
+              ...u,
+              propertyId: p.id,
+              propertyAddress: [governorateName, centerName, neighborhoodName, streetName].filter(Boolean).join(' - '),
+              ownerName: owners.length > 0 ? owners[0].name : p.ownerName, // أول مالك
+              status: u.status || 'New' // حالة الوحدة (New, Pending, etc)
+            });
+          });
+        }
+      });
+      resolve(enrichedUnits);
+    }, 300);
+  });
 };
 
-export const updatePropertyStatus =
-  async (propertyId, status) => {
+// ==========================================
+// 7. تحديث حالة الوحدة (للمدير)
+// ==========================================
+export const updatePropertyStatus = async (unitId, newStatus) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      try {
+        const properties = getStorage('properties');
+        let unitFound = false;
 
-    await axios.put(
-      `${API}/${propertyId}/status`,
-      {
-        status
+        properties.forEach(property => {
+          if (property.units && Array.isArray(property.units)) {
+            const index = property.units.findIndex(u => u.id == unitId);
+            
+            if (index !== -1) {
+              property.units[index].status = newStatus;
+              property.units[index].lastModified = new Date().toISOString();
+              unitFound = true;
+            }
+          }
+        });
+
+        if (unitFound) {
+          setStorage('properties', properties);
+          resolve({ message: 'تم اعتماد حالة الوحدة بنجاح' });
+        } else {
+          reject(new Error('الوحدة غير موجودة في أي عقار'));
+        }
+      } catch (error) {
+        reject(error);
       }
     );
   };
@@ -133,22 +183,34 @@ export const getPropertiesWithUnits = async () => {
 export const updateUnitStatus =
   async (unitId, status) => {
 
-    await axios.put(
-      `${API}/unit/${unitId}/status`,
-      {
-        status
+// تحديث بيانات الوحدة داخل جدول العقارات
+export const updateUnitData = async (unitId, updates) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      try {
+        const properties = getStorage('properties');
+        let unitFound = false;
+
+        properties.forEach(property => {
+          if (property.units && Array.isArray(property.units)) {
+            const index = property.units.findIndex(u => u.id == unitId);
+            if (index !== -1) {
+              property.units[index] = {
+                ...property.units[index],
+                ...updates
+              };
+              unitFound = true;
+            }
+          }
+        });
+
+        if (!unitFound) return reject(new Error('الوحدة غير موجودة في أي عقار'));
+
+        setStorage('properties', properties);
+        resolve({ message: 'تم تحديث بيانات الوحدة بنجاح' });
+      } catch (error) {
+        reject(error);
       }
-    );
-  };
-  
-  /////////////////////////////////////////////////////////////////
-  // سيتم استخدامها بعد ربط المالك بالعقار
-
-export const getEnrichedUnits =
-async () => {
-
-  throw new Error(
-    'getEnrichedUnits غير متاحة حالياً. سيتم تفعيلها بعد تنفيذ Owner Feature.'
-  );
-
+    }, 300);
+  });
 };
