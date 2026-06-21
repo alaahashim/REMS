@@ -1,162 +1,154 @@
-// import React from 'react';
-// import { Card, Container, Row, Col, Table, Button } from 'react-bootstrap';
-// import { useNavigate } from 'react-router-dom';
-// import { getSystemLogs } from '../../services/adminService';
-
-// const AdminHome = () => {
-//   const navigate = useNavigate();
-//   const [userCount, setUserCount] = React.useState(0);
-//   const [logsCount, setLogsCount] = React.useState(0);
-
-//   React.useEffect(() => {
-//     const loadData = async () => {
-//       const logs = await getSystemLogs();
-//       const users = JSON.parse(localStorage.getItem('tax_users')) || [];
-//       setLogsCount(logs.length);
-//       setUserCount(users.length);
-//     };
-//     loadData();
-//   }, []);
-
-//   return (
-//     <div style={{padding:'20px'}}>
-//       <Row className="mb-4">
-//         <Col md={6}>
-//           <Card className="border-0 shadow-sm border-start border-4 border-primary">
-//             <Card.Body className="d-flex justify-content-between align-items-center">
-//               <div>
-//                 <h6 className="text-muted text-uppercase mb-1">إجمالي المستخدمين</h6>
-//                 <h3 className="fw-bold mb-0 text-primary">{userCount}</h3>
-//               </div>
-//               <div className="text-primary opacity-25 fs-1"><i className="fa-solid fa-users"></i></div>
-//             </Card.Body>
-//           </Card>
-//         </Col>
-//         <Col md={6}>
-//           <Card className="border-0 shadow-sm border-start border-4 border-dark">
-//             <Card.Body className="d-flex justify-content-between align-items-center">
-//               <div>
-//                 <h6 className="text-muted text-uppercase mb-1">حالة النظام (Health)</h6>
-//                 <h3 className="fw-bold mb-0 text-success">ممتازة</h3>
-//               </div>
-//               <div className="text-success opacity-25 fs-1"><i className="fa-solid fa-server"></i></div>
-//             </Card.Body>
-//           </Card>
-//         </Col>
-//       </Row>
-
-//       <Card className="shadow-sm border-0">
-//         <Card.Header className="bg-white fw-bold d-flex justify-content-between align-items-center">
-//           <span>أحدث العمليات المسجلة (System Logs)</span>
-//           <Button variant="outline-dark" size="sm" onClick={() => navigate('/admin/logs')}>
-//             عرض السجل الكامل
-//           </Button>
-//         </Card.Header>
-//         <Card.Body>
-//             <div className="alert alert-info">
-//                 <i className="fa-solid fa-info-circle"></i> تستطيع إدارة المستخدمين ومراقبة العمليات من القائمة الجانبية.
-//             </div>
-//         </Card.Body>
-//       </Card>
-//     </div>
-//   );
-// };
-
-// export default AdminHome;
-import React, { useState, useEffect } from 'react';
-import { Card, Container, Row, Col, Table, Button, Badge } from 'react-bootstrap';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import { Badge, Button, Card, Col, Row, Spinner, Table } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { getSystemLogs } from '../../services/adminService';
 
 const AdminHome = () => {
   const navigate = useNavigate();
-  const [userCount, setUserCount] = useState(0);
-  const [logs, setLogs] = useState([]); // لتخزين آخر السجلات
+  const [users, setUsers] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = async () => {
-      // جلب المستخدمين
-      const users = JSON.parse(localStorage.getItem('tax_users')) || [];
-      setUserCount(users.length);
+    const loadAdminData = async () => {
+      try {
+        const storedUsers = JSON.parse(localStorage.getItem('tax_users')) || [];
+        const systemLogs = await getSystemLogs();
 
-      // جلب أحدث السجلات
-      const systemLogs = await getSystemLogs();
-      setLogs(systemLogs);
+        setUsers(storedUsers);
+        setLogs(systemLogs);
+      } catch (error) {
+        console.error('Error loading admin dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-    loadData();
+
+    loadAdminData();
   }, []);
 
-  return (
-    <div style={{padding:'20px'}}>
-      <Row className="mb-4">
-        <Col md={6}>
-          <Card className="border-0 shadow-sm border-start border-4 border-primary">
-            <Card.Body className="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 className="text-muted text-uppercase mb-1">إجمالي المستخدمين</h6>
-                <h3 className="fw-bold mb-0 text-primary">{userCount}</h3>
-              </div>
-              <div className="text-primary opacity-25 fs-1"><i className="fa-solid fa-users"></i></div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={6}>
-          <Card className="border-0 shadow-sm border-start border-4 border-dark">
-            <Card.Body className="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 className="text-muted text-uppercase mb-1">حالة النظام (Health)</h6>
-                <h3 className="fw-bold mb-0 text-success">ممتازة</h3>
-              </div>
-              <div className="text-success opacity-25 fs-1"><i className="fa-solid fa-server"></i></div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+  const stats = useMemo(() => {
+    const totalUsers = users.length;
+    const activeUsers = users.filter((user) => user.status !== 'Inactive').length;
 
-      <Card className="shadow-sm border-0">
-        <Card.Header className="bg-white fw-bold d-flex justify-content-between align-items-center">
-          <span>أحدث العمليات المسجلة (System Activity)</span>
-          <Button variant="outline-dark" size="sm" onClick={() => navigate('/admin/logs')}>
-            عرض السجل الكامل
-          </Button>
-        </Card.Header>
-        <Card.Body>
-            {/* جدول آخر العمليات بدلاً من الـ Alert */}
-            {logs.length > 0 ? (
-                <Table hover responsive size="sm" className="align-middle">
+    const roleCounts = users.reduce((acc, user) => {
+      const role = user.role || 'Unknown';
+      acc[role] = (acc[role] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      totalUsers,
+      activeUsers,
+      roleCounts,
+      recentLogs: logs.slice(0, 5)
+    };
+  }, [users, logs]);
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h3 className="fw-bold mb-1">لوحة تحكم الأدمن</h3>
+          <p className="text-muted mb-0">نظرة عامة على المستخدمين والأنشطة الإدارية</p>
+        </div>
+        <Button variant="outline-primary" onClick={() => navigate('/admin/users')}>
+          إدارة المستخدمين
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-5">
+          <Spinner animation="border" />
+        </div>
+      ) : (
+        <>
+          <Row className="g-3 mb-4">
+            <Col md={3}>
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Body>
+                  <div className="text-muted mb-1">إجمالي الموظفين</div>
+                  <h3 className="fw-bold mb-0">{stats.totalUsers}</h3>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={3}>
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Body>
+                  <div className="text-muted mb-1">المستخدمون النشطون</div>
+                  <h3 className="fw-bold mb-0 text-success">{stats.activeUsers}</h3>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={3}>
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Body>
+                  <div className="text-muted mb-1">عدد الأدوار</div>
+                  <h3 className="fw-bold mb-0">{Object.keys(stats.roleCounts).length}</h3>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={3}>
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Body>
+                  <div className="text-muted mb-1">آخر سجلات</div>
+                  <h3 className="fw-bold mb-0">{stats.recentLogs.length}</h3>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          <Row className="g-3 mb-4">
+            <Col lg={8}>
+              <Card className="shadow-sm border-0 h-100">
+                <Card.Header className="bg-white fw-bold">أحدث النشاطات</Card.Header>
+                <Card.Body>
+                  <Table responsive hover className="mb-0">
                     <thead className="table-light">
-                        <tr>
-                            <th>المستخدم</th>
-                            <th>الإجراء</th>
-                            <th>التفاصيل</th>
-                            <th>الوقت</th>
-                        </tr>
+                      <tr>
+                        <th>التاريخ</th>
+                        <th>الموظف</th>
+                        <th>الإجراء</th>
+                        <th>الجهة</th>
+                      </tr>
                     </thead>
                     <tbody>
-                        {logs.slice(0, 5).map((log) => (
-                            <tr key={log.id}>
-                                <td><strong>{log.user}</strong></td>
-                                <td>
-                                    <Badge 
-                                        bg={log.action === 'LOGIN' ? 'primary' : (log.action === 'APPROVE' ? 'success' : 'secondary')}
-                                        className="fw-normal"
-                                    >
-                                        {log.action}
-                                    </Badge>
-                                </td>
-                                <td style={{fontSize:'0.9rem'}}>{log.details}</td>
-                                <td className="text-muted" style={{fontSize:'0.8rem'}}>
-                                    {new Date(log.date).toLocaleTimeString('ar-EG')}
-                                </td>
-                            </tr>
-                        ))}
+                      {stats.recentLogs.map((log) => (
+                        <tr key={log.id}>
+                          <td>{new Date(log.date).toLocaleString('ar-EG')}</td>
+                          <td>{log.employeeName || log.user || '-'}</td>
+                          <td>
+                            <Badge bg={log.action === 'INSERT' ? 'success' : log.action === 'DELETE' ? 'danger' : 'warning'}>
+                              {log.action}
+                            </Badge>
+                          </td>
+                          <td>{log.entity || '-'}</td>
+                        </tr>
+                      ))}
                     </tbody>
-                </Table>
-            ) : (
-                <div className="text-center p-4 text-muted">لا توجد عمليات مسجلة حالياً.</div>
-            )}
-        </Card.Body>
-      </Card>
+                  </Table>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col lg={4}>
+              <Card className="shadow-sm border-0 h-100">
+                <Card.Header className="bg-white fw-bold">توزيع الأدوار</Card.Header>
+                <Card.Body>
+                  <div className="d-grid gap-2">
+                    {Object.entries(stats.roleCounts).map(([role, count]) => (
+                      <div key={role} className="border rounded p-3 d-flex justify-content-between align-items-center">
+                        <span className="fw-semibold">{role}</span>
+                        <Badge bg="primary" pill>{count}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
     </div>
   );
 };

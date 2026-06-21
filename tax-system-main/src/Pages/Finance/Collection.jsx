@@ -4,6 +4,7 @@ import { Container, Row, Col, Form, Button, Card, Alert, Spinner, Badge, InputGr
 import { registerPayment } from '../../services/financeService';
 import { getEnrichedUnits } from '../../services/propertyService'; 
 import { getUnitInstallments } from '../../services/installmentService';
+import { printDocument } from '../../utils/printDocument';
 
 const Collection = () => {
   const navigate = useNavigate();
@@ -32,7 +33,80 @@ const Collection = () => {
   const [receiptData, setReceiptData] = useState(null);
 
   const handlePrintReceipt = () => {
-    window.print();
+    if (!receiptData) return;
+
+    const receiptNo = receiptData.payment.receiptNo || '-';
+    const paidAmount = Math.round(Number(receiptData.payment.amount) || 0).toLocaleString('ar-EG');
+    const paymentDate = new Date(receiptData.payment.paymentDate).toLocaleDateString('ar-EG');
+    const issuedAt = new Date().toLocaleString('ar-EG');
+
+    printDocument(
+      `إيصال سداد ${receiptNo}`,
+      `
+        <main class="print-page receipt-page">
+          <header class="print-header">
+            <div>
+              <h1 class="print-title">إيصال سداد ضريبة عقارية</h1>
+              <div class="print-subtitle">نسخة رسمية صادرة من نظام التحصيل</div>
+            </div>
+            <div class="receipt-number">
+              <span>رقم الإيصال</span>
+              <strong>${receiptNo}</strong>
+            </div>
+          </header>
+
+          <section class="print-grid">
+            <div class="print-field">
+              <span class="print-label">رقم الوحدة</span>
+              <span class="print-value">${receiptData.unit.id}</span>
+            </div>
+            <div class="print-field">
+              <span class="print-label">اسم المالك</span>
+              <span class="print-value">${receiptData.unit.ownerName || '-'}</span>
+            </div>
+            <div class="print-field" style="grid-column: 1 / -1;">
+              <span class="print-label">العنوان</span>
+              <span class="print-value">${receiptData.unit.propertyAddress || '-'}</span>
+            </div>
+            <div class="print-field print-total">
+              <span class="print-label">المبلغ المدفوع</span>
+              <span class="print-value">${paidAmount} ج.م</span>
+            </div>
+            <div class="print-field">
+              <span class="print-label">طريقة الدفع</span>
+              <span class="print-value">${receiptData.payment.method}</span>
+            </div>
+            <div class="print-field">
+              <span class="print-label">تاريخ السداد</span>
+              <span class="print-value">${paymentDate}</span>
+            </div>
+            <div class="print-field">
+              <span class="print-label">رقم القسط</span>
+              <span class="print-value">${receiptData.installment.id}</span>
+            </div>
+          </section>
+
+          <footer class="print-footer">
+            <div class="signature-box">توقيع الموظف المختص</div>
+            <div class="signature-box">ختم المأمورية</div>
+          </footer>
+          <p class="print-subtitle">تمت الطباعة في: ${issuedAt}</p>
+        </main>
+      `,
+      `
+        .receipt-page { border: 2px solid #0f766e; padding: 18px; }
+        .receipt-number {
+          min-width: 150px;
+          border: 1px solid #99f6e4;
+          background: #ecfdf5;
+          border-radius: 8px;
+          padding: 10px 12px;
+          text-align: center;
+        }
+        .receipt-number span { display: block; color: #667085; font-size: 12px; }
+        .receipt-number strong { display: block; color: #0f766e; font-size: 20px; margin-top: 4px; }
+      `
+    );
   };
 
   // دالة البحث عن وحدة
