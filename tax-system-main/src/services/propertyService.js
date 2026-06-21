@@ -61,75 +61,9 @@ export const getPropertyById = async (id) => {
   return properties.find(p => p.id == id);
 };
 
-// ==========================================
-// 3. إضافة عقار (مع الربط التلقائي)
-// ==========================================
-export const createProperty = async (propertyData, units) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      try {
-        const properties = getStorage('properties');
-        
-        // إنشاء معرف فريد للعقار
-        const newId = Date.now();
-        const governorateName = getGovernorateById(propertyData.governorateId)?.name || '';
-        const centerName = getCenterById(propertyData.centerId)?.name || '';
-        const streetName = getStreetById(propertyData.streetId)?.name || '';
-        const neighborhood = getNeighborhoodById(propertyData.neighborhoodId);
-
-        const totalPropertyArea = units.reduce((sum, unit) => sum + Number(unit.area || 0), 0);
-        const propertyType = units.length === 1 ? units[0].unitType : 'مبنى وحدات';
-
-        const newProperty = {
-          id: newId,
-          ...propertyData,
-          governorateName,
-          centerName,
-          streetName,
-          neighborhoodName: neighborhood?.name || '',
-          locationZone: neighborhood?.zone || 'B',
-          address: [governorateName, centerName, neighborhood?.name, streetName].filter(Boolean).join(' - '),
-          refNo: `PR-${newId}`,
-          date: new Date().toISOString(),
-          area: totalPropertyArea,
-          unitType: propertyType,
-          units: units.map((unit, index) => ({
-            id: newId + index + 1,
-            ...unit,
-            status: 'New',
-            locationZone: neighborhood?.zone || 'B'
-          }))
-        };
-        
-        // حفظ العقار
-        properties.push(newProperty);
-        setStorage('properties', properties);
-
-        // --- Auto-Link (ربط المالك تلقائياً) ---
-        if (propertyData.ownerName && propertyData.ownerNationalId) {
-          const assignments = getStorage('assignments');
-          assignments.push({
-            id: Date.now() + 1,
-            propertyId: newId,
-            unitId: newId,
-            personId: propertyData.ownerNationalId,
-            name: propertyData.ownerName,
-            roleType: 'Owner',
-            shareType: 'Full',
-            sharePercentage: 100,
-            ownershipStartDate: new Date().toISOString().split('T')[0],
-            ownershipEndDate: ''
-          });
-          setStorage('assignments', assignments);
-        }
-        // -----------------------------------------
-
-        resolve(newProperty);
-      } catch (error) {
-        reject(error);
-      }
-    }, 500);
-  });
+export const getUnits = async (propertyId) => {
+  const res = await axios.get(`${API}/${propertyId}/units`);
+  return res.data;
 };
 
 // ==========================================
@@ -239,9 +173,15 @@ export const updatePropertyStatus = async (unitId, newStatus) => {
       } catch (error) {
         reject(error);
       }
-    }, 500);
-  });
+    );
+  };
+export const getPropertiesWithUnits = async () => {
+  const res = await axios.get(`${API}/with-units`);
+  return res.data;
 };
+
+export const updateUnitStatus =
+  async (unitId, status) => {
 
 // تحديث بيانات الوحدة داخل جدول العقارات
 export const updateUnitData = async (unitId, updates) => {

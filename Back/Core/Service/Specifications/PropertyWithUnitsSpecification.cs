@@ -3,11 +3,27 @@ using Core.DomainLayer.Entities;
 using Core.Specifications;
 namespace  Core.Specifications
 {
-public class PropertyWithUnitsSpecification
-    : BaseSpecifications<Property, int>
+public class PropertyWithUnitsSpec : BaseSpecifications<Property, int>
 {
-    public PropertyWithUnitsSpecification()
+    public PropertyWithUnitsSpec()
     {
-        AddInclude(p => p.Units);
+        AddInclude(x => x.Units);
+        AddInclude(x => x.Assignments); // لو فيه مالك
     }
-}}
+
+    public PropertyWithUnitsSpec(int id)
+        : base(x => x.Id == id)
+    {
+        AddInclude(x => x.Units);
+        AddInclude(x => x.Assignments);
+    }
+}
+public class RoleAssignmentWithDetailsSpec : BaseSpecifications<RoleAssignment, int>
+    {
+        public RoleAssignmentWithDetailsSpec()
+        {
+            AddInclude(x => x.Unit);
+            AddInclude(x => x.Owner);
+        }
+    }
+}
