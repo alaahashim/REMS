@@ -31,6 +31,7 @@ namespace Shared.DTOS
 
         public string Status { get; set; } = null!;
         public DateTime ExemptionDate { get; set; }
+        public string? LegalReference { get; set; }
 
         public string? DecisionResult { get; set; }
     }
@@ -79,4 +80,20 @@ namespace Shared.DTOS
 
         public string? LegalReference { get; set; }
     }
+
+    public class RequestHomeDto
+{
+    public int Id { get; set; }
+
+    public string NationalId { get; set; } = null!;
+    public string OwnerName { get; set; } = null!;
+        public string UnitNumber { get; set; } = null!;
+
+    public string Status { get; set; } = null!;
+    public DateTime RequestDate { get; set; }
+
+    public string? LegalReference { get; set; }
+
+    public string Type { get; set; } = null!; // "إعفاء" أو "طعن"
+}
 }

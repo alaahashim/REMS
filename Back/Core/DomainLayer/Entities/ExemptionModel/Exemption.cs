@@ -17,7 +17,7 @@ namespace Core.DomainLayer.Entities
 
         public DateTime ExemptionDate { get; set; }
 
-        public WorkflowStatus Status { get; set; } = WorkflowStatus.PendingReview;
+        public WorkflowStatus Status { get; set; } = WorkflowStatus.Pending;
 
         // قرار المدير / اللجنة
         public string? DecisionResult { get; set; }
@@ -35,7 +35,7 @@ namespace Core.DomainLayer.Entities
 
     public enum WorkflowStatus
     {
-        PendingReview = 1,   // قيد المراجعة
+        Pending = 1,   // قيد المراجعة
         Approved = 2,        // موافق عليه
         Rejected = 3,        // مرفوض
         NeedsMoreInfo = 4    // يحتاج استيفاء

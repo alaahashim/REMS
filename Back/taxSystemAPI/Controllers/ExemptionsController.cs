@@ -15,6 +15,13 @@ namespace Presentation.Controllers
             _service = serviceManager.ExemptionService;
         }
 
+
+[HttpGet("home")]
+public async Task<IActionResult> GetForHome()
+{
+    var result = await _service.GetHomeRequestsAsync();
+    return Ok(result);
+}
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
