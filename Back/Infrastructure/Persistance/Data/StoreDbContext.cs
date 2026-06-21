@@ -10,6 +10,8 @@ namespace Persistence.Data
         public DbSet<Governorate> Governorates { get; set; }
         public DbSet<Center> Centers { get; set; }
         public DbSet<Street> Streets { get; set; }
+        public DbSet<Exemption> Exemptions { get; set; }
+        public DbSet<ExemptionAttachment> ExemptionAttachments { get; set; }
         
         public DbSet<Neighborhood> Neighborhoods { get; set; }
         

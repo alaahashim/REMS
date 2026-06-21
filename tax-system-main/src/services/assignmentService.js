@@ -68,3 +68,8 @@ export const createOwner = async (payload) => {
   const { data } = await api.post(OWNER_BASE, payload);
   return data;
 };
+
+export const getOwnerByNationalId = async (nationalId) => {
+  const { data } = await api.get(`/owners/by-national-id/${nationalId}`);
+  return data; 
+}

@@ -1,18 +1,17 @@
 using AutoMapper;
 using Core.DomainLayer.Contracts;
 using Shared.DTOS;
+using Core.Service.Specifications;
 namespace Core.Service.Implementations;
 public class OwnerService : IOwnerService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
-
     public OwnerService(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
-
     // ─────────────────────────────
     // GET ALL + SEARCH
     // ─────────────────────────────
@@ -80,7 +79,42 @@ public class OwnerService : IOwnerService
 
         await repo.AddAsync(owner);
         await _unitOfWork.SaveChangesAsync();
-
         return owner.Id;
+        
     }
+   public async Task<OwnerDto?> GetByNationalIdAsync(string nationalId)
+{
+    var assignmentRepo =
+        _unitOfWork.GetRepository<RoleAssignment, int>();
+
+    var spec =
+        new AssignmentsByNationalIdSpec(nationalId);
+
+    var assignments =
+        await assignmentRepo.GetAllAsync(spec);
+
+    if (!assignments.Any())
+        return null;
+
+    var owner =
+        assignments.First().Owner;
+
+    var ownerDto =
+        _mapper.Map<OwnerDto>(owner);
+
+    ownerDto.Units =
+        assignments
+        .Where(a => a.Unit != null)
+        .Select(a => new UnitDto
+        {
+            Id = a.Unit!.Id,
+            UnitNumber = a.Unit.UnitNumber,
+             Floor = a.Unit.Floor,
+        Area = a.Unit.Area,
+        UsageType = a.Unit.UsageType
+        })
+        .ToList();
+
+    return ownerDto;
+}
 }

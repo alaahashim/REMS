@@ -8,20 +8,39 @@ namespace Core.Service.Implementations
     public class ServiceManager(
         IUnitOfWork unitOfWork,
         IMapper mapper,
-        IConfiguration configuration
-    ) : IServiceManager
+        IConfiguration configuration)
+        : IServiceManager
     {
-        private readonly Lazy<ILocationService> _lazyLocationService =
-            new(() => new LocationService(unitOfWork));
+        private readonly Lazy<ILocationService>
+            _lazyLocationService =
+                new(() => new LocationService(
+                    unitOfWork));
 
-        private readonly Lazy<IPropertyService> _lazyPropertyService =
-            new(() => new PropertyService(unitOfWork, mapper));
+        private readonly Lazy<IPropertyService>
+            _lazyPropertyService =
+                new(() => new PropertyService(
+                    unitOfWork,
+                    mapper));
 
-       private readonly Lazy<IAssignmentService> _lazyAssignmentService =
-           new(() => new AssignmentService(unitOfWork, mapper));
+        private readonly Lazy<IAssignmentService>
+            _lazyAssignmentService =
+                new(() => new AssignmentService(
+                    unitOfWork,
+                    mapper));
 
-private readonly Lazy<IOwnerService>_lazyOwnerService =
-        new(() => new OwnerService( unitOfWork, mapper));
+        private readonly Lazy<IOwnerService>
+            _lazyOwnerService =
+                new(() => new OwnerService(
+                    unitOfWork,
+                    mapper));
+
+        private readonly Lazy<IExemptionService>
+            _lazyExemptionService =
+                new(() => new ExemptionService(
+                    unitOfWork,
+                    mapper));
+
+        //--------------------------------------
 
         public ILocationService LocationService
             => _lazyLocationService.Value;
@@ -29,10 +48,13 @@ private readonly Lazy<IOwnerService>_lazyOwnerService =
         public IPropertyService PropertyService
             => _lazyPropertyService.Value;
 
-       public IAssignmentService AssignmentService
-           => _lazyAssignmentService.Value;
+        public IAssignmentService AssignmentService
+            => _lazyAssignmentService.Value;
 
-      public IOwnerService OwnerService
-                => _lazyOwnerService.Value;
+        public IOwnerService OwnerService
+            => _lazyOwnerService.Value;
+
+        public IExemptionService ExemptionService
+            => _lazyExemptionService.Value;
     }
 }

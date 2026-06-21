@@ -41,6 +41,17 @@ namespace Presentation.Controllers
             });
         }
 
+        [HttpGet("by-national-id/{nationalId}")]
+    public async Task<IActionResult> GetByNationalId(string nationalId)
+    {
+        var owner = await service.OwnerService.GetByNationalIdAsync(nationalId);
+
+        if (owner == null)
+            return NotFound(new { message = "Owner not found" });
+
+        return Ok(owner);
+    }
+
   
     }
 }
