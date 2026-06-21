@@ -27,7 +27,7 @@ public class ExemptionService : IExemptionService
 
         entity.CreatedBy = userId;
         entity.CreatedAt = DateTime.UtcNow;
-        entity.Status = WorkflowStatus.PendingReview;
+        entity.Status = WorkflowStatus.Pending;
 
         if (attachment != null && attachment.Content.Length > 0)
         {
@@ -39,8 +39,19 @@ public class ExemptionService : IExemptionService
 
         return entity.Id;
     }
+public async Task<IEnumerable<RequestHomeDto>> GetHomeRequestsAsync()
+{
+    var repo = _unitOfWork.GetRepository<Exemption, int>();
 
-    public async Task<IEnumerable<ExemptionDto>> GetAllAsync()
+    var spec = new ExemptionHomeSpec();
+    var data = await repo.GetAllAsync(spec);
+
+    if (data == null || !data.Any())
+        return Enumerable.Empty<RequestHomeDto>();
+
+    return _mapper.Map<IEnumerable<RequestHomeDto>>(data);
+}
+   public async Task<IEnumerable<ExemptionDto>> GetAllAsync()
     {
         var repo = _unitOfWork.GetRepository<Exemption, int>();
 

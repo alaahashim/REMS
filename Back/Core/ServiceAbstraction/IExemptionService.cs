@@ -5,6 +5,7 @@ namespace Core.ServiceAbstraction
     public interface IExemptionService
     {
         Task<IEnumerable<ExemptionDto>> GetAllAsync();
+        Task<IEnumerable<RequestHomeDto>> GetHomeRequestsAsync();
 
         Task<ExemptionDetailsDto?> GetByIdAsync(int id);
 

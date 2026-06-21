@@ -11,6 +11,11 @@ export const getExemptions = async () => {
   const { data } = await api.get('/exemptions');
   return data;
 };
+//*********************************************************************** */
+export const getExemptionsForHome = async () => {
+  const { data } = await api.get('/exemptions/home');
+  return data;
+};
 
 // GET /api/exemptions/{id} -> تفاصيل طلب إعفاء واحد (ExemptionDetailsDto)
 export const getExemptionById = async (id) => {
