@@ -1,6 +1,7 @@
 using AutoMapper;
 using Core.DomainLayer.Contracts;
 using Core.DomainLayer.Entities;
+using Core.Service.Specifications;
 using Core.ServiceAbstraction;
 using Shared.DTOS;
 
@@ -10,29 +11,41 @@ namespace Core.Service.Implementations
         IUnitOfWork unitOfWork,
         IMapper mapper) : IPropertyService
     {
-      public async Task<int> AddPropertyAsync(CreatePropertyWithUnitsDto dto)
+     public async Task<int> AddPropertyAsync(CreatePropertyWithUnitsDto dto)
 {
     var propertyRepo = unitOfWork.GetRepository<Property, int>();
     var unitRepo = unitOfWork.GetRepository<Unit, int>();
-
     var property = mapper.Map<Property>(dto);
+
+    
 
     await propertyRepo.AddAsync(property);
     await unitOfWork.SaveChangesAsync();
 
     foreach (var unitDto in dto.Units)
-    {
-        var unit = mapper.Map<Unit>(unitDto);
+{
+    var unit = mapper.Map<Unit>(unitDto);
 
-        unit.PropertyId = property.Id;
+    unit.PropertyId = property.Id;
 
-        // ⚠️ قيم افتراضية لتوافق الفرونت
-        unit.Status = string.IsNullOrEmpty(unit.Status) ? "New" : unit.Status;
-        unit.UnitNumber = unit.UnitNumber ?? $"U-{Guid.NewGuid().ToString()[..6]}";
+    unit.UnitNumber = string.IsNullOrWhiteSpace(unit.UnitNumber)
+        ? $"U-{Guid.NewGuid().ToString()[..6]}"
+        : unit.UnitNumber;
 
-        await unitRepo.AddAsync(unit);
-    }
+    unit.Status = string.IsNullOrWhiteSpace(unit.Status)
+        ? "Available"
+        : unit.Status;
 
+    unit.FinishingType = string.IsNullOrWhiteSpace(unit.FinishingType)
+        ? "Standard"
+        : unit.FinishingType;
+
+    await unitRepo.AddAsync(unit);
+}
+foreach (var u in dto.Units)
+{
+    Console.WriteLine($"DTO UnitNumber = {u.UnitNumber}");
+}
     await unitOfWork.SaveChangesAsync();
 
     return property.Id;
@@ -43,47 +56,52 @@ namespace Core.Service.Implementations
 
     var unit = mapper.Map<Unit>(dto);
 
-    unit.Status = string.IsNullOrEmpty(dto.Status) ? "New" : dto.Status;
-    unit.UnitNumber = dto.UnitNumber ?? $"U-{Guid.NewGuid().ToString()[..6]}";
+unit.Status = string.IsNullOrEmpty(unit.Status)
+    ? "Available"
+    : unit.Status;
+unit.UnitNumber =string.IsNullOrWhiteSpace(unit.UnitNumber)? $"U-{Guid.NewGuid().ToString()[..6]}"
+        : unit.UnitNumber;
 
     await repo.AddAsync(unit);
     await unitOfWork.SaveChangesAsync();
 } 
-        public async Task<IEnumerable<PropertyDto>>GetPropertiesAsync()
-        {
-            var repo =
-                unitOfWork.GetRepository<Property, int>();
+        public async Task<IEnumerable<PropertyDto>> GetPropertiesAsync()
+{
+    var repo = unitOfWork.GetRepository<Property, int>();
 
-            var properties =
-                await repo.GetAllAsync();
+    var spec = new PropertyWithUnitsSpec();
 
-            return mapper.Map<
-                IEnumerable<PropertyDto>>
-                (properties);
-        }
+    var properties = await repo.GetAllAsync(spec);
 
-        public async Task<PropertyDto?> GetPropertyByIdAsync(int propertyId)
-        {
-            var repo = unitOfWork.GetRepository<Property, int>();
+    return mapper.Map<IEnumerable<PropertyDto>>(properties);
+}
 
-            var property = await repo.GetByIdAsync(propertyId);
 
-            return property is null? null: mapper.Map<PropertyDto>(property);
-        }
+      public async Task<PropertyDto?> GetPropertyByIdAsync(int propertyId)
+{
+    var repo = unitOfWork.GetRepository<Property, int>();
 
-        public async Task<IEnumerable<UnitDto>> GetUnitsAsync(int? propertyId)
-        {
-            var repo = unitOfWork.GetRepository<Unit, int>();
+    var spec = new PropertyWithUnitsSpec(propertyId);
 
-            var units = await repo.GetAllAsync();
+    var property = await repo.GetByIdAsync(spec);
 
-            if (propertyId.HasValue)
-            {
-                units = units.Where(x =>x.PropertyId ==propertyId.Value) .ToList();
-            }
+    return property is null ? null : mapper.Map<PropertyDto>(property);
+}
 
-            return mapper.Map<IEnumerable<UnitDto>>(units);
-        }
+
+       public async Task<IEnumerable<UnitDto>> GetUnitsAsync(int? propertyId)
+{
+    var repo = unitOfWork.GetRepository<Unit, int>();
+
+    var units = await repo.GetAllAsync();
+
+    if (propertyId.HasValue)
+        units = units.Where(x => x.PropertyId == propertyId.Value).ToList();
+
+    return mapper.Map<IEnumerable<UnitDto>>(units);
+}
+
+
 
         public async Task UpdatePropertyAsync( int id,UpdatePropertyDto dto)
         {
@@ -110,7 +128,6 @@ namespace Core.Service.Implementations
             if (property is null)
                 return;
 
-            property.Status = status;
 
             repo.Update(property);
 
@@ -141,11 +158,9 @@ public async Task UpdateUnitStatusAsync( int unitId,string status)
             if (property is null)
              return;
 
-var assignments =
-    await assignmentRepo.GetAllAsync();
+var assignments = await assignmentRepo.GetAllAsync();
 
-foreach(var item in assignments
-        .Where(x => x.PropertyId == propertyId))
+foreach(var item in assignments.Where(x => x.Unit.PropertyId == propertyId))
 {
     assignmentRepo.Remove(item);
 }
@@ -163,7 +178,7 @@ foreach(var item in assignments
             await unitOfWork.SaveChangesAsync();
         }
 
-       public async Task UpdateUnitAsync(int unitId, UnitDto dto)
+public async Task UpdateUnitAsync(int unitId, UnitDto dto)
 {
     var repo = unitOfWork.GetRepository<Unit, int>();
 
@@ -179,11 +194,9 @@ foreach(var item in assignments
 
         public async Task DeleteUnitAsync( int unitId)
         {
-            var repo =
-                unitOfWork.GetRepository<Unit, int>();
+            var repo =unitOfWork.GetRepository<Unit, int>();
 
-            var unit =
-                await repo.GetByIdAsync(unitId);
+            var unit = await repo.GetByIdAsync(unitId);
 
             if (unit is null)
                 return;
@@ -192,5 +205,19 @@ foreach(var item in assignments
 
             await unitOfWork.SaveChangesAsync();
         }
-    }
+    
+
+
+    ////////////////
+    public async Task<IEnumerable<PropertyWithUnitsDto>> GetPropertiesWithUnitsAsync()
+{
+    var repo = unitOfWork.GetRepository<Property, int>();
+
+    var spec = new PropertyWithUnitsSpec();
+
+    var data = await repo.GetAllAsync(spec);
+
+    return mapper.Map<IEnumerable<PropertyWithUnitsDto>>(data);
+}
+}
 }

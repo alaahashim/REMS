@@ -5,7 +5,7 @@ namespace Core.ServiceAbstraction
     public interface IPropertyService
     {
         Task<int> AddPropertyAsync(CreatePropertyWithUnitsDto dto);
-
+        Task<IEnumerable<PropertyWithUnitsDto>> GetPropertiesWithUnitsAsync();
         Task AddUnitAsync(UnitDto dto);
 
         Task<IEnumerable<PropertyDto>> GetPropertiesAsync();

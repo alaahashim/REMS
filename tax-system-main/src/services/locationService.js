@@ -6,13 +6,7 @@ const GOVERNORATES = [
   { id: 3, name: 'الإسكندرية' }
 ];
 
-// لاحظ أن govId يجب أن يطابق ID المحافظة
-const CENTERS = [
-  { id: 1, govId: 1, name: 'مدينة نصر' },
-  { id: 2, govId: 1, name: 'التجمع الخامس' },
-  { id: 3, govId: 2, name: 'المهندسين' },
-  { id: 4, govId: 2, name: 'الدقي' }
-];
+const API_URL = "http://localhost:5179/api/Locations";
 
 // لاحظ أن centerId يجب أن يطابق ID المركز
 const STREETS = [

@@ -4,6 +4,7 @@ namespace Core.DomainLayer.Entities
 {
  public class Property : BaseEntity<int>
 {
+
     public string BuildingNo { get; set; }
 
 
@@ -23,7 +24,6 @@ namespace Core.DomainLayer.Entities
 
     public string? Description { get; set; }
 
-    public string Status { get; set; }
 
     public ICollection<Unit> Units { get; set; }
         = new HashSet<Unit>();

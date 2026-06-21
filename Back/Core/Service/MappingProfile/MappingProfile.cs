@@ -10,77 +10,74 @@ namespace Core.Service.MappingProfiles
         {
             #region Property
 
-            CreateMap<Property, PropertyDto>()
-                .ReverseMap();
+            CreateMap<Property, PropertyDto>();
 
-            CreateMap<CreatePropertyWithUnitsDto, Property>();
-
-            CreateMap<UpdatePropertyDto, Property>();
-
+            CreateMap<CreatePropertyWithUnitsDto, Property>()
+                .ForMember(x => x.Units, opt => opt.Ignore())
+                .ForMember(x => x.Assignments, opt => opt.Ignore())
+                .ForMember(x => x.Id, opt => opt.Ignore())
+                .ForMember(x => x.CreatedAt, opt => opt.Ignore());
+CreateMap<Property, PropertyWithUnitsDto>()
+    .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units));
             #endregion
 
             #region Unit
 
-          CreateMap<UnitDto, Unit>()
-    .ForMember(d => d.UnitNumber, opt => opt.Ignore())
-    .ForMember(d => d.FinishingType, opt => opt.Ignore())
-    .ForMember(d => d.Status, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.Status) ? "New" : src.Status));
+          CreateMap<Unit, UnitDto>();
+          CreateMap<UnitDto, Unit>();
 
             #endregion
 
-            #region Owner
+          CreateMap<RoleAssignment, AssignmentDto>()
+            .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner!.FullName))
+            .ForMember(d => d.NationalId, o => o.MapFrom(s => s.Owner!.NationalId));
 
-           CreateMap<Owner, OwnerDto>();
+        CreateMap<CreateAssignmentDto, RoleAssignment>()
+            .ForMember(d => d.StartDate, o => o.MapFrom(s => s.OwnershipStartDate))
+            .ForMember(d => d.EndDate, o => o.MapFrom(s => s.OwnershipEndDate));
+         
+       
+//----------------------
+      #region  Owner
+CreateMap<Owner, OwnerDto>();
+        CreateMap<CreateOwnerDto, Owner>();
 
-           CreateMap<CreateOwnerDto, Owner>();
+#endregion
 
-           CreateMap<UpdateOwnerDto, Owner>();
+           #region Exemption
 
-            #endregion
+CreateMap<Exemption, ExemptionDto>()
+    .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName))
+    .ForMember(d => d.NationalId, o => o.MapFrom(s => s.Owner.NationalId))
+    .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
 
-            #region Assignment
+CreateMap<Exemption, ExemptionDetailsDto>()
+    .IncludeBase<Exemption, ExemptionDto>()
+    .ForMember(d => d.Attachments, o => o.MapFrom(s => s.Attachments));
 
-            CreateMap<CreateAssignmentDto, RoleAssignment>()
-                .ForMember(
-                    dest => dest.StartDate,
-                    opt => opt.MapFrom(
-                        src => src.OwnershipStartDate))
-                .ForMember(
-                    dest => dest.EndDate,
-                    opt => opt.MapFrom(
-                        src => src.OwnershipEndDate))
-                .ForMember(
-                    dest => dest.Id,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.Owner,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.Property,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.Unit,
-                    opt => opt.Ignore());
+CreateMap<ExemptionAttachment, ExemptionAttachmentDto>();
 
-            CreateMap<RoleAssignment, AssignmentDto>()
-                .ForMember(
-                    dest => dest.PersonId,
-                    opt => opt.MapFrom(
-                        src => src.Owner.NationalId))
-                .ForMember(
-                    dest => dest.Name,
-                    opt => opt.MapFrom(
-                        src => src.Owner.FullName))
-                .ForMember(
-                    dest => dest.OwnershipStartDate,
-                    opt => opt.MapFrom(
-                        src => src.StartDate))
-                .ForMember(
-                    dest => dest.OwnershipEndDate,
-                    opt => opt.MapFrom(
-                        src => src.EndDate));
+CreateMap<CreateExemptionDto, Exemption>();
 
-            #endregion
+CreateMap<UpdateExemptionDto, Exemption>()
+    .ForMember(dest => dest.Id, opt => opt.Ignore())
+    .ForMember(dest => dest.OwnerId, opt => opt.Ignore())
+    .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+    .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+    .ForMember(dest => dest.Attachments, opt => opt.Ignore())
+    .ForMember(dest => dest.Status, opt => opt.Ignore())
+    .ForMember(dest => dest.DecisionResult, opt => opt.Ignore());
+
+CreateMap<Exemption, RequestHomeDto>()
+    .ForMember(d => d.NationalId, o => o.MapFrom(s => s.Owner.NationalId))
+    .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName))
+    .ForMember(d => d.UnitNumber, o => o.MapFrom(s => s.UnitNumber))
+    .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
+    .ForMember(d => d.RequestDate, o => o.MapFrom(s => s.ExemptionDate))
+    .ForMember(d => d.LegalReference, o => o.MapFrom(s => s.LegalReference))
+    .ForMember(d => d.Type, o => o.MapFrom(s => "إعفاء"));
+
+#endregion
         }
     }
 }

@@ -3,7 +3,9 @@
   <ItemGroup>
   <ProjectReference Include="..\DomainLayer\DomainLayer.csproj" />
     <ProjectReference Include="..\..\Shared\Shared.csproj" />
-
+ 
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  
 </ItemGroup>
 
   <PropertyGroup>

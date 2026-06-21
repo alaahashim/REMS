@@ -10,7 +10,7 @@ namespace Core.Specifications
 
         List<Expression<Func<TEntity, object>>>
             IncludeExpressions { get; }
-
+//List<Func<IQueryable<TEntity>, IQueryable<TEntity>>> IncludeQueries { get; }
         Expression<Func<TEntity, object>>? OrderBy { get; }
 
         Expression<Func<TEntity, object>>?

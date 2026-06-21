@@ -4,6 +4,7 @@ using Core.Specifications;
 using Infrastructure.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Data;
+using System.Linq.Expressions;
 namespace Infrastructure.Persistence.Repositories
 {
     public class GenericRepository<TEntity, Tkey>
@@ -69,5 +70,15 @@ namespace Infrastructure.Persistence.Repositories
         .CreateQuery(
             _dbContext.Set<TEntity>(),specifications).FirstOrDefaultAsync();
 }
+
+
+public async Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate)
+{
+    return await _dbContext.Set<TEntity>()
+        .FirstOrDefaultAsync(predicate);
+}
+
+
+
     }
 }

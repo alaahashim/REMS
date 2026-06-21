@@ -1,72 +1,75 @@
-// محاكاة API
-const API_URL = 'http://localhost:5000/api'; 
+import api from "./apiClient";
 
-const saveToStorage = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-const getFromStorage = (key) => {
-  const data = localStorage.getItem(key);
-  return data ? JSON.parse(data) : [];
-};
+const BASE = "/assignments";
 
-// --- GET ---
+// ==========================
+// Assignments APIs
+// ==========================
+
+// جلب كل الربطات
 export const getAssignments = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(getFromStorage('assignments')), 300);
-  });
+  const { data } = await api.get(BASE);
+  return data;
 };
 
-// --- CREATE (ربط مالك جديد) ---
-export const createAssignment = async (assignmentData) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const assignments = getFromStorage('assignments');
-      const newAssignment = {
-        id: Date.now(),
-        ...assignmentData
-      };
-      assignments.push(newAssignment);
-      saveToStorage('assignments', assignments);
-      resolve(newAssignment);
-    } catch (error) {
-      reject(error);
-    }
-  });
+// جلب ربطات شخص
+export const getAssignmentByPersonId = async (personId) => {
+  const { data } = await api.get(`${BASE}/person/${personId}`);
+  return data;
 };
 
-// --- UPDATE (تعديل نسبة الملكية) ---
-export const updateAssignment = async (id, data) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const assignments = getFromStorage('assignments');
-      const index = assignments.findIndex(a => a.id == id);
-      if (index !== -1) {
-        assignments[index] = { ...assignments[index], ...data };
-        saveToStorage('assignments', assignments);
-        resolve(assignments[index]);
-      } else {
-        reject(new Error('الربط غير موجود'));
-      }
-    } catch (error) {
-      reject(error);
-    }
-  });
+// جلب ربط واحد
+export const getAssignmentById = async (id) => {
+  const { data } = await api.get(`${BASE}/${id}`);
+  return data;
 };
 
-// --- DELETE (حذف رابط مالك) ---
+// إنشاء عدة ربطات
+export const createAssignments = async (payload) => {
+  const { data } = await api.post(`${BASE}/bulk`, payload);
+  return data;
+};
+
+// تحديث ربط
+export const updateAssignment = async (id, payload) => {
+  const { data } = await api.put(`${BASE}/${id}`, payload);
+  return data;
+};
+
+// حذف ربط
 export const deleteAssignment = async (id) => {
-  return new Promise((resolve) => {
-    const assignments = getFromStorage('assignments');
-    const filtered = assignments.filter(a => a.id != id);
-    saveToStorage('assignments', filtered);
-    resolve(true);
-  });
+  const { data } = await api.delete(`${BASE}/${id}`);
+  return data;
 };
 
-// ... بقية الكود
-export const getAssignmentById = async (personId) => {
-  return new Promise((resolve) => {
-    const assignments = getFromStorage('assignments');
-    // البحث عن الربط الأول لهذا الشخص
-    const found = assignments.find(a => a.personId === personId);
-    resolve(found || null); // إرجاع كائن المالك أو null
+
+// ==========================
+// Owners APIs (إضافة هنا)
+// ==========================
+
+const OWNER_BASE = "/owners";
+
+// جلب كل الملاك + بحث
+export const getOwners = async (search = "") => {
+  const { data } = await api.get(OWNER_BASE, {
+    params: search ? { search } : undefined,
   });
+  return data;
 };
+
+// جلب مالك واحد
+export const getOwnerById = async (id) => {
+  const { data } = await api.get(`${OWNER_BASE}/${id}`);
+  return data;
+};
+
+// إنشاء مالك جديد
+export const createOwner = async (payload) => {
+  const { data } = await api.post(OWNER_BASE, payload);
+  return data;
+};
+
+export const getOwnerByNationalId = async (nationalId) => {
+  const { data } = await api.get(`/owners/by-national-id/${nationalId}`);
+  return data; 
+}

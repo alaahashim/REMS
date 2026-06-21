@@ -1,3 +1,4 @@
+using Core.DomainLayer.Entities;
 using Core.DomainLayer.Entities.Common;
 
 public class Owner : BaseEntity<int>
