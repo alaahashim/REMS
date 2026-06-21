@@ -64,5 +64,11 @@ namespace Core.Specifications
 
             Skip = (pageIndex - 1) * pageSize;
         }
+
+/*public List<Func<IQueryable<TEntity>, IQueryable<TEntity>>> IncludeQueries { get; } = [];
+protected void AddInclude(Func<IQueryable<TEntity>, IQueryable<TEntity>> includeQuery)
+{
+    IncludeQueries.Add(includeQuery);
+}*/
     }
 }

@@ -48,7 +48,6 @@ namespace Infrastructure.Persistence.Specifications
                     .Skip(specifications.Skip)
                     .Take(specifications.Take);
             }
-
             return query;
         }
     }

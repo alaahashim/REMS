@@ -8,6 +8,8 @@ public class OwnerDto
     public string Phone { get; set; }
     public string Address { get; set; }
     public string OwnerType { get; set; }
+        public List<UnitDto>? Units { get; set; }=[];
+
 }
 
 
@@ -23,3 +25,4 @@ public class OwnerQueryDto
 {
     public string? Search { get; set; }
 }
+

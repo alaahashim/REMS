@@ -1,6 +1,7 @@
 using AutoMapper;
 using Core.DomainLayer.Contracts;
 using Core.DomainLayer.Entities;
+using Core.Service.Specifications;
 using Core.ServiceAbstraction;
 using Shared.DTOS;
 

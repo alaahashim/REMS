@@ -1,61 +1,61 @@
-const API_URL = 'http://localhost:5000/api'; 
+import api from "./apiClient";
 
-const saveToStorage = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-const getFromStorage = (key) => {
-  const data = localStorage.getItem(key);
-  return data ? JSON.parse(data) : [];
-};
+const BASE = "/exemptions";
+// ============================================================
+// خدمة طلبات الإعفاء (Exemptions)
+// كل دالة هنا تقابل Endpoint مطابق في ExemptionsController
+// ============================================================
 
-// --- GET ---
+// GET /api/exemptions  -> قائمة كل طلبات الإعفاء (ExemptionDto[])
 export const getExemptions = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(getFromStorage('exemptions')), 300);
-  });
+  const { data } = await api.get('/exemptions');
+  return data;
 };
 
-// --- CREATE (طلب إعفاء) ---
-export const createExemption = async (exemptionData, userId) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const exemptions = getFromStorage('exemptions');
-      const newExemption = {
-        id: Date.now(),
-        refNo: `EX-${Date.now()}`,
-        ...exemptionData,
-        createdBy: userId,
-        date: new Date().toISOString(),
-        status: 'Pending'
-      };
-      exemptions.push(newExemption);
-      saveToStorage('exemptions', exemptions);
-      resolve(newExemption);
-    } catch (error) {
-      reject(error);
-    }
-  });
+// GET /api/exemptions/{id} -> تفاصيل طلب إعفاء واحد (ExemptionDetailsDto)
+export const getExemptionById = async (id) => {
+  const { data } = await api.get(`/exemptions/${id}`);
+  return data;
 };
 
-// --- UPDATE ---
-export const updateExemption = async (id, data) => {
-  return new Promise((resolve, reject) => {
-    const exemptions = getFromStorage('exemptions');
-    const index = exemptions.findIndex(e => e.id == id);
-    if (index !== -1) {
-      exemptions[index] = { ...exemptions[index], ...data };
-      saveToStorage('exemptions', exemptions);
-      resolve(exemptions[index]);
-    } else {
-      reject(new Error('طلب الإعفاء غير موجود'));
-    }
+// تحويل بيانات الفورم (+ الملف إن وُجد) إلى FormData
+// ملاحظة مهمة: الـ Controller الآن يستقبل [FromForm] وليس [FromBody]،
+// لذلك يجب إرسال البيانات كـ multipart/form-data وليس JSON، حتى يتوافق مع الملف المرفق.
+const buildExemptionFormData = (payload) => {
+  const fd = new FormData();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (key === 'file') return;
+    if (value === null || value === undefined || value === '') return;
+    fd.append(key, value);
   });
+
+  if (payload.file) {
+    fd.append('file', payload.file);
+  }
+
+  return fd;
 };
 
-// --- DELETE ---
+// POST /api/exemptions -> إنشاء طلب إعفاء جديد
+// payload: { OwnerId, UnitId, UnitNumber, ExemptionType, ExemptionDate, ExemptionStartDate,
+//            ExemptionEndDate, LegalReference, ExemptionReason, InspectionResult, Notes, file }
+// POST /api/exemptions -> إنشاء طلب إعفاء جديد
+export const createExemption = async (payload) => {
+  const fd = buildExemptionFormData(payload);
+  const { data } = await api.post('/exemptions', fd);
+  return data;
+};
+
+// PUT /api/exemptions/{id} -> تعديل طلب إعفاء
+export const updateExemption = async (id, payload) => {
+  const fd = buildExemptionFormData(payload);
+  const { data } = await api.put(`/exemptions/${id}`, fd);
+  return data;
+};
+
+// DELETE /api/exemptions/{id}
 export const deleteExemption = async (id) => {
-  return new Promise((resolve) => {
-    const exemptions = getFromStorage('exemptions');
-    const filtered = exemptions.filter(e => e.id != id);
-    saveToStorage('exemptions', filtered);
-    resolve(true);
-  });
+  const { data } = await api.delete(`/exemptions/${id}`);
+  return data;
 };

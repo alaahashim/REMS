@@ -2,6 +2,7 @@ using AutoMapper;
 using Core.DomainLayer.Contracts;
 using Core.DomainLayer.Entities;
 using Core.DomainLayer.Exceptions;
+using Core.Service.Specifications;
 using Shared.DTOS;
 
 namespace Core.Service.Implementations{

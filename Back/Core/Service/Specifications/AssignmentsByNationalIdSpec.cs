@@ -1,6 +1,7 @@
 using Core.DomainLayer.Entities;
 using Core.Specifications;
-
+namespace Core.Service.Specifications
+{
 public class AssignmentsByNationalIdSpec : BaseSpecifications<RoleAssignment, int>
 {
     public AssignmentsByNationalIdSpec(string nationalId)
@@ -34,4 +35,7 @@ public class PropertyWithUnitsSpec : BaseSpecifications<Property, int>
     {
         AddInclude(x => x.Units);
     }
-}
+
+
+
+}}
