@@ -79,16 +79,8 @@ export const deleteProperty = async (
   );
 };
 
-export const getUnits = async (
-  propertyId = null
-) => {
-  const res = await axios.get(
-    `${API}/units`,
-    {
-      params: { propertyId }
-    }
-  );
-
+export const getUnits = async (propertyId) => {
+  const res = await axios.get(`${API}/${propertyId}/units`);
   return res.data;
 };
 
@@ -133,6 +125,10 @@ export const updatePropertyStatus =
       }
     );
   };
+export const getPropertiesWithUnits = async () => {
+  const res = await axios.get(`${API}/with-units`);
+  return res.data;
+};
 
 export const updateUnitStatus =
   async (unitId, status) => {

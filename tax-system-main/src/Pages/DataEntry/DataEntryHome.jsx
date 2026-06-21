@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, Row, Col, Table, Badge, Button, Container, Form, Nav, Spinner, Tab } from 'react-bootstrap';
 import { useAuth } from '../../context/AuthContext';
-import { getProperties } from '../../services/propertyService';
+import { getProperties, deleteProperty } from '../../services/propertyService';
 //import { getAppealsForHome, deleteAppeal } from '../../services/appealService';
 import { getExemptionsForHome, deleteExemption } from '../../services/exemptionService';
 
@@ -21,8 +21,8 @@ const DataEntryHome = () => {
       const props = await getProperties();
       setProperties(props);
 
-    //  const appeals = await getAppealsForHome();       // لازم يرجع Type = "طعن"
-      const exemptions = await getExemptionsForHome(); // لازم يرجع Type = "إعفاء"
+      // const appeals = await getAppealsForHome();
+      const exemptions = await getExemptionsForHome();
 
       const formattedRequests = [...exemptions];
       setAllRequests(formattedRequests);
@@ -53,8 +53,12 @@ const DataEntryHome = () => {
         if (!target) return;
 
         if (target.type === 'طعن') {
-          await deleteAppeal(id);
-        } else if (target.type === 'إعفاء') {
+          // ميزة الطعون لسه مش متفعّلة بالكامل
+          alert('حذف الطعون غير متاح حالياً');
+          return;
+        }
+
+        if (target.type === 'إعفاء') {
           await deleteExemption(id);
         }
 
@@ -67,13 +71,18 @@ const DataEntryHome = () => {
     }
   };
 
+  // 🔧 الإصلاح الأساسي: كانت بتمسح من localStorage بدل ما تنادي الـ API الحقيقي
+  // فالعقار كان بيرجع تاني أول ما تعمل refresh لإنه أصلاً مكنش بيتمسح من الداتابيز
   const handleDeleteProperty = async (id) => {
-    if (window.confirm('هل أنت متأكد من حذف بيانات هذا العقار؟')) {
-      const props = JSON.parse(localStorage.getItem('properties')) || [];
-      const newProps = props.filter((p) => p.id !== id);
-      localStorage.setItem('properties', JSON.stringify(newProps));
-      setProperties(newProps);
-      alert('تم حذف العقار بنجاح');
+    if (window.confirm('هل أنت متأكد من حذف بيانات هذا العقار؟ لا يمكن التراجع عن هذا الإجراء.')) {
+      try {
+        await deleteProperty(id);
+        setProperties((prev) => prev.filter((p) => p.id !== id));
+        alert('تم حذف العقار بنجاح');
+      } catch (error) {
+        console.error('Delete Property Error:', error);
+        alert('فشل حذف العقار، حاول مرة أخرى');
+      }
     }
   };
 
@@ -98,9 +107,10 @@ const DataEntryHome = () => {
       );
     }
 
+    // 🔧 كانت 'NeedsMoreInfo' (يحتاج استيفاء) مش موجودة في أي تاب فكانت بتختفي تمامًا
     const statusFilter =
       key === 'pending'
-        ? ['Pending', 'Under Review']
+        ? ['Pending', 'NeedsMoreInfo']
         : ['Approved', 'Rejected'];
 
     return allRequests.filter(
@@ -115,20 +125,20 @@ const DataEntryHome = () => {
     );
   };
 
- const getStatusBadge = (status) => {
-  switch (status) {
-    case 'Pending':
-      return <Badge bg="warning text-dark">قيد المراجعة</Badge>;
-    case 'Approved':
-      return <Badge bg="success">مقبول</Badge>;
-    case 'Rejected':
-      return <Badge bg="danger">مرفوض</Badge>;
-    case 'NeedsMoreInfo':
-      return <Badge bg="info">يحتاج استيفاء</Badge>;
-    default:
-      return <Badge bg="secondary">{status}</Badge>;
-  }
-};
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'Pending':
+        return <Badge bg="warning text-dark">قيد المراجعة</Badge>;
+      case 'Approved':
+        return <Badge bg="success">مقبول</Badge>;
+      case 'Rejected':
+        return <Badge bg="danger">مرفوض</Badge>;
+      case 'NeedsMoreInfo':
+        return <Badge bg="info">يحتاج استيفاء</Badge>;
+      default:
+        return <Badge bg="secondary">{status}</Badge>;
+    }
+  };
 
   const getTypeBadge = (type) => {
     return type === 'طعن' ? (
@@ -140,6 +150,16 @@ const DataEntryHome = () => {
         <i className="fa-solid fa-shield-halved me-1"></i> إعفاء
       </Badge>
     );
+  };
+
+  // 🔧 المساحة كانت بتستخدم || اللي بيتجاهل القيمة 0 (لإن 0 falsy في JS)
+  // فعقار مساحته 0 فعليًا (لسه مفيهوش وحدات) كان بيظهر "-" بدل الرقم الحقيقي
+  const formatArea = (prop) => {
+    if (typeof prop.area === 'number') return prop.area;
+    if (Array.isArray(prop.units)) {
+      return prop.units.reduce((sum, unit) => sum + Number(unit.area || 0), 0);
+    }
+    return '-';
   };
 
   return (
@@ -155,7 +175,6 @@ const DataEntryHome = () => {
         </Col>
       </Row>
 
-      {/* قسم الإجراءات السريعة */}
       <Row className="g-3 mb-4">
         <Col md={3}>
           <Link to="/data-entry/add" className="text-decoration-none">
@@ -256,7 +275,6 @@ const DataEntryHome = () => {
             </div>
 
             <Tab.Content>
-              {/* الطلبات المعلقة */}
               <Tab.Pane eventKey="pending">
                 <Table hover responsive className="align-middle">
                   <thead className="table-light">
@@ -327,7 +345,6 @@ const DataEntryHome = () => {
                 </Table>
               </Tab.Pane>
 
-              {/* القرارات الصادرة */}
               <Tab.Pane eventKey="decided">
                 <Table hover responsive className="align-middle">
                   <thead className="table-light">
@@ -375,7 +392,6 @@ const DataEntryHome = () => {
                 </Table>
               </Tab.Pane>
 
-              {/* العقارات */}
               <Tab.Pane eventKey="properties">
                 <Table hover responsive className="align-middle">
                   <thead className="table-light">
@@ -399,20 +415,14 @@ const DataEntryHome = () => {
                       getFilteredData('properties').map((prop) => (
                         <tr key={prop.id}>
                           <td className="fw-bold text-primary">{prop.refNo || prop.id}</td>
-                          <td className="fw-medium">{prop.ownerName}</td>
+                          <td className="fw-medium">{prop.ownerName || '-'}</td>
                           <td className="text-muted">
-                            {prop.address || `${prop.buildingNo} - ${prop.streetId}`}
+                            {`${prop.governorate} - ${prop.neighborhood}`}
                           </td>
                           <td>
                             <Badge bg="dark">{prop.unitType || 'عقار'}</Badge>
                           </td>
-                          <td>
-                            {prop.area ||
-                              (prop.units
-                                ? prop.units.reduce((sum, unit) => sum + Number(unit.area || 0), 0)
-                                : '-') ||
-                              '-'}
-                          </td>
+                          <td>{formatArea(prop)}</td>
                           <td className="text-end pe-4">
                             <div className="d-flex justify-content-end gap-1">
                               <Button

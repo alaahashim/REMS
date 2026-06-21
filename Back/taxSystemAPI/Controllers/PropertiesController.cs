@@ -4,11 +4,14 @@ using Shared.DTOS;
 
 namespace Presentation.Controllers
 {
+    // 🔧 DTO صغير عشان نستقبل { status: "..." } بشكل صحيح بدل ما نستنى string خام
+    public record UpdateStatusRequest(string Status);
+
     [ApiController]
     [Route("api/[controller]")]
     public class PropertiesController(IServiceManager service) : ControllerBase
     {
-        [HttpPost]
+         [HttpPost]
         public async Task<IActionResult> AddProperty([FromBody] CreatePropertyWithUnitsDto dto)
         {
             var id = await service.PropertyService.AddPropertyAsync(dto);
@@ -22,7 +25,7 @@ namespace Presentation.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetProperties()
-            => Ok(await service.PropertyService.GetPropertiesAsync());
+            => Ok(await service.PropertyService.GetPropertiesForHomeAsync());
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPropertyById(int id)
@@ -35,7 +38,6 @@ namespace Presentation.Controllers
             return Ok(result);
         }
 
-        // ✅ الأفضل: endpoint واحد فقط للوحدات
         [HttpGet("{propertyId}/units")]
         public async Task<IActionResult> GetUnits(int propertyId)
         {
@@ -51,9 +53,9 @@ namespace Presentation.Controllers
         }
 
         [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusRequest request)
         {
-            await service.PropertyService.UpdatePropertyStatusAsync(id, status);
+            await service.PropertyService.UpdatePropertyStatusAsync(id, request.Status);
             return Ok(new { success = true });
         }
 
@@ -71,6 +73,15 @@ namespace Presentation.Controllers
             return Ok(new { success = true });
         }
 
+        // 🔧 كان ناقص بالكامل! propertyService.js في الفرونت بينادي عليه (updateUnitStatus)
+        // وكان بيرجع 404 لإنه مكنش موجود في الـ Controller
+        [HttpPut("unit/{unitId}/status")]
+        public async Task<IActionResult> UpdateUnitStatus(int unitId, [FromBody] UpdateStatusRequest request)
+        {
+            await service.PropertyService.UpdateUnitStatusAsync(unitId, request.Status);
+            return Ok(new { success = true });
+        }
+
         [HttpDelete("unit/{unitId}")]
         public async Task<IActionResult> DeleteUnit(int unitId)
         {
@@ -79,9 +90,9 @@ namespace Presentation.Controllers
         }
 
         [HttpGet("with-units")]
-public async Task<IActionResult> GetWithUnits()
-{
-    return Ok(await service.PropertyService.GetPropertiesWithUnitsAsync());
-}
+        public async Task<IActionResult> GetWithUnits()
+        {
+            return Ok(await service.PropertyService.GetPropertiesWithUnitsAsync());
+        }
     }
 }

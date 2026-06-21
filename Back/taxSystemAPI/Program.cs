@@ -58,13 +58,14 @@ builder.Services.AddCors(options =>
 // =========================
 // Dependency Injection
 // =========================
-
+builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IServiceManager, ServiceManager>();
 builder.Services.AddScoped(
     typeof(IGenericRepository<,>),
     typeof(GenericRepository<,>)
 );
+
 
 
 
