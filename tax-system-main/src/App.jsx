@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'; 
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Button } from 'react-bootstrap'; 
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import Chatbot from './pages/Shared/Chatbot';
@@ -89,8 +89,11 @@ function App() {
     <Router>
       <Routes>
         {/* صفحة الدخول */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
+  {/* صفحة الدخول */}
+  <Route path="/login" element={<Login />} />
+  <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* التطبيق الرئيسي */}
         <Route path="/*" element={
