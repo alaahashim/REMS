@@ -4,19 +4,17 @@
 
 namespace Persistance.Data.Migrations
 {
-    /// <inheritdoc />
-    public partial class UpdateOwnership : Migration
+    public partial class InitialMigration : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
+            // Baseline migration for existing database state.
+            // Existing tables are already present in the database.
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-
+            // No rollback actions for baseline migration.
         }
     }
 }

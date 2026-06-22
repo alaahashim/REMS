@@ -8,6 +8,8 @@ namespace Core.ServiceAbstraction
 
         IAssignmentService AssignmentService { get; }
             IOwnerService OwnerService { get; }
+          IEmployeeService EmployeeService { get; }
+    IAuditLogService AuditLogService { get;}// ضيفي السطر ده هنا
 
     }
 }

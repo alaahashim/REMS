@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Nav, Button, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -6,13 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [role, setRole] = useState('');
-
-  useEffect(() => {
-    if (user) {
-      setRole(user.role);
-    }
-  }, [user]);
+  const role = user?.role ?? '';
 
   const handleLogout = () => {
     logout();

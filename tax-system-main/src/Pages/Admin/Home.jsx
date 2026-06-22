@@ -66,7 +66,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Container, Row, Col, Table, Button, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { getSystemLogs } from '../../services/adminService';
+import { getEmployees, getSystemLogs } from '../../services/adminService';
 
 const AdminHome = () => {
   const navigate = useNavigate();
@@ -75,8 +75,8 @@ const AdminHome = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      // جلب المستخدمين
-      const users = JSON.parse(localStorage.getItem('tax_users')) || [];
+      // جلب المستخدمين من ال API
+      const users = await getEmployees();
       setUserCount(users.length);
 
       // جلب أحدث السجلات
@@ -85,6 +85,109 @@ const AdminHome = () => {
     };
     loadData();
   }, []);
+
+  // اعرض أحدث 5 سجلات مرتبة من الأحدث للأقدم
+  const recentLogs = (logs || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+
+  // مساعد لترجمة أسماء المستخدمين إلى عرض عربي صريح
+  const translateUser = (log) => {
+    if (!log) return '-';
+
+    // إذا كانت التفاصيل تحتوي على FullName أو Username
+    const nameMatch = /FullName:\s*([^,|]+)/i.exec(log.details) || /Username:\s*([^,|]+)/i.exec(log.details);
+    if (nameMatch && nameMatch[1]) return nameMatch[1].trim();
+
+    // إذا كان المستخدم معرف كـ Employee #id
+    const empMatch = /^Employee #(\d+)$/i.exec(log.user);
+    if (empMatch) {
+      // عرض اسم عربي افتراضي للمعرّفات العامة
+      return 'المسؤول';
+    }
+
+    if (log.user === 'System') return 'النظام';
+
+    // افتراضيًا أعرض القيمة كما هي
+    return log.user || '-';
+  };
+
+  // مساعد لتحويل نوع الحدث إلى بادج عربي + لون
+  const actionBadge = (action) => {
+    const map = {
+      CREATE: { text: 'إضافة حساب', variant: 'success' },
+      UPDATE: { text: 'تعديل حساب', variant: 'warning' },
+      DELETE: { text: 'حذف حساب', variant: 'danger' },
+      LOGIN: { text: 'تسجيل دخول', variant: 'primary' },
+      APPROVE: { text: 'إقرار', variant: 'success' },
+    };
+    return map[action] || { text: action || 'نشاط', variant: 'secondary' };
+  };
+
+  // مساعد لتنسيق حقل التفاصيل بطريقة عربية قابلة للقراءة
+  const formatDetails = (log) => {
+    if (!log || !log.details) return <span className="text-muted">لا توجد تفاصيل</span>;
+
+    // أجزاء التفاصيل مفصولة بـ ' | '
+    const parts = log.details.split(' | ').map((p) => p.trim());
+    const keyPart = parts.find((p) => /^Key:/i.test(p));
+    const newPart = parts.find((p) => /^New:/i.test(p));
+    const oldPart = parts.find((p) => /^Old:/i.test(p));
+
+    const extractField = (text, field) => {
+      const re = new RegExp(field + '\\s*:\\s*([^,|]+)', 'i');
+      const m = re.exec(text);
+      return m ? m[1].trim() : null;
+    };
+
+    if (log.action === 'CREATE' && newPart) {
+      const full = extractField(newPart, 'FullName') || extractField(newPart, 'FullName');
+      const code = extractField(newPart, 'EmployeeCode') || extractField(newPart, 'EmployeeCode');
+      if (full || code) {
+        return (
+          <div>
+            تم إنشاء حساب جديد للموظف: <strong>{full || '-'}</strong>
+            {code ? <span> <span className="text-muted">(كود: {code})</span></span> : null}
+          </div>
+        );
+      }
+    }
+
+    if (log.action === 'UPDATE') {
+      if (keyPart) {
+        const keyVal = keyPart.split(':')[1]?.trim();
+        return <div>تم تعديل حالة الحساب (الرقم المسلسل: <strong>{keyVal}</strong>)</div>;
+      }
+      // عرض ملخص للتغييرات إن وُجدت
+      if (newPart || oldPart) {
+        return (
+          <div>
+            <div>تم تعديل الحساب:</div>
+            <ul className="mb-0" style={{paddingInlineStart: '18px'}}>
+              {oldPart && <li>السابق: {oldPart.replace(/(Old:|New:|,)/gi, ' - ').replace(/FullName:/gi, 'الاسم:').replace(/EmployeeCode:/gi, 'كود الموظف:')}</li>}
+              {newPart && <li>الحالي: {newPart.replace(/(Old:|New:|,)/gi, ' - ').replace(/FullName:/gi, 'الاسم:').replace(/EmployeeCode:/gi, 'كود الموظف:')}</li>}
+            </ul>
+          </div>
+        );
+      }
+    }
+
+    if (log.action === 'DELETE') {
+      if (keyPart) {
+        const keyVal = keyPart.split(':')[1]?.trim();
+        return <div>تم حذف الحساب (الرقم المسلسل: <strong>{keyVal}</strong>)</div>;
+      }
+    }
+
+    // افتراضي: عرض أجزاء مفصّلة مع استبدال الحقول التقنية بنص عربي
+    return (
+      <div style={{fontSize:'0.95rem'}}>
+        {parts.map((p, idx) => (
+          <div key={idx} className="text-break">
+            • {p.replace(/FullName:/gi, 'الاسم:').replace(/EmployeeCode:/gi, 'كود الموظف:').replace(/Key:/gi, 'الرقم المسلسلي:').replace(/\|/g, ' - ')}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div style={{padding:'20px'}}>
@@ -122,38 +225,37 @@ const AdminHome = () => {
         </Card.Header>
         <Card.Body>
             {/* جدول آخر العمليات بدلاً من الـ Alert */}
-            {logs.length > 0 ? (
-                <Table hover responsive size="sm" className="align-middle">
-                    <thead className="table-light">
-                        <tr>
-                            <th>المستخدم</th>
-                            <th>الإجراء</th>
-                            <th>التفاصيل</th>
-                            <th>الوقت</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {logs.slice(0, 5).map((log) => (
-                            <tr key={log.id}>
-                                <td><strong>{log.user}</strong></td>
-                                <td>
-                                    <Badge 
-                                        bg={log.action === 'LOGIN' ? 'primary' : (log.action === 'APPROVE' ? 'success' : 'secondary')}
-                                        className="fw-normal"
-                                    >
-                                        {log.action}
-                                    </Badge>
-                                </td>
-                                <td style={{fontSize:'0.9rem'}}>{log.details}</td>
-                                <td className="text-muted" style={{fontSize:'0.8rem'}}>
-                                    {new Date(log.date).toLocaleTimeString('ar-EG')}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </Table>
+            {recentLogs.length > 0 ? (
+              <Table striped bordered hover responsive size="sm" className="align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>المستخدم</th>
+                    <th>الإجراء</th>
+                    <th>التفاصيل</th>
+                    <th>الوقت</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentLogs.map((log) => {
+                    const userLabel = translateUser(log);
+                    const badge = actionBadge(log.action);
+                    return (
+                    <tr key={log.id} style={{borderBottom: '2px solid #eef2f5'}}>
+                      <td><strong>{userLabel}</strong></td>
+                      <td>
+                        <Badge bg={badge.variant} className="fw-normal">{badge.text}</Badge>
+                      </td>
+                      <td style={{fontSize:'0.95rem'}}>{formatDetails(log)}</td>
+                      <td className="text-muted" style={{fontSize:'0.8rem'}}>
+                        {new Date(log.date).toLocaleString('ar-EG')}
+                      </td>
+                    </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
             ) : (
-                <div className="text-center p-4 text-muted">لا توجد عمليات مسجلة حالياً.</div>
+              <div className="text-center p-4 text-muted">لا توجد عمليات مسجلة حالياً.</div>
             )}
         </Card.Body>
       </Card>

@@ -12,8 +12,8 @@ using Persistence.Data;
 namespace Persistance.Data.Migrations
 {
     [DbContext(typeof(StoreDbContext))]
-    [Migration("20260602132603_UpdateOwnership")]
-    partial class UpdateOwnership
+    [Migration("20260621190258_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,93 @@ namespace Persistance.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.AdminModule.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("KeyValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TableName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.AdminModule.Employee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OfficeId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Employees");
+                });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Center", b =>
                 {
@@ -49,6 +136,106 @@ namespace Persistance.Data.Migrations
                     b.HasIndex("GovernorateId");
 
                     b.ToTable("Centers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(1879),
+                            GovernorateId = 1,
+                            Name = "مدينة نصر"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2835),
+                            GovernorateId = 1,
+                            Name = "المعادي"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2837),
+                            GovernorateId = 1,
+                            Name = "حلوان"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2839),
+                            GovernorateId = 2,
+                            Name = "الدقي"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2841),
+                            GovernorateId = 2,
+                            Name = "الهرم"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2843),
+                            GovernorateId = 3,
+                            Name = "سيدي جابر"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2844),
+                            GovernorateId = 3,
+                            Name = "العجمي"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2846),
+                            GovernorateId = 4,
+                            Name = "أسيوط"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2848),
+                            GovernorateId = 4,
+                            Name = "البداري"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2850),
+                            GovernorateId = 4,
+                            Name = "ديروط"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2852),
+                            GovernorateId = 4,
+                            Name = "القوصية"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2853),
+                            GovernorateId = 5,
+                            Name = "المنيا"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2855),
+                            GovernorateId = 6,
+                            Name = "سوهاج"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2857),
+                            GovernorateId = 7,
+                            Name = "قنا"
+                        });
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Governorate", b =>
@@ -70,6 +257,50 @@ namespace Persistance.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Governorates");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(7286),
+                            Name = "القاهرة"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8238),
+                            Name = "الجيزة"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8240),
+                            Name = "الإسكندرية"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8242),
+                            Name = "أسيوط"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8244),
+                            Name = "المنيا"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8245),
+                            Name = "سوهاج"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8247),
+                            Name = "قنا"
+                        });
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Neighborhood", b =>
@@ -99,6 +330,56 @@ namespace Persistance.Data.Migrations
                     b.HasIndex("CenterId");
 
                     b.ToTable("Neighborhoods");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(5962),
+                            Name = "الحي السابع",
+                            Zone = "A"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7117),
+                            Name = "الحي الثامن",
+                            Zone = "B"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7120),
+                            Name = "الحي العاشر",
+                            Zone = "C"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7122),
+                            Name = "غرب البلد",
+                            Zone = "A"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7123),
+                            Name = "شرق البلد",
+                            Zone = "B"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7125),
+                            Name = "الأربعين",
+                            Zone = "C"
+                        });
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Property", b =>
@@ -133,11 +414,10 @@ namespace Persistance.Data.Migrations
                     b.Property<int>("GovernorateId")
                         .HasColumnType("int");
 
-                    b.Property<string>("OldPropertyNo")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("NeighborhoodId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("OwnerName")
-                        .IsRequired()
+                    b.Property<string>("OldPropertyNo")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PlanningNo")
@@ -180,6 +460,50 @@ namespace Persistance.Data.Migrations
                     b.HasIndex("CenterId");
 
                     b.ToTable("Streets");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4107),
+                            Name = "شارع النصر"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4897),
+                            Name = "شارع عباس العقاد"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CenterId = 1,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4899),
+                            Name = "شارع مكرم عبيد"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4901),
+                            Name = "شارع الجمهورية"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4902),
+                            Name = "شارع الهلالي"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CenterId = 8,
+                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4904),
+                            Name = "شارع يسري راغب"
+                        });
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Unit", b =>
