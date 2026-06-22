@@ -1,61 +1,88 @@
-// دالة مساعدة لحساب أداء الموظفين
-// (يمكنك وضعها في ملف utils/performance.js أو في ملف الخدمة)
+const readStorage = (key) => {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || [];
+  } catch {
+    return [];
+  }
+};
+
+const defaultEmployees = [
+  { id: 1, name: 'موظف التحصيل', role: 'Finance' },
+  { id: 2, name: 'مراجع الضرائب', role: 'Reviewer' },
+  { id: 3, name: 'مدخل البيانات', role: 'Data Entry' }
+];
+
+const normalizeRole = (role = '') => {
+  const value = role.toLowerCase();
+  if (value.includes('finance')) return 'Finance';
+  if (value.includes('review')) return 'Reviewer';
+  if (value.includes('data')) return 'Data Entry';
+  return role || 'Employee';
+};
 
 export const getEmployeesPerformance = () => {
-  const properties = JSON.parse(localStorage.getItem('tax_properties')) || [];
-  const employees = [
-    { id: 1, name: 'أحمد محمود', role: 'Reviewer' },
-    { id: 2, name: 'سارة علي', role: 'Data Entry' },
-    { id: 3, name: 'خالد إبراهيم', role: 'Finance' }
-  ];
+  const users = readStorage('tax_users').map((user) => ({
+    id: user.id,
+    name: user.name || user.username || `موظف ${user.id}`,
+    role: normalizeRole(user.role || user.jobTitle),
+    isActive: user.isActive !== false
+  }));
 
-  // نتائج الأداء
-  const performanceStats = employees.map(emp => {
-    let score = 0;
-    let tasksDone = 0;
-    let totalErrors = 0; // الأخطاء أو الرفض
+  const employees = users.length > 0 ? users : defaultEmployees;
+  const properties = readStorage('properties');
+  const payments = readStorage('tax_payments');
+  const installments = readStorage('tax_installments');
 
-    // --- منطق حساب المراجع ---
-    if (emp.role === 'Reviewer') {
-      // 1. حساب عدد العمليات التي قام بها (حالة Approved هي النجاح)
-      const approved = properties.filter(p => p.status === 'Approved' && p.reviewerId === emp.id).length;
-      // 2. حساب العمليات التي رفضها المدير (خطأ)
-      const rejected = properties.filter(p => p.status === 'Rejected' && p.reviewerId === emp.id).length;
-      
-      tasksDone = approved + rejected;
-      
-      // القانون: (الناجح / المجموع) * 100
-      score = tasksDone > 0 ? Math.round((approved / tasksDone) * 100) : 0;
-    } 
-    
-    // --- منطق حساب مدخل البيانات ---
-    else if (emp.role === 'Data Entry') {
-      // نفترض أن جميع العقارات تم إدخالها، والحالة Draft تعني أنه لم يتم رفضها
-      const totalAdded = properties.filter(p => p.createdBy === emp.id).length;
-      const rejected = properties.filter(p => p.status === 'Draft' && p.createdBy === emp.id).length; // Draft تعني أنه لم يمر بعد
-      
-      tasksDone = totalAdded;
-      score = totalAdded > 0 ? 95 : 0; // مجرد مثال، مدخل البيانات دائماً حاصلة إلا إذا توقف عن العمل
-    }
+  return employees
+    .filter((employee) => employee.isActive !== false)
+    .map((employee) => {
+      const role = normalizeRole(employee.role);
+      let tasksDone = 0;
+      let score = 0;
+      let totalCollected = 0;
+      let details = 'لا توجد عمليات مسجلة بعد';
 
-    // --- منطق حساب المالي ---
-    else if (emp.role === 'Finance') {
-      // عدد العقارات المدفوعة التي دفعها هذا الموظف
-      const collected = properties.filter(p => p.status === 'Paid' && p.collectorId === emp.id).length;
-      
-      tasksDone = collected;
-      // المالي يقيّم بكم المبلغ المحصل (في التقرير نعرض المبلغ)
-      score = 90; // افتراضي
-    }
+      if (role === 'Finance') {
+        const employeePayments = payments.filter((payment) => String(payment.employeeId) === String(employee.id));
+        const fallbackPayments = payments.length > 0 && employee.id === 1 ? payments : employeePayments;
 
-    return {
-      name: emp.name,
-      role: emp.role,
-      tasksDone,
-      score: score, // النسبة المئوية للدقة
-      totalCollected: emp.role === 'Finance' ? properties.filter(p => p.status === 'Paid').reduce((sum, p) => sum + (p.tax||0), 0) : 0
-    };
-  });
+        tasksDone = fallbackPayments.length;
+        totalCollected = fallbackPayments.reduce((sum, payment) => sum + Number(payment.paidAmount || 0), 0);
+        const validReceipts = fallbackPayments.filter((payment) => payment.receiptNo && Number(payment.paidAmount) > 0).length;
+        score = tasksDone > 0 ? Math.round((validReceipts / tasksDone) * 100) : 0;
+        details = `${totalCollected.toLocaleString('ar-EG')} ج.م محصلة`;
+      }
 
-  return performanceStats;
+      if (role === 'Reviewer') {
+        const reviewedUnits = properties.flatMap((property) => property.units || [])
+          .filter((unit) => ['Pending_Manager', 'Approved', 'Rejected', 'Paid'].includes(unit.status));
+        const approvedOrPaid = reviewedUnits.filter((unit) => ['Approved', 'Paid'].includes(unit.status)).length;
+
+        tasksDone = reviewedUnits.length;
+        score = tasksDone > 0 ? Math.round((approvedOrPaid / tasksDone) * 100) : 0;
+        details = `${approvedOrPaid} ملف معتمد من ${tasksDone}`;
+      }
+
+      if (role === 'Data Entry') {
+        const createdProperties = properties.filter((property) => property.ownerName || property.units?.length);
+        const completeProperties = createdProperties.filter((property) => property.ownerName && property.address && property.units?.length);
+
+        tasksDone = createdProperties.length;
+        score = tasksDone > 0 ? Math.round((completeProperties.length / tasksDone) * 100) : 0;
+        details = `${completeProperties.length} ملف مكتمل من ${tasksDone}`;
+      }
+
+      const pendingInstallments = installments.filter((installment) => installment.status === 'Pending').length;
+
+      return {
+        id: employee.id,
+        name: employee.name,
+        role,
+        tasksDone,
+        score,
+        totalCollected,
+        details,
+        pendingInstallments
+      };
+    });
 };

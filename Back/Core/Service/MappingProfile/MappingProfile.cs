@@ -19,6 +19,17 @@ namespace Core.Service.MappingProfiles
                 .ForMember(x => x.CreatedAt, opt => opt.Ignore());
 CreateMap<Property, PropertyWithUnitsDto>()
     .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units));
+
+CreateMap<UpdatePropertyDto, Property>();
+    CreateMap<Property, PropertyHomeDto>()
+    .ForMember(d => d.Units, opt => opt.MapFrom(s => s.Units))
+    .ForMember(d => d.Area, opt => opt.MapFrom(s => s.Units.Sum(u => u.Area)))
+    .ForMember(d => d.OwnerName,
+        opt => opt.MapFrom(s =>
+            s.Assignments.FirstOrDefault() != null
+            ? s.Assignments.First().Owner.FullName
+            : null
+        ));
             #endregion
 
             #region Unit
