@@ -1,5 +1,3 @@
-// import axios from 'axios'; // إذا ستستخدم API لاحقاً
-
 // أدوات مساعدة
 const getStorage = (key) => {
   try {
@@ -13,53 +11,24 @@ const setStorage = (key, data) => {
   localStorage.setItem(key, JSON.stringify(data));
 };
 
-// دالة ذكية لجلب اسم المواطن (تحتوي البحث في الربطات أولاً، ثم العقارات)
-const findCitizenName = (personId) => {
-  // 1. البحث في الربطات (لأنه الأهم)
-  const assignments = getStorage('assignments');
-  const foundInAssignments = assignments.find(a => a.personId === personId);
-  if (foundInAssignments && foundInAssignments.name) {
-    return foundInAssignments.name;
-  }
-
-  // 2. إذا لم نجد، نبحث في العقارات (Fallback)
-  const properties = getStorage('properties');
-  for (const prop of properties) {
-    if (prop.ownerNationalId === personId) {
-      return prop.ownerName;
-    }
-  }
-  return null; // لم يتم العثور
-};
-
-// ==========================================
 // 1. جلب الطعون
-// ==========================================
 export const getAppeals = async () => {
   return new Promise(resolve => setTimeout(() => resolve(getStorage('appeals')), 300));
 };
 
-// ==========================================
-// 2. إضافة طعن (Auto-Fill Name included)
-// ==========================================
+// 2. إضافة طعن (البيانات تجي من الفورم الجديد مباشرة)
 export const createAppeal = async (appealData, userId) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       try {
         const appeals = getStorage('appeals');
         
-        // ✅ البحث عن اسم المواطن تلقائياً باستخدام findCitizenName
-        const personName = findCitizenName(appealData.personId);
-
         const newAppeal = {
           id: Date.now(),
           refNo: `TN-${Date.now()}`,
-          ...appealData,
-          // ✅ حقول الاسم يتم إضافته تلقائياً
-          citizen: personName || appealData.personName, // نستخدم الاسم المجلوب
+          ...appealData, // يحتوي على: taxAssessmentId, appealDate, appealReason, status
           createdBy: userId,
-          date: new Date().toISOString(),
-          status: 'Pending' // حالة افتراضية
+          createdAt: new Date().toISOString()
         };
         
         appeals.push(newAppeal);
@@ -72,9 +41,7 @@ export const createAppeal = async (appealData, userId) => {
   });
 };
 
-// ==========================================
-// 3. تعديل طعن
-// ==========================================
+// 3. تعديل طعن (يحدث سبب الطعن والتاريخ فقط، لا يغير الربط الضريبي)
 export const updateAppeal = async (id, data) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -82,7 +49,12 @@ export const updateAppeal = async (id, data) => {
       const index = appeals.findIndex(a => a.id == id);
 
       if (index !== -1) {
-        appeals[index] = { ...appeals[index], ...data };
+        appeals[index] = { 
+          ...appeals[index], 
+          appealDate: data.appealDate || appeals[index].appealDate,
+          appealReason: data.appealReason || appeals[index].appealReason,
+          fileName: data.fileName || appeals[index].fileName
+        };
         setStorage('appeals', appeals);
         resolve(appeals[index]);
       } else {
