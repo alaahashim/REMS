@@ -12,8 +12,8 @@ using Persistence.Data;
 namespace Persistance.Data.Migrations
 {
     [DbContext(typeof(StoreDbContext))]
-    [Migration("20260621190258_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20260623192417_CleanInitialDesign")]
+    partial class CleanInitialDesign
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -141,98 +141,98 @@ namespace Persistance.Data.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(1879),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(5734),
                             GovernorateId = 1,
                             Name = "مدينة نصر"
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2835),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6810),
                             GovernorateId = 1,
                             Name = "المعادي"
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2837),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6813),
                             GovernorateId = 1,
                             Name = "حلوان"
                         },
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2839),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6814),
                             GovernorateId = 2,
                             Name = "الدقي"
                         },
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2841),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6816),
                             GovernorateId = 2,
                             Name = "الهرم"
                         },
                         new
                         {
                             Id = 6,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2843),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6818),
                             GovernorateId = 3,
                             Name = "سيدي جابر"
                         },
                         new
                         {
                             Id = 7,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2844),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6820),
                             GovernorateId = 3,
                             Name = "العجمي"
                         },
                         new
                         {
                             Id = 8,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2846),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6821),
                             GovernorateId = 4,
                             Name = "أسيوط"
                         },
                         new
                         {
                             Id = 9,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2848),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6823),
                             GovernorateId = 4,
                             Name = "البداري"
                         },
                         new
                         {
                             Id = 10,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2850),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6825),
                             GovernorateId = 4,
                             Name = "ديروط"
                         },
                         new
                         {
                             Id = 11,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2852),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6827),
                             GovernorateId = 4,
                             Name = "القوصية"
                         },
                         new
                         {
                             Id = 12,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2853),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6828),
                             GovernorateId = 5,
                             Name = "المنيا"
                         },
                         new
                         {
                             Id = 13,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2855),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6830),
                             GovernorateId = 6,
                             Name = "سوهاج"
                         },
                         new
                         {
                             Id = 14,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(2857),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6832),
                             GovernorateId = 7,
                             Name = "قنا"
                         });
@@ -262,43 +262,43 @@ namespace Persistance.Data.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(7286),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(7527),
                             Name = "القاهرة"
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8238),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8773),
                             Name = "الجيزة"
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8240),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8775),
                             Name = "الإسكندرية"
                         },
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8242),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8776),
                             Name = "أسيوط"
                         },
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8244),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8778),
                             Name = "المنيا"
                         },
                         new
                         {
                             Id = 6,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8245),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8849),
                             Name = "سوهاج"
                         },
                         new
                         {
                             Id = 7,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 963, DateTimeKind.Utc).AddTicks(8247),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8851),
                             Name = "قنا"
                         });
                 });
@@ -336,7 +336,7 @@ namespace Persistance.Data.Migrations
                         {
                             Id = 1,
                             CenterId = 1,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(5962),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(707),
                             Name = "الحي السابع",
                             Zone = "A"
                         },
@@ -344,7 +344,7 @@ namespace Persistance.Data.Migrations
                         {
                             Id = 2,
                             CenterId = 1,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7117),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1933),
                             Name = "الحي الثامن",
                             Zone = "B"
                         },
@@ -352,7 +352,7 @@ namespace Persistance.Data.Migrations
                         {
                             Id = 3,
                             CenterId = 1,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7120),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1935),
                             Name = "الحي العاشر",
                             Zone = "C"
                         },
@@ -360,7 +360,7 @@ namespace Persistance.Data.Migrations
                         {
                             Id = 4,
                             CenterId = 8,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7122),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1937),
                             Name = "غرب البلد",
                             Zone = "A"
                         },
@@ -368,7 +368,7 @@ namespace Persistance.Data.Migrations
                         {
                             Id = 5,
                             CenterId = 8,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7123),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1941),
                             Name = "شرق البلد",
                             Zone = "B"
                         },
@@ -376,7 +376,7 @@ namespace Persistance.Data.Migrations
                         {
                             Id = 6,
                             CenterId = 8,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(7125),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1943),
                             Name = "الأربعين",
                             Zone = "C"
                         });
@@ -466,42 +466,42 @@ namespace Persistance.Data.Migrations
                         {
                             Id = 1,
                             CenterId = 1,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4107),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(8541),
                             Name = "شارع النصر"
                         },
                         new
                         {
                             Id = 2,
                             CenterId = 1,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4897),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9416),
                             Name = "شارع عباس العقاد"
                         },
                         new
                         {
                             Id = 3,
                             CenterId = 1,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4899),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9418),
                             Name = "شارع مكرم عبيد"
                         },
                         new
                         {
                             Id = 4,
                             CenterId = 8,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4901),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9419),
                             Name = "شارع الجمهورية"
                         },
                         new
                         {
                             Id = 5,
                             CenterId = 8,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4902),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9421),
                             Name = "شارع الهلالي"
                         },
                         new
                         {
                             Id = 6,
                             CenterId = 8,
-                            CreatedAt = new DateTime(2026, 6, 21, 19, 2, 51, 965, DateTimeKind.Utc).AddTicks(4904),
+                            CreatedAt = new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9422),
                             Name = "شارع يسري راغب"
                         });
                 });
