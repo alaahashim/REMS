@@ -7,6 +7,7 @@ using Core.Service.Implementations;
 using AutoMapper;
 using Core.Service.MappingProfiles;
 using Presentation.Middlewares;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +38,12 @@ builder.Services.AddDbContext<StoreDbContext>(options =>
         .GetConnectionString("DefaultConnection"));
 });
 
-
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
+    {
+        opt.JsonSerializerOptions.Converters
+           .Add(new JsonStringEnumConverter());
+    });
 // =========================
 // CORS
 // =========================

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Button } from 'react-bootstrap'; 
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import Chatbot from './pages/Shared/Chatbot';
@@ -17,10 +17,12 @@ import NotificationsPage from './pages/Shared/Notifications';
 import SettingsPage from './pages/Shared/Settings';
 
 // Data Entry
+import EditOwner from './Pages/DataEntry/EditOwner';
 import DataEntryHome from './pages/DataEntry/DataEntryHome'; 
 import AddProperty from './pages/DataEntry/AddProperty';
 import LinkOwner from './pages/DataEntry/LinkOwner';
 import AddAppeal from './pages/DataEntry/AddAppeal';
+import OwnerDetails from './Pages/DataEntry/OwnerDetails';
 import AddExemption from './pages/DataEntry/AddExemption';
 import EditProperty from "./pages/DataEntry/EditProperty"; 
 
@@ -115,8 +117,11 @@ function App() {
                     <Route path="/data-entry/add" element={<AddProperty />} />
                     <Route path="/data-entry/link" element={<LinkOwner />} />
                     <Route path="/data-entry/appeal" element={<AddAppeal />} />
+                     <Route path="/data-entry/owner/:id" element={<OwnerDetails />} />
                     <Route path="/data-entry/exemption" element={<AddExemption />} />
                     <Route path="/data-entry/edit-property/:id" element={<EditProperty />} />
+                    <Route path="/data-entry/edit-owner/:id" element={<EditOwner />} />
+
 
                     {/* ✅ تعديل: ربط المسارات بالملفات الحقيقية */}
                     <Route path="/data-entry/edit-appeal/:id" element={<EditAppeal />} />

@@ -16,8 +16,7 @@ namespace Core.DomainLayer.Entities
         public string UsageType { get; set; } = null!;
 
         public string FinishingType { get; set; } = "Unknown";
-        public string UnitType { get; set; }
-
+        public string? UnitType { get; set; }
 
          public string Status { get; set; } = "Available"; 
         // Navigation

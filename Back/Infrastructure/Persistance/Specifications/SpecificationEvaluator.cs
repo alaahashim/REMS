@@ -41,7 +41,11 @@ namespace Infrastructure.Persistence.Specifications
                         (currentQuery, includeExpression)
                         => currentQuery.Include(includeExpression));
             }
-
+            if (specifications.IncludeStrings?.Count > 0)
+                  {
+                       query = specifications.IncludeStrings
+                      .Aggregate(query, (q, s) => q.Include(s));
+                      }          
             if (specifications.IsPaginated)
             {
                 query = query

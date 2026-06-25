@@ -38,4 +38,29 @@ public class PropertyWithUnitsSpec : BaseSpecifications<Property, int>
 
 
 
+}
+
+
+public class AssignmentsByOwnerIdSpec : BaseSpecifications<RoleAssignment, int>
+{
+    public AssignmentsByOwnerIdSpec(int ownerId)
+        : base(a => a.OwnerId == ownerId)
+    {
+        AddInclude(a => a.Unit);
+        AddInclude(a => a.Unit.Property);
+    }
+
+
+ public class AssignmentsByOwnerIdWithAddressSpec 
+    : BaseSpecifications<RoleAssignment, int>
+{
+    public AssignmentsByOwnerIdWithAddressSpec(int ownerId)
+        : base(a => a.OwnerId == ownerId)
+    {
+        AddInclude(a => a.Unit);
+        AddInclude(a => a.Unit.Property);
+        AddInclude(a => a.Unit.Property.Neighborhood);          // ← الآن يعمل
+        AddInclude(a => a.Unit.Property.Governorate);           // ← الآن يعمل
+    }
+}
 }}

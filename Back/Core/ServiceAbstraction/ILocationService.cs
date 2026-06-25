@@ -1,5 +1,4 @@
 using Shared.DTOS;
-
 namespace Core.ServiceAbstraction
 {
     public interface ILocationService

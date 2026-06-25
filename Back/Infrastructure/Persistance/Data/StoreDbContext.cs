@@ -21,6 +21,8 @@ namespace Persistence.Data
         public DbSet<Owner> Owners { get; set; }
 
          public DbSet<RoleAssignment> RoleAssignments { get; set; }
+         public DbSet<TaxRule> TaxRules { get; set; }
+           public DbSet<TaxAssessment> TaxAssessments { get; set; }
         #endregion
        
         protected override void OnModelCreating(ModelBuilder modelBuilder)

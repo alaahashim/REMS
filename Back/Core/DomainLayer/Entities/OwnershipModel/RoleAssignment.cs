@@ -13,7 +13,7 @@ public class RoleAssignment : BaseEntity<int>
     public string RoleType { get; set; }= null!;
 
     public string ShareType { get; set; }= null!;
-    public double SharePercentage { get; set; }
+    public double SharePercentage { get; set; }=100;
     public DateTime StartDate { get; set; }
     
     public DateTime? EndDate { get; set; }

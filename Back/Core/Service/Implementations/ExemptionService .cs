@@ -3,6 +3,7 @@ using Core.DomainLayer.Contracts;
 using Core.DomainLayer.Entities;
 using Core.DomainLayer.Exceptions;
 using Core.ServiceAbstraction;
+using Core.Service.Specifications;
 using Shared.DTOS;
 
 public class ExemptionService : IExemptionService
@@ -143,4 +144,85 @@ public async Task<IEnumerable<RequestHomeDto>> GetHomeRequestsAsync()
                 .Replace("\\", "/")
         };
     }
+
+public async Task<TaxExemptionCheckResultDto> CheckTaxExemptionAsync(
+    int ownerId,
+    int unitId,
+    int taxYear,
+    decimal netAnnualRentalValue)
+{
+    // ── حد الإعفاء — القانون 196 / 2008 بتعديل 2023 ──────────
+    // الوحدة السكنية الأساسية معفاة إعفاءً كاملاً إذا كان
+    // صافي القيمة الإيجارية السنوية ≤ 24,000 ج.م
+    // هذا الفحص يجري بالفعل في TaxAssessmentService قبل استدعاء هذه الميثود
+    // لكن نتحقق مرة أخرى للأمان
+
+    if (netAnnualRentalValue > 24_000m)
+    {
+        return new TaxExemptionCheckResultDto
+        {
+            IsExempted      = false,
+            ExemptionAmount = 0m,
+            ExemptionReason = "صافي القيمة الإيجارية يتجاوز حد الإعفاء (24,000 ج.م)"
+        };
+    }
+
+    var repo = _unitOfWork.GetRepository<Exemption, int>();
+    var allOwnerExemptions = await repo.GetAllAsync();
+
+    // الإعفاءات المعتمدة لهذا المالك من نوع السكن الأساسي فقط
+    var primaryHomeExemptions = allOwnerExemptions
+        .Where(x =>
+            x.OwnerId == ownerId &&
+            x.Status  == WorkflowStatus.Approved &&
+            IsPrimaryHomeType(x.ExemptionType))
+        .OrderBy(x => x.ExemptionDate)
+        .ToList();
+
+    // لا يوجد إعفاء مسجل لهذا المالك
+    if (!primaryHomeExemptions.Any())
+    {
+        return new TaxExemptionCheckResultDto
+        {
+            IsExempted      = false,
+            ExemptionAmount = 0m,
+            ExemptionReason = null
+        };
+    }
+
+    // المالك له إعفاء واحد فقط للسكن الأساسي — نأخذ الأقدم
+    var approvedExemption = primaryHomeExemptions.First();
+
+    // الإعفاء مسجل على وحدة أخرى
+    if (approvedExemption.UnitId != unitId)
+    {
+        return new TaxExemptionCheckResultDto
+        {
+            IsExempted      = false,
+            ExemptionAmount = 0m,
+            ExemptionReason = "الإعفاء الأساسي مُستخدم على وحدة أخرى"
+        };
+    }
+
+    // إعفاء كامل من صافي القيمة الإيجارية
+    return new TaxExemptionCheckResultDto
+    {
+        IsExempted      = true,
+        ExemptionAmount = netAnnualRentalValue,
+        ExemptionReason = "وحدة سكنية أساسية — إعفاء كامل (م. 18 ق. 196/2008)"
+    };
+}
+
+// ── Helper داخلي ────────────────────────────────────────────────
+private static bool IsPrimaryHomeType(string? type)
+{
+    if (string.IsNullOrWhiteSpace(type)) return false;
+
+    return type.Trim().ToLowerInvariant() is
+        "primaryhome"  or
+        "primary_home" or
+        "سكن رئيسي"   or
+        "مسكن رئيسي"  or
+        "الوحدة السكنية الأساسية";
+}
 }

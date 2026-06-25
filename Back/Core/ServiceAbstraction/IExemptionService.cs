@@ -12,7 +12,6 @@ namespace Core.ServiceAbstraction
         Task<int> CreateAsync(CreateExemptionDto dto, int userId, AttachmentDto? attachment);
 
         Task<bool> UpdateAsync(int id, UpdateExemptionDto dto, AttachmentDto? attachment);
-
         Task<bool> DeleteAsync(int id);
-    }
+Task<TaxExemptionCheckResultDto> CheckTaxExemptionAsync(int ownerId, int unitId, int taxYear, decimal netAnnualRentalValue);    }
 }

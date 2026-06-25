@@ -16,6 +16,8 @@ namespace Shared.DTOS
    public int Id { get; set; }
         public string RefNo { get; set; } = string.Empty;
         public string? BuildingNo { get; set; }
+          public string? UnitNumber { get; set; }
+
         public string governorate { get; set; } = string.Empty;
         public string neighborhood { get; set; } = string.Empty;
         public string? OwnerName { get; set; }

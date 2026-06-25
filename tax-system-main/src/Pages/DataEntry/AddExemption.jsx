@@ -233,7 +233,7 @@ const AddExemption = () => {
                     onChange={(e) => updateField('exemptionType', e.target.value)}
                   >
                     <option value="">اختر</option>
-                    <option value="basic">سكن أساسي</option>
+                    <option value="PrimaryResidence">سكن أساسي</option>
                     <option value="disability">إعاقة</option>
                     <option value="charity">جمعيات</option>
                   </Form.Select>

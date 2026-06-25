@@ -6,6 +6,9 @@ namespace Core.Specifications
     public interface ISpecifications<TEntity, Tkey>
         where TEntity : BaseEntity<Tkey>
     {
+
+        List<string> IncludeStrings { get; }
+
         Expression<Func<TEntity, bool>>? Criteria { get; }
 
         List<Expression<Func<TEntity, object>>>

@@ -1,55 +1,62 @@
 // src/services/taxService.js
+import api from "./apiClient";
 
 /**
- * دالة حساب الضريبة
- * تأخذ البيانات المدخلة وتعيد النتيجة
+ * جلب قائمة مهام المراجع مع فلترة + Paging
+ * query = {
+ *   status?: "PendingCalculation" | "Approved",
+ *   ownerName?: string,
+ *   pageNumber?: number,
+ *   pageSize?: number
+ * }
  */
-export const calculateTax = ({ area, usage, locationZone = 'B', isFirstHome = false }) => {
-  // تحويل القيمة لرقم
-  const areaNum = parseFloat(area) || 0;
+export const getReviewerTaxTasks = async (query = {}) => {
+  const params = new URLSearchParams();
 
-  // تحديد سعر المتر التقديري (مثال)
-  let pricePerMeter = 30;
-  if (usage === 'Commercial') pricePerMeter = 60;
-  if (usage === 'Industrial') pricePerMeter = 40;
+  if (query.status) params.append("status", query.status);
+  if (query.ownerName) params.append("ownerName", query.ownerName);
+  if (query.pageNumber) params.append("pageNumber", query.pageNumber);
+  if (query.pageSize) params.append("pageSize", query.pageSize);
 
-  // تعديل حسب المنطقة الضريبية
-  const zoneMultiplier = locationZone === 'A' ? 1.15 : locationZone === 'C' ? 0.90 : 1;
-  const zoneDescription = locationZone === 'A' ? 'منطقة A (سعر أعلى)' : locationZone === 'C' ? 'منطقة C (سعر مخفض)' : 'منطقة B (السعر القياسي)';
+  const { data } = await api.get(
+    `/taxassessments/reviewer-tasks?${params.toString()}`
+  );
 
-  // 1. القيمة الإيجارية السنوية التقديرية
-  const annualRent = areaNum * pricePerMeter * 12 * zoneMultiplier;
+  return data;
+};
 
-  // 2. نسبة الخصم
-  const discountRate = (usage === 'Residential') ? 0.30 : 0.32;
-  const discountAmount = annualRent * discountRate;
+/**
+ * جلب تفاصيل وحدة واحدة في شاشة المراجع
+ */
+export const getReviewerTaskDetails = async (unitId) => {
+  const { data } = await api.get(
+    `/taxassessments/reviewer-tasks/${unitId}/details`
+  );
+  return data;
+};
 
-  // 3. الوعاء الضريبي
-  const taxBase = annualRent - discountAmount;
+/**
+ * معاينة الحساب الضريبي قبل الاعتماد
+ */
+export const previewTaxCalculation = async (payload) => {
+  const { data } = await api.post("/taxassessments/preview", payload);
+  return data;
+};
 
-  // 4. الإعفاء الخاص بالوحدة الأساسية
-  let exemptionAmount = 0;
-  let exemptionLabel = '';
-  if (usage === 'Residential' && isFirstHome) {
-    exemptionAmount = taxBase;
-    exemptionLabel = 'وحدة سكنية أساسية معفاة';
-  }
+/**
+ * اعتماد التقييم الضريبي
+ */
+export const approveTaxCalculation = async (payload) => {
+  const { data } = await api.post("/taxassessments/approve", payload);
+  return data;
+};
 
-  const netTax = Math.max(0, taxBase - exemptionAmount) * 0.10;
-
-  return {
-    annualRent,
-    discountAmount,
-    taxBase,
-    netRent: taxBase,
-    exemptionAmount,
-    exemptionLabel,
-    netTax,
-    tax: netTax,
-    pricePerMeter,
-    zoneMultiplier,
-    zoneDescription,
-    discountRate: discountRate * 100,
-    taxRate: 10
-  };
+/**
+ * جلب تقييم محفوظ لوحدة وسنة محددة
+ */
+export const getUnitTaxAssessment = async (unitId, taxYear) => {
+  const { data } = await api.get(
+    `/taxassessments/unit/${unitId}/year/${taxYear}`
+  );
+  return data;
 };

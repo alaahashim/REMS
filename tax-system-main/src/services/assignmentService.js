@@ -31,18 +31,16 @@ export const createAssignments = async (payload) => {
 };
 
 // تحديث ربط
-export const updateAssignment = async (id, payload) => {
+/*export const updateAssignment = async (id, payload) => {
   const { data } = await api.put(`${BASE}/${id}`, payload);
   return data;
-};
+};*/
 
-// حذف ربط
+// DELETE
 export const deleteAssignment = async (id) => {
-  const { data } = await api.delete(`${BASE}/${id}`);
+  const { data } = await api.delete(`/assignments/${id}`);
   return data;
 };
-
-
 // ==========================
 // Owners APIs (إضافة هنا)
 // ==========================
@@ -73,3 +71,32 @@ export const getOwnerByNationalId = async (nationalId) => {
   const { data } = await api.get(`/owners/by-national-id/${nationalId}`);
   return data; 
 }
+// جلب وحدات مالك بالـ id
+export const getOwnerUnits = async (ownerId) => {
+  const { data } = await api.get(`/owners/${ownerId}/units`);
+  return data;
+};
+
+// جلب وحدات المالك للتعديل (مع assignmentId و EndDate و UsageType)
+export const getOwnerUnitsForEdit = async (ownerId) => {
+  const { data } = await api.get(`/owners/${ownerId}/units/edit`);
+  return data;
+};
+
+// تعديل بيانات المالك
+export const updateOwner = async (ownerId, payload) => {
+  const { data } = await api.put(`/owners/${ownerId}`, payload);
+  return data;
+};
+
+// حذف مالك
+export const deleteOwner = async (ownerId) => {
+  const { data } = await api.delete(`/owners/${ownerId}`);
+  return data;
+};
+
+// تعديل بيانات الربط
+export const updateAssignment = async (assignmentId, payload) => {
+  const { data } = await api.put(`/assignments/${assignmentId}`, payload);
+  return data;
+};
