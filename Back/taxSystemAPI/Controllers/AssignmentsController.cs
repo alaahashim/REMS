@@ -52,26 +52,24 @@ public class AssignmentsController : ControllerBase
             message = "Assignments created successfully"
         });
     }
-
-    // PUT api/assignments/{id}
-    [HttpPut("{id}")]
-    public IActionResult Update(int id)
-    {
-        return Ok(new
-        {
-            success = true,
-            message = $"Assignment {id} updated"
-        });
-    }
-
     // DELETE api/assignments/{id}
-    [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+   [HttpDelete("{id}")]
+public async Task<IActionResult> Delete(int id)
+{
+    await _service.DeleteAsync(id);
+
+    return Ok(new
     {
-        return Ok(new
-        {
-            success = true,
-            message = $"Assignment {id} deleted"
-        });
-    }
+        success = true,
+        message = "تم حذف الربط بنجاح"
+    });
+}
+
+    // PUT: api/assignments/{id}
+[HttpPut("{id}")]
+public async Task<IActionResult> UpdateAssignment(int id, [FromBody] UpdateAssignmentDto dto)
+{
+    await _service.UpdateAsync(id, dto);
+    return Ok(new { success = true });
+}
 }

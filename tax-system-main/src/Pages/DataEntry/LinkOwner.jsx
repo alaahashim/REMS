@@ -25,6 +25,9 @@ const emptyUnit = () => ({
   _key: Date.now() + Math.random(),
   unitId: '',
   unitLabel: '',
+
+  roleType: 'Owner', // مالك افتراضياً
+
   shareType: 'Full',
   sharePercentage: 100,
   ownershipStartDate: '',
@@ -419,20 +422,22 @@ const LinkOwner = () => {
     setLoading(true);
 
     try {
-      const payload = units.map(u => ({
-        personId: ownerData.personId,
-        personName: ownerData.personName,
-        contactPhone: ownerData.contactPhone,
-        address: ownerData.address,
-        propertyId: Number(ownerData.propertyId),
-        unitId: Number(u.unitId),
-        roleType: 'Owner',
-        shareType: u.shareType,
-        sharePercentage: Number(u.sharePercentage),
-        ownershipStartDate: u.ownershipStartDate,
-        ownershipEndDate: u.ownershipEndDate || null,
-        isActive: true,
-      }));
+     const payload = units.map(u => ({
+  personId: ownerData.personId,
+  personName: ownerData.personName,
+  contactPhone: ownerData.contactPhone,
+  address: ownerData.address,
+  propertyId: Number(ownerData.propertyId),
+  unitId: Number(u.unitId),
+
+  roleType: u.roleType,
+
+  shareType: u.shareType,
+  sharePercentage: Number(u.sharePercentage),
+  ownershipStartDate: u.ownershipStartDate,
+  ownershipEndDate: u.ownershipEndDate || null,
+  isActive: true,
+}));
 
       await createAssignments(payload);
 
@@ -443,10 +448,10 @@ const LinkOwner = () => {
 
       setTimeout(() => navigate('/data-entry/home'), 1500);
     } catch (err) {
-      const backendMsg =
-        err?.errors?.length
-          ? err.errors.join(' | ')
-          : err?.message || 'حدث خطأ أثناء الربط';
+     const backendMsg =
+  err?.errors?.length
+    ? err.errors.join('\n')          // كل رسالة في سطر
+    : err?.message || 'حدث خطأ أثناء الربط';
 
       setMessage({
         text: backendMsg,
@@ -486,14 +491,16 @@ const LinkOwner = () => {
       </div>
 
       {message.text && (
-        <Alert
-          variant={message.type}
-          className="lo-alert"
-          onClose={() => setMessage({ text: '', type: '' })}
-          dismissible
-        >
-          {message.text}
-        </Alert>
+  <Alert
+    variant={message.type}
+    className="lo-alert"
+    onClose={() => setMessage({ text: '', type: '' })}
+    dismissible
+    style={{ whiteSpace: 'pre-line' }}   // ← هذا يعرض \n كسطر جديد
+  >
+    {message.text}
+  </Alert>
+
       )}
 
       <Form onSubmit={handleSubmit} noValidate>
@@ -732,16 +739,13 @@ const LinkOwner = () => {
               {/* نوع العلاقة */}
               <div className="lo-unit-field" style={{ flex: '2' }}>
                 <Form.Select
-                  value={unit.shareType}
-                  onChange={e => updateUnit(index, 'shareType', e.target.value)}
-                  className="lo-input"
-                >
-                  <option value="Full">تملّك كامل</option>
-                  <option value="Inheritance">ميراث</option>
-                  <option value="Sale">بيع</option>
-                  <option value="Gift">هبة</option>
-                  <option value="Rent">إيجار</option>
-                </Form.Select>
+  value={unit.roleType}
+  onChange={e => updateUnit(index, 'roleType', e.target.value)}
+  className="lo-input"
+>
+  <option value="Owner">مالك</option>
+  <option value="Tenant">مستأجر</option>
+</Form.Select>
               </div>
 
               {/* نسبة الحصة */}

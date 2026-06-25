@@ -10,7 +10,13 @@ namespace Core.Specifications
         protected BaseSpecifications()
         {
         }
-
+  ////////////////////////////////////////////////////////////////////////////////
+public List<string> IncludeStrings { get; } = [];
+protected void AddInclude(string includeString)
+{
+    IncludeStrings.Add(includeString);
+}
+///////////////////////////////////////////////////////////////////////////////
         protected BaseSpecifications(
             Expression<Func<TEntity, bool>> criteriaExpression)
         {

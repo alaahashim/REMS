@@ -1,8 +1,5 @@
 using Core.DomainLayer.Entities.Common;
 using Core.DomainLayer.Contracts;
-using Core.Specifications;
-using Infrastructure.Persistence.Specifications;
-using Microsoft.EntityFrameworkCore;
 using Persistence.Data;
 namespace Infrastructure.Persistence.Repositories
 {public class UnitOfWork : IUnitOfWork

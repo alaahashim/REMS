@@ -17,3 +17,9 @@ public class AssignmentDto
 
     public bool IsActive { get; set; }
 }
+public class UpdateAssignmentDto
+{
+    public DateTime  StartDate { get; set; }
+    public DateTime? EndDate   { get; set; }
+    public string    UsageType { get; set; } = null!;
+}

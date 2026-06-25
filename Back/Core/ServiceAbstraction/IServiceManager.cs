@@ -11,5 +11,7 @@ namespace Core.ServiceAbstraction
         IOwnerService OwnerService { get; }
 
         IExemptionService ExemptionService { get; }
+
+ITaxAssessmentService TaxAssessmentService { get; }
     }
 }

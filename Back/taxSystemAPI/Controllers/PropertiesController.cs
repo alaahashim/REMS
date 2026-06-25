@@ -74,7 +74,6 @@ namespace Presentation.Controllers
         }
 
         // 🔧 كان ناقص بالكامل! propertyService.js في الفرونت بينادي عليه (updateUnitStatus)
-        // وكان بيرجع 404 لإنه مكنش موجود في الـ Controller
         [HttpPut("unit/{unitId}/status")]
         public async Task<IActionResult> UpdateUnitStatus(int unitId, [FromBody] UpdateStatusRequest request)
         {

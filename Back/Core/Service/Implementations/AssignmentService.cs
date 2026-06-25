@@ -63,108 +63,112 @@ public class AssignmentService : IAssignmentService
     // ─────────────────────────────
     // CREATE BULK ASSIGNMENTS
     // ─────────────────────────────
-    public async Task CreateBulkAsync(List<CreateAssignmentDto> dtoList)
+  public async Task CreateBulkAsync(List<CreateAssignmentDto> dtoList)
+{
+    if (dtoList == null || !dtoList.Any())
     {
-        // 1) Validation على مستوى القائمة
-        if (dtoList == null || !dtoList.Any())
+        throw new ValidationException(new List<string>
         {
-            throw new ValidationException(new List<string>
-            {
-                "قائمة الربط لا يمكن أن تكون فارغة"
-            });
-        }
-
-        var ownerRepo = _unitOfWork.GetRepository<Owner, int>();
-        var assignmentRepo = _unitOfWork.GetRepository<RoleAssignment, int>();
-        var propertyRepo = _unitOfWork.GetRepository<Property, int>();
-        var unitRepo = _unitOfWork.GetRepository<Unit, int>();
-
-        // تحميل الملاك الحاليين مرة واحدة فقط بدل GetAllAsync داخل كل loop
-        var existingOwners = (await ownerRepo.GetAllAsync()).ToList();
-
-        foreach (var dto in dtoList)
-        {
-            // 2) Validation لكل DTO
-            ValidateAssignmentDto(dto);
-
-            // 3) التأكد أن العقار موجود
-            var property = await propertyRepo.GetByIdAsync(dto.PropertyId);
-            if (property == null)
-            {
-                throw new NotFoundException($"العقار رقم {dto.PropertyId} غير موجود");
-            }
-
-            // 4) التأكد أن الوحدة موجودة
-            var unit = await unitRepo.GetByIdAsync(dto.UnitId);
-            if (unit == null)
-            {
-                throw new NotFoundException($"الوحدة رقم {dto.UnitId} غير موجودة");
-            }
-
-            // 5) التأكد أن الوحدة تتبع العقار المختار
-            if (unit.PropertyId != dto.PropertyId)
-            {
-                throw new BusinessException(
-                    $"الوحدة رقم {dto.UnitId} لا تتبع العقار رقم {dto.PropertyId}"
-                );
-            }
-
-            // 6) البحث عن المالك الحالي
-            var owner = existingOwners.FirstOrDefault(x => x.NationalId == dto.PersonId.Trim());
-
-            // 7) لو المالك غير موجود → أنشئيه
-            if (owner == null)
-            {
-                owner = new Owner
-                {
-                    NationalId = dto.PersonId.Trim(),
-                    FullName = dto.PersonName.Trim(),
-                    Phone = dto.ContactPhone?.Trim() ?? string.Empty,
-                    Address = dto.Address?.Trim() ?? string.Empty,
-                    OwnerType = "Individual",
-                    IsActive = true
-                };
-
-                await ownerRepo.AddAsync(owner);
-                existingOwners.Add(owner); // حتى لا يتكرر داخل نفس الطلب
-            }
-
-            // 8) Business Rule إضافية (اختيارية لكن مفيدة)
-            // منع تكرار نفس الربط لنفس المالك ونفس الوحدة ونفس الدور لو كان Active
-            var existingAssignments = await assignmentRepo.GetAllAsync();
-            bool duplicateAssignment = existingAssignments.Any(a =>
-                a.OwnerId == owner.Id &&
-                a.UnitId == dto.UnitId &&
-                a.RoleType == dto.RoleType &&
-                a.IsActive);
-
-            if (duplicateAssignment)
-            {
-                throw new BusinessException(
-                    $"يوجد بالفعل ربط نشط لهذا المالك على الوحدة رقم {dto.UnitId} بنفس الدور"
-                );
-            }
-
-            // 9) إنشاء الربط
-            var assignment = new RoleAssignment
-            {
-                Owner = owner,
-                UnitId = dto.UnitId,
-                RoleType = dto.RoleType.Trim(),
-                ShareType = dto.ShareType.Trim(),
-                SharePercentage = dto.SharePercentage,
-                StartDate = dto.OwnershipStartDate,
-                EndDate = dto.OwnershipEndDate,
-                IsActive = dto.IsActive
-            };
-
-            await assignmentRepo.AddAsync(assignment);
-        }
-
-        // 10) حفظ مرة واحدة فقط
-        await _unitOfWork.SaveChangesAsync();
+            "قائمة الربط لا يمكن أن تكون فارغة"
+        });
     }
 
+    var ownerRepo      = _unitOfWork.GetRepository<Owner, int>();
+    var assignmentRepo = _unitOfWork.GetRepository<RoleAssignment, int>();
+    var propertyRepo   = _unitOfWork.GetRepository<Property, int>();
+    var unitRepo       = _unitOfWork.GetRepository<Unit, int>();
+
+    var existingOwners = (await ownerRepo.GetAllAsync()).ToList();
+    var existingAssignments = (await assignmentRepo.GetAllAsync()).ToList();
+
+    foreach (var dto in dtoList)
+    {
+        ValidateAssignmentDto(dto);
+
+        var property = await propertyRepo.GetByIdAsync(dto.PropertyId);
+        if (property == null)
+            throw new NotFoundException($"العقار رقم {dto.PropertyId} غير موجود");
+
+        var unit = await unitRepo.GetByIdAsync(dto.UnitId);
+        if (unit == null)
+            throw new NotFoundException($"الوحدة رقم {dto.UnitId} غير موجودة");
+
+        if (unit.PropertyId != dto.PropertyId)
+        {
+            throw new BusinessException(
+                $"الوحدة رقم {dto.UnitId} لا تتبع العقار رقم {dto.PropertyId}"
+            );
+        }
+
+        var owner = existingOwners.FirstOrDefault(x => x.NationalId == dto.PersonId.Trim());
+
+        if (owner == null)
+        {
+            owner = new Owner
+            {
+                NationalId = dto.PersonId.Trim(),
+                FullName = dto.PersonName.Trim(),
+                Phone = dto.ContactPhone?.Trim() ?? string.Empty,
+                Address = dto.Address?.Trim() ?? string.Empty,
+                OwnerType = "Individual",
+                IsActive = true
+            };
+
+            await ownerRepo.AddAsync(owner);
+
+            // مهم لو الـ Id يتولد بعد SaveChanges فقط في حالتك
+            await _unitOfWork.SaveChangesAsync();
+
+            existingOwners.Add(owner);
+        }
+
+        // 1) منع تكرار نفس المالك على نفس الوحدة
+        bool sameOwnerAlreadyAssigned = existingAssignments.Any(a =>
+            a.OwnerId == owner.Id &&
+            a.UnitId == dto.UnitId &&
+            a.IsActive);
+
+        if (sameOwnerAlreadyAssigned)
+        {
+            throw new BusinessException(
+                $"هذا المالك مسجل بالفعل على الوحدة رقم {dto.UnitId}"
+            );
+        }
+
+        // 2) منع تجاوز مجموع نسب الملكية 100%
+        double currentUnitShareTotal = existingAssignments
+            .Where(a => a.UnitId == dto.UnitId && a.IsActive)
+            .Sum(a => a.SharePercentage);
+
+        double newTotal = currentUnitShareTotal + dto.SharePercentage;
+
+        if (newTotal > 100)
+        {
+            throw new BusinessException(
+                $"لا يمكن إضافة المالك على الوحدة رقم {dto.UnitId} لأن إجمالي نسب الملكية سيصبح {newTotal}% وهو أكبر من 100%"
+            );
+        }
+
+        var assignment = new RoleAssignment
+        {
+            OwnerId = owner.Id,
+            UnitId = dto.UnitId,
+            RoleType = dto.RoleType.Trim(),
+            ShareType = dto.ShareType.Trim(),
+            SharePercentage = dto.SharePercentage,
+            StartDate = dto.OwnershipStartDate,
+            EndDate = dto.OwnershipEndDate,
+            IsActive = dto.IsActive
+        };
+
+        await assignmentRepo.AddAsync(assignment);
+
+        // حتى يحتسب في نفس الطلب bulk
+        existingAssignments.Add(assignment);
+    }
+
+    await _unitOfWork.SaveChangesAsync();
+}
     // ─────────────────────────────
     // PRIVATE VALIDATION METHOD
     // ─────────────────────────────
@@ -224,4 +228,47 @@ public class AssignmentService : IAssignmentService
         if (errors.Any())
             throw new ValidationException(errors);
     }
-}}
+
+
+// ─────────────────────────────
+// UPDATE ASSIGNMENT (StartDate + EndDate + UsageType)
+// ─────────────────────────────
+public async Task UpdateAsync(int id, UpdateAssignmentDto dto)
+{
+    var assignmentRepo = _unitOfWork.GetRepository<RoleAssignment, int>();
+    var unitRepo       = _unitOfWork.GetRepository<Unit, int>();
+
+    var assignment = await assignmentRepo.GetByIdAsync(id);
+    if (assignment is null)
+        throw new Exception("الربط غير موجود");
+
+    // تعديل تواريخ الربط
+    assignment.StartDate = dto.StartDate;
+    assignment.EndDate   = dto.EndDate;
+
+    // تعديل UsageType في الوحدة نفسها
+    var unit = await unitRepo.GetByIdAsync(assignment.UnitId);
+    if (unit != null)
+    {
+        unit.UsageType = dto.UsageType;
+        unitRepo.Update(unit);
+    }
+
+    assignmentRepo.Update(assignment);
+    await _unitOfWork.SaveChangesAsync();
+}
+
+
+    public async Task DeleteAsync(int id)
+{
+    var assignmentRepo = _unitOfWork.GetRepository<RoleAssignment, int>();
+
+    var assignment = await assignmentRepo.GetByIdAsync(id);
+    if (assignment == null)
+        throw new NotFoundException("الربط غير موجود");
+
+    assignmentRepo.Remove(assignment);
+    await _unitOfWork.SaveChangesAsync();
+}
+}
+}

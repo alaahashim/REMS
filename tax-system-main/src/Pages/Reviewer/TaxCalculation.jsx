@@ -1,391 +1,583 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Form, Button, Card, Row, Col, Alert, Spinner, Badge, Container, Table, InputGroup } from 'react-bootstrap';
-import { getUnits, getProperties, updateUnitData } from '../../services/propertyService';
-import { calculateTax } from '../../services/taxService'; 
+// src/pages/Reviewer/TaxCalculation.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  Alert, Badge, Button, Card, Col, Container, Form,
+  InputGroup, Modal, Row, Spinner, Table,
+} from "react-bootstrap";
+import {
+  getReviewerTaskDetails,
+  previewTaxCalculation,
+  approveTaxCalculation,
+} from "../../services/taxService";
 
+const CURRENT_YEAR = new Date().getFullYear();
 
+const PAYER_TYPE    = { OWNER: 1, TENANT: 2 };
+const PAYMENT_PLAN  = { FULL: 1, INSTALLMENT_2: 2 };
+
+/* ──────────────────────────────────────────
+   مكوّنات مساعدة صغيرة
+────────────────────────────────────────── */
+const InfoField = ({ label, value, primary = false }) => (
+  <div>
+    <div className="text-muted mb-1" style={{ fontSize: "0.72rem", letterSpacing: "0.02em" }}>
+      {label}
+    </div>
+    <div className={`fw-semibold${primary ? " text-primary" : ""}`} style={{ fontSize: "0.9rem" }}>
+      {value ?? "-"}
+    </div>
+  </div>
+);
+
+const SectionHeading = ({ icon, label, color = "primary" }) => (
+  <div className={`d-flex align-items-center gap-2 mb-3`}>
+    <i className={`fa-solid ${icon} text-${color}`} />
+    <span className={`fw-bold text-${color}`}>{label}</span>
+  </div>
+);
+
+const TaxStatusBadge = ({ status }) => {
+  const s = String(status ?? "").toLowerCase();
+  const approved = s.includes("approved") || s === "2";
+  return approved
+    ? <Badge bg="success">معتمد</Badge>
+    : <Badge bg="warning" text="dark">بانتظار الحساب</Badge>;
+};
+
+/** صف في جدول الملاك أو المستأجرين */
+const PersonRow = ({ person, showShare = false }) => (
+  <tr>
+    <td className="fw-semibold">{person.fullName || "-"}</td>
+    <td className="text-muted small">{person.roleType || "-"}</td>
+    {showShare && (
+      <td>{person.sharePercentage != null ? `${person.sharePercentage}%` : "-"}</td>
+    )}
+    <td className="text-muted small">{person.phone || "-"}</td>
+  </tr>
+);
+
+/** سطر مبلغ في ملخص المعاينة */
+const AmountRow = ({ label, amount, variant = "", minus = false, bold = false, large = false }) => {
+  const cls = [variant ? `text-${variant}` : "", bold ? "fw-bold" : "", large ? "fs-5" : ""].join(" ").trim();
+  const formatted = `${Number(amount ?? 0).toLocaleString("en-US")} ج.م`;
+  return (
+    <div className={`d-flex justify-content-between align-items-center py-1 ${large ? "border-top mt-2 pt-3" : ""}`}>
+      <span className={cls}>{label}</span>
+      <span className={cls}>{minus ? `– ${formatted}` : formatted}</span>
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════
+   الصفحة الرئيسية
+══════════════════════════════════════════ */
 const TaxCalculation = () => {
-  const { id } = useParams(); 
-  const navigate = useNavigate();
-  
-  // حالة البحث السريع
-  const [quickSearchId, setQuickSearchId] = useState('');
-  
-  const [loading, setLoading] = useState(false);
-  const [unit, setUnit] = useState(null);
-  const [property, setProperty] = useState(null); 
-  const [errorMsg, setErrorMsg] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const { id }    = useParams();
+  const navigate  = useNavigate();
 
-  // مدخلات الحساب
-  const [taxInput, setTaxInput] = useState({ area: 0, usage: 'Residential', annualRent: 0, isFirstHome: false });
-  const [calcResult, setCalcResult] = useState(null);
+  /* تحميل بيانات الوحدة */
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [details,         setDetails]        = useState(null);
+  const [detailsError,    setDetailsError]   = useState("");
 
-  // إعدادات الفوترة والسداد
-  const [billingConfig, setBillingConfig] = useState({
-    payerType: 'owner', 
-    paymentPlan: 'full', 
-    includeAppealFee: false 
+  /* نموذج الإعدادات */
+  const [form, setForm] = useState({
+    taxYear:            CURRENT_YEAR,
+    annualRentOverride: "",
+    payerType:          PAYER_TYPE.OWNER,
+    paymentPlan:        PAYMENT_PLAN.FULL,
+    includeAppealFee:   false,
   });
 
+  /* المعاينة */
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewResult,  setPreviewResult]  = useState(null);
+  const [previewError,   setPreviewError]   = useState("");
+
+  /* الاعتماد */
+  const [approving,     setApproving]     = useState(false);
+  const [approveError,  setApproveError]  = useState("");
+  const [showConfirm,   setShowConfirm]   = useState(false); // ← مودال تأكيد بدلاً من window.confirm
+
+  /* ── تحميل التفاصيل ── */
   useEffect(() => {
-    if (id) loadDataById(id);
+    if (!id) return;
+    (async () => {
+      try {
+        setLoadingDetails(true);
+        setDetailsError("");
+        setDetails(null);
+        setDetails(await getReviewerTaskDetails(id));
+      } catch (err) {
+        setDetailsError(err?.message || "حدث خطأ أثناء تحميل بيانات الوحدة");
+      } finally {
+        setLoadingDetails(false);
+      }
+    })();
   }, [id]);
 
-  const handleQuickJump = (e) => {
-    if (e.key === 'Enter' && quickSearchId) {
-      e.preventDefault();
-      navigate(`/reviewer/calc/${quickSearchId}`);
-    }
+  /* ── حسابات مشتقة ── */
+  const owners = useMemo(
+    () => (Array.isArray(details?.owners) ? details.owners : []),
+    [details],
+  );
+  const tenants = useMemo(
+    () => (Array.isArray(details?.tenants) ? details.tenants : []),
+    [details],
+  );
+  const primaryOwner = useMemo(
+    () => owners.length
+      ? [...owners].sort((a, b) => (b.sharePercentage || 0) - (a.sharePercentage || 0))[0]
+      : null,
+    [owners],
+  );
+
+  /* ── بناء الـ payload ── */
+  const buildPayload = () => ({
+    unitId:             Number(id),
+    taxYear:            Number(form.taxYear),
+    annualRentOverride: form.annualRentOverride === "" ? null : Number(form.annualRentOverride),
+    payerType:          Number(form.payerType),
+    paymentPlan:        Number(form.paymentPlan),
+    includeAppealFee:   !!form.includeAppealFee,
+  });
+
+  /* ── التحقق ── */
+  const validate = () => {
+    if (!id || Number(id) <= 0)                                   return "معرّف الوحدة غير صحيح";
+    if (!form.taxYear || Number(form.taxYear) < 2010)             return "يرجى إدخال سنة ضريبية صحيحة";
+    if (form.annualRentOverride !== "" && Number(form.annualRentOverride) < 0)
+                                                                  return "القيمة الإيجارية لا يمكن أن تكون سالبة";
+    return "";
   };
 
-  const loadDataById = async (unitId) => {
-    setLoading(true);
+  /* ── معاينة ── */
+  const handlePreview = async () => {
+    const msg = validate();
+    if (msg) { setPreviewError(msg); return; }
     try {
-      const [unitsData, propsData] = await Promise.all([ getUnits(), getProperties() ]);
-      const foundUnit = unitsData.find(u => String(u.id) === String(unitId));
-      
-      if (foundUnit) {
-        const foundProp = propsData.find(p => p.id == foundUnit.propertyId);
-        setUnit(foundUnit);
-        setProperty(foundProp);
-        prepareCalculation(foundUnit);
-        setErrorMsg('');
-      } else {
-        setErrorMsg('وحدة غير موجودة');
-      }
-    } catch (error) {
-      console.error("Load Error:", error);
-      setErrorMsg('خطأ في تحميل البيانات');
+      setPreviewLoading(true);
+      setPreviewError("");
+      setApproveError("");
+      setPreviewResult(await previewTaxCalculation(buildPayload()));
+    } catch (err) {
+      setPreviewResult(null);
+      setPreviewError(err?.message || "حدث خطأ أثناء معاينة التقدير الضريبي");
     } finally {
-      setLoading(false);
+      setPreviewLoading(false);
     }
   };
 
-  const prepareCalculation = (u) => {
-    const estimatedRent = (u.area || 0) * 30 * 12;
-    setTaxInput({
-      area: u.area || 0,
-      usage: u.usage || 'Residential',
-      annualRent: estimatedRent,
-      isFirstHome: false,
-      locationZone: u.locationZone || 'B'
-    });
+  /* ── اعتماد ── */
+  const handleApprove = () => {
+    const msg = validate();
+    if (msg) { setApproveError(msg); return; }
+    if (!previewResult) { setApproveError("يجب تنفيذ معاينة الحساب أولاً قبل الاعتماد"); return; }
+    setShowConfirm(true);
   };
 
-  useEffect(() => {
-    if (taxInput.area > 0) {
-        const result = calculateTax(taxInput);
-        setCalcResult(result);
-    }
-  }, [taxInput]); // إعادة الحساب عند تغيير الاستخدام أو القيمة
-
-  const getFinalBilling = () => {
-    if (!calcResult) return null;
-    const tax = calcResult.tax;
-    const appealFee = billingConfig.includeAppealFee ? 50 : 0; 
-    const totalDue = tax + appealFee; 
-    
-    let installmentAmount = 0;
-    let installmentCount = 0;
-
-    if (billingConfig.paymentPlan === 'installment_2') {
-        installmentCount = 2;
-        installmentAmount = totalDue / 2;
-    } else {
-        installmentCount = 1;
-        installmentAmount = totalDue;
-    }
-
-    return { tax, appealFee, totalDue, installmentCount, installmentAmount };
-  };
-
-  const finalBilling = getFinalBilling();
-
-  const handleApprove = async () => {
-    if (!window.confirm("هل أنت متأكد من اعتماد هذا التقدير وإرساله للمالية؟")) return;
-    setIsSaving(true);
+  const confirmApprove = async () => {
+    setShowConfirm(false);
     try {
-        await updateUnitData(unit.id, {
-          status: (finalBilling.totalDue === 0) ? 'Approved' : 'Pending_Manager',
-          tax: finalBilling.totalDue,
-          taxDetails: `ضريبة: ${finalBilling.tax} + رسوم: ${finalBilling.appealFee}`,
-          payerType: billingConfig.payerType,
-          paymentPlan: billingConfig.paymentPlan
-        });
-
-        alert('تم الحفظ وإرسال الطلب للجهة المختصة');
-        navigate('/reviewer/home');
-    } catch (error) {
-        alert('خطأ: الوحدة غير موجودة');
+      setApproving(true);
+      setApproveError("");
+      await approveTaxCalculation(buildPayload());
+      navigate("/reviewer/home", { state: { successMsg: "تم اعتماد التقييم الضريبي بنجاح ✓" } });
+    } catch (err) {
+      setApproveError(err?.message || "حدث خطأ أثناء اعتماد التقييم الضريبي");
+    } finally {
+      setApproving(false);
     }
-    finally { setIsSaving(false); }
   };
 
-  if (loading && !unit) return <div className="text-center mt-5"><Spinner animation="border" variant="primary" /> جاري التحميل...</div>;
+  const setField = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
+  /* ── حالات التحميل / الخطأ ── */
+  if (loadingDetails) return (
+    <Container fluid className="py-5 text-center">
+      <Spinner animation="border" variant="primary" />
+      <div className="mt-3 text-muted">جاري تحميل بيانات الوحدة...</div>
+    </Container>
+  );
+
+  if (detailsError) return (
+    <Container fluid className="py-4">
+      <Alert variant="danger">{detailsError}</Alert>
+      <Button variant="secondary" onClick={() => navigate("/reviewer/home")}>عودة</Button>
+    </Container>
+  );
+
+  if (!details) return (
+    <Container fluid className="py-4">
+      <Alert variant="warning">لا توجد بيانات لهذه الوحدة</Alert>
+      <Button variant="secondary" onClick={() => navigate("/reviewer/home")}>عودة</Button>
+    </Container>
+  );
+
+  /* ══════════════════════════════
+     العرض الرئيسي
+  ══════════════════════════════ */
   return (
-    <Container fluid className="mt-4">
-      {/* 1. البحث السريع */}
-      <Row className="mb-3">
-        <Col>
-          <InputGroup>
-            <InputGroup.Text><i className="fa-solid fa-bolt text-warning"></i></InputGroup.Text>
-            <Form.Control 
-              placeholder="أدخل رقم الوحدة للانتقال السريع..." 
-              value={quickSearchId}
-              onChange={(e) => setQuickSearchId(e.target.value)}
-              onKeyDown={handleQuickJump}
-            />
-          </InputGroup>
-        </Col>
-      </Row>
+    <>
+      <Container fluid className="py-4">
+        <Row className="justify-content-center">
+          <Col xxl={10} xl={11}>
 
-      {/* رسالة الخطأ */}
-      {errorMsg && (
-        <Row className="justify-content-center mb-3">
-            <Col md={8}><Alert variant="danger">{errorMsg}</Alert></Col>
-        </Row>
-      )}
-
-      <Row className="justify-content-center">
-        <Col md={11} lg={10}>
-          <Card className="shadow-sm border-0 border-top border-5 border-primary">
-            <Card.Header className="bg-white d-flex justify-content-between align-items-center pt-3">
+            {/* ── رأس الصفحة ── */}
+            <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
               <div>
-                <small className="text-muted">تقدير ضريبة وحدة عقارية</small>
-                <Card.Title className="mb-0 fs-4 fw-bold">وحدة رقم: {unit?.id}</Card.Title>
+                <div className="text-muted small mb-1">شاشة التقدير الضريبي</div>
+                <h4 className="fw-bold mb-1">
+                  وحدة رقم: {details.unitNumber || details.unitId}
+                </h4>
+                <div className="text-muted small">معرّف الوحدة: {details.unitId}</div>
               </div>
-              <div className="text-end">
-                  <Badge bg="primary" className="fs-6 mb-1">{unit?.unitType}</Badge>
-                  <div><small className="text-muted fw-bold">الدور: {unit?.floor}</small></div>
+              <div className="d-flex align-items-center gap-3">
+                <TaxStatusBadge status={details.taxStatus} />
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={() => navigate("/reviewer/home")}
+                >
+                  <i className="fa-solid fa-arrow-right me-1" />
+                  عودة
+                </Button>
               </div>
-            </Card.Header>
-            <Card.Body>
-              
-              {/* بيانات المبنى */}
-              <Card className="mb-3 bg-light border">
-                  <Card.Body className="py-3">
-                    <h6 className="fw-bold border-bottom pb-2 text-primary"><i className="fa-solid fa-building me-2"></i> بيانات المبنى</h6>
-                    <Row>
-                        <Col md={4}>
-                            <div className="small text-muted">العنوان الكامل</div>
-                            <div className="fw-bold">{property?.address || `${property?.governorateName || property?.governorateId} - ${property?.centerName || property?.centerId} - ${property?.neighborhoodName || ''} - ${property?.streetName || property?.streetId}`}</div>
-                        </Col>
-                        <Col md={4}>
-                            <div className="small text-muted">المنطقة الضريبية</div>
-                            <div className="fw-bold">{property?.locationZone || 'B'}</div>
-                        </Col>
-                        <Col md={4}>
-                            <div className="small text-muted">اسم المالك (الأول)</div>
-                            <div className="fw-bold text-primary fs-5">{property?.ownerName} <span className="text-danger">*</span></div>
-                        </Col>
-                    </Row>
-                  </Card.Body>
-              </Card>
+            </div>
 
-              {/* بيانات الوحدة */}
-              <Card className="mb-3 border-info">
-                  <Card.Body className="py-3">
-                    <h6 className="fw-bold border-bottom pb-2 text-info"><i className="fa-solid fa-house-chimney me-2"></i> بيانات الوحدة</h6>
-                    <Row>
-                        <Col md={4}>
-                            <div className="small text-muted">المساحة</div>
-                            <div className="fw-bold fs-5">{unit?.area} م²</div>
-                        </Col>
-                        <Col md={4}>
-                            <div className="small text-muted">الاستخدام</div>
-                            <div className="fw-bold fs-5">{unit?.usage}</div>
-                        </Col>
-                    </Row>
-                  </Card.Body>
-              </Card>
+            {/* أخطاء */}
+            {previewError && (
+              <Alert variant="danger" dismissible onClose={() => setPreviewError("")} className="mb-3">
+                {previewError}
+              </Alert>
+            )}
+            {approveError && (
+              <Alert variant="danger" dismissible onClose={() => setApproveError("")} className="mb-3">
+                {approveError}
+              </Alert>
+            )}
 
-              <Form>
-                <Row>
+            {/* ════════ بيانات الوحدة ════════ */}
+            <Card className="mb-4 shadow-sm border-0">
+              <Card.Body>
+                <SectionHeading icon="fa-house" label="بيانات الوحدة والعقار" />
+                <Row className="g-3">
+                  <Col xs={6} sm={3}><InfoField label="رقم الوحدة"    value={details.unitNumber} /></Col>
+                  <Col xs={6} sm={3}><InfoField label="نوع الوحدة"    value={details.unitType} /></Col>
+                  <Col xs={6} sm={3}><InfoField label="الدور"          value={details.floor} /></Col>
+                  <Col xs={6} sm={3}><InfoField label="المساحة"        value={details.area != null ? `${details.area} م²` : null} /></Col>
+                  <Col xs={12} sm={6}><InfoField label="العنوان"       value={details.propertyAddress} /></Col>
+                  <Col xs={6} sm={3}><InfoField label="الاستخدام"      value={details.usage} /></Col>
+                  <Col xs={6} sm={3}><InfoField label="المالك الأساسي" value={primaryOwner?.fullName} primary /></Col>
+                </Row>
+              </Card.Body>
+            </Card>
+
+            {/* ════════ الملاك والمستأجرون ════════ */}
+            <Row className="g-3 mb-4">
+              {/* الملاك */}
+              <Col lg={6}>
+                <Card className="h-100 shadow-sm border-0">
+                  <Card.Body>
+                    <SectionHeading icon="fa-users" label="الملاك" />
+                    {owners.length === 0 ? (
+                      <p className="text-muted small">لا يوجد ملاك مسجلون لهذه الوحدة</p>
+                    ) : (
+                      <Table size="sm" bordered responsive className="mb-0 align-middle">
+                        <thead className="table-light">
+                          <tr>
+                            <th>الاسم</th>
+                            <th>نوع العلاقة</th>
+                            <th>نسبة الملكية</th>
+                            <th>الهاتف</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {owners.map((o, i) => (
+                            <PersonRow key={`o-${o.ownerId ?? i}`} person={o} showShare />
+                          ))}
+                        </tbody>
+                      </Table>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              {/* المستأجرون */}
+              <Col lg={6}>
+                <Card className="h-100 shadow-sm border-0">
+                  <Card.Body>
+                    <SectionHeading icon="fa-user-check" label="المستأجرون" color="success" />
+                    {tenants.length === 0 ? (
+                      <p className="text-muted small">لا يوجد مستأجرون مسجلون لهذه الوحدة</p>
+                    ) : (
+                      <Table size="sm" bordered responsive className="mb-0 align-middle">
+                        <thead className="table-light">
+                          <tr>
+                            <th>الاسم</th>
+                            <th>نوع العلاقة</th>
+                            <th>الهاتف</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tenants.map((t, i) => (
+                            <PersonRow key={`t-${t.ownerId ?? i}`} person={t} />
+                          ))}
+                        </tbody>
+                      </Table>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* ════════ نموذج الإعدادات ════════ */}
+            <Card className="mb-4 shadow-sm border-0 border-top border-3 border-primary">
+              <Card.Header className="bg-white border-bottom py-3">
+                <SectionHeading icon="fa-calculator" label="إعدادات التقدير الضريبي" />
+              </Card.Header>
+              <Card.Body>
+                <Row className="g-3">
+                  {/* السنة الضريبية */}
                   <Col md={4}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>نوع الاستخدام <span className="text-danger">*</span></Form.Label>
-                      <Form.Select
-                        value={taxInput.usage}
-                        onChange={(e) => setTaxInput({...taxInput, usage: e.target.value})}
-                      >
-                        <option value="Residential">سكني (خصم 30%)</option>
-                        <option value="Commercial">تجاري (خصم 32%)</option>
-                        <option value="Industrial">صناعي (خصم 32%)</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col md={4}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>القيمة الإيجارية السنوية <span className="text-danger">*</span></Form.Label>
-                      <Form.Control 
-                        type="number" 
-                        className="fw-bold text-primary"
-                        value={taxInput.annualRent}
-                        onChange={(e) => setTaxInput({...taxInput, annualRent: Number(e.target.value)})}
+                    <Form.Group>
+                      <Form.Label className="fw-semibold small">
+                        السنة الضريبية <span className="text-danger">*</span>
+                      </Form.Label>
+                      <Form.Control
+                        type="number"
+                        min={2010}
+                        max={CURRENT_YEAR + 1}
+                        value={form.taxYear}
+                        onChange={(e) => setField("taxYear", e.target.value)}
                       />
                     </Form.Group>
                   </Col>
-                  {/* جديد: خيار الوحدة السكنية الأساسية */}
+
+                  {/* القيمة الإيجارية */}
                   <Col md={4}>
-                    <Form.Group className="mb-3 pt-4">
-                        <Form.Check 
-                            type="switch"
-                            id="first-home-switch"
-                            label={<span className="fw-bold text-success">الوحدة السكنية الأساسية (معفى)</span>}
-                            disabled={taxInput.usage !== 'Residential'} // غير مفعال للتاجر
-                            checked={taxInput.isFirstHome}
-                            onChange={(e) => setTaxInput({...taxInput, isFirstHome: e.target.checked})}
+                    <Form.Group>
+                      <Form.Label className="fw-semibold small">
+                        القيمة الإيجارية السنوية{" "}
+                        <span className="text-muted fw-normal">(اختياري)</span>
+                      </Form.Label>
+                      <InputGroup>
+                        <Form.Control
+                          type="number"
+                          min={0}
+                          placeholder="تقدير تلقائي إذا تُرك فارغاً"
+                          value={form.annualRentOverride}
+                          onChange={(e) => setField("annualRentOverride", e.target.value)}
                         />
+                        <InputGroup.Text>ج.م</InputGroup.Text>
+                      </InputGroup>
                     </Form.Group>
                   </Col>
+
+                  {/* الاستخدام (قراءة فقط) */}
+                  <Col md={4}>
+                    <Form.Group>
+                      <Form.Label className="fw-semibold small">نوع الاستخدام</Form.Label>
+                      <Form.Control value={details.usage || "-"} disabled readOnly />
+                    </Form.Group>
+                  </Col>
+
+                  {/* المسؤول عن السداد */}
+                  <Col md={6}>
+                    <Form.Label className="fw-semibold small d-block">المسؤول عن السداد</Form.Label>
+                    <div className="d-flex gap-4 mt-1">
+                      <Form.Check
+                        type="radio" id="payer-owner" name="payerType" label="المالك"
+                        checked={Number(form.payerType) === PAYER_TYPE.OWNER}
+                        onChange={() => setField("payerType", PAYER_TYPE.OWNER)}
+                      />
+                      <Form.Check
+                        type="radio" id="payer-tenant" name="payerType" label="المستأجر"
+                        checked={Number(form.payerType) === PAYER_TYPE.TENANT}
+                        onChange={() => setField("payerType", PAYER_TYPE.TENANT)}
+                      />
+                    </div>
+                  </Col>
+
+                  {/* خطة السداد */}
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label className="fw-semibold small">خطة السداد</Form.Label>
+                      <Form.Select
+                        value={form.paymentPlan}
+                        onChange={(e) => setField("paymentPlan", Number(e.target.value))}
+                      >
+                        <option value={PAYMENT_PLAN.FULL}>دفع كامل</option>
+                        <option value={PAYMENT_PLAN.INSTALLMENT_2}>تقسيط على دفعتين</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
+
+                  {/* رسوم الطعن */}
+                  <Col xs={12}>
+                    <Form.Check
+                      type="switch"
+                      id="appeal-fee-switch"
+                      label="إضافة رسوم طعن (50 ج.م)"
+                      checked={form.includeAppealFee}
+                      onChange={(e) => setField("includeAppealFee", e.target.checked)}
+                    />
+                  </Col>
                 </Row>
-              </Form>
 
-              {/* تفاصيل الحساب القانونية (محدثة لتظهر النسب الديناميكية) */}
-              {calcResult && (
-                <div className="bg-light p-4 rounded mb-4 border border-info shadow-sm">
-                    <h6 className="fw-bold mb-3 text-info">تفاصيل الحساب وفقاً للنظام</h6>
-                    
-                    <div className="d-flex justify-content-between mb-2">
-                        <span>القيمة الإيجارية السنوية:</span>
-                        <span className="fw-bold text-primary">{Math.round(calcResult.annualRent).toLocaleString()} ج.م</span>
-                    </div>
-                    <div className="d-flex justify-content-between mb-2">
-                        <span>قواعد الحي / المنطقة:</span>
-                        <span className="fw-bold">{calcResult.zoneDescription}</span>
-                    </div>
-                    
-                    <div className="d-flex justify-content-between mb-2 text-danger">
-                        <span>الخصم للصيانة والاستهلاك ({calcResult.discountRate}%):</span>
-                        <span className="fw-bold">- {Math.round(calcResult.discountAmount).toLocaleString()} ج.م</span>
-                    </div>
-                    
-                     <div className="d-flex justify-content-between mb-2 bg-white p-2 rounded border">
-                        <span className="fw-bold">الوعاء الضريبي بعد الخصم:</span>
-                        <span className="fw-bold">{Math.round(calcResult.netRent).toLocaleString()} ج.م</span>
-                    </div>
-
-                    {/* تفاصيل الإعفاء إذا وجدت */}
-                    {calcResult.exemptionAmount > 0 && (
-                        <div className="d-flex justify-content-between mb-2 text-success">
-                            <span>{calcResult.exemptionLabel || 'إعفاء'}:</span>
-                            <span className="fw-bold">- {Math.round(calcResult.exemptionAmount).toLocaleString()} ج.م</span>
-                        </div>
+                <div className="mt-4">
+                  <Button
+                    variant="primary"
+                    onClick={handlePreview}
+                    disabled={previewLoading || approving}
+                  >
+                    {previewLoading ? (
+                      <><Spinner size="sm" className="me-2" />جاري المعاينة...</>
+                    ) : (
+                      <><i className="fa-solid fa-magnifying-glass-dollar me-2" />معاينة الحساب</>
                     )}
-
-                    <hr />
-                    <div className="d-flex justify-content-between align-items-center bg-white p-3 rounded border border-success border-2">
-                        <span className="fw-bold fs-5">الضريبة المستحقة ({calcResult.taxRate}%):</span>
-                        <span className="fw-bold text-success fs-3">{Math.round(calcResult.tax).toLocaleString()} ج.م</span>
-                    </div>
-                </div>
-              )}
-
-              {/* إعدادات الفوترة والسداد */}
-              {calcResult && (
-                <Card className="mb-4 border-warning bg-warning bg-opacity-10">
-                    <Card.Header className="bg-transparent border-bottom fw-bold text-warning">
-                        <i className="fa-solid fa-file-invoice-dollar me-2"></i> إعدادات الفوترة والسداد
-                    </Card.Header>
-                    <Card.Body>
-                        <Row>
-                            <Col md={6} className="mb-3">
-                                <Form.Label className="fw-bold">المسؤول عن الدفع</Form.Label>
-                                <div className="d-flex gap-3 mt-2">
-                                    <Form.Check 
-                                        type="radio" 
-                                        label={<span className="fw-bold">المالك (الافتراضي)</span>} 
-                                        name="payerType"
-                                        id="payer-owner"
-                                        checked={billingConfig.payerType === 'owner'}
-                                        onChange={() => setBillingConfig({...billingConfig, payerType: 'owner'})}
-                                    />
-                                    <Form.Check 
-                                        type="radio" 
-                                        label={<span className="fw-bold">المستأجر</span>} 
-                                        name="payerType"
-                                        id="payer-tenant"
-                                        checked={billingConfig.payerType === 'tenant'}
-                                        onChange={() => setBillingConfig({...billingConfig, payerType: 'tenant'})}
-                                    />
-                                </div>
-                            </Col>
-                            <Col md={6} className="mb-3">
-                                <Form.Label className="fw-bold">خطة السداد</Form.Label>
-                                <Form.Select 
-                                    value={billingConfig.paymentPlan}
-                                    onChange={(e) => setBillingConfig({...billingConfig, paymentPlan: e.target.value})}
-                                    className="fw-bold"
-                                >
-                                    <option value="full">دفع كامل (دفعة واحدة)</option>
-                                    <option value="installment_2">دفع على شهرين (دفعات شهرية)</option>
-                                </Form.Select>
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col md={12}>
-                                <Form.Check 
-                                    type="switch"
-                                    id="appeal-fee-switch"
-                                    label={<span className="fw-bold text-danger">إضافة رسوم تقديم طعن (+ 50 ج.م)</span>}
-                                    checked={billingConfig.includeAppealFee}
-                                    onChange={(e) => setBillingConfig({...billingConfig, includeAppealFee: e.target.checked})}
-                                />
-                            </Col>
-                        </Row>
-                    </Card.Body>
-                </Card>
-              )}
-
-              {/* ملخص الفاتورة النهائية */}
-              {finalBilling && (
-                <Card className="mb-4 border-dark bg-dark text-white shadow-lg">
-                    <Card.Body>
-                        <h5 className="fw-bold text-warning mb-3 border-bottom border-secondary pb-2">ملخص الفاتورة النهائية</h5>
-                        <Table borderedless className="mb-0">
-                            <tbody>
-                                <tr>
-                                    <td>قيمة الضريبة المستحقة:</td>
-                                    <td className="text-end fw-bold">{Math.round(finalBilling.tax).toLocaleString()} ج.م</td>
-                                </tr>
-                                {finalBilling.appealFee > 0 && (
-                                    <tr className="text-danger">
-                                        <td>رسوم الطعن:</td>
-                                        <td className="text-end fw-bold">+ {finalBilling.appealFee.toLocaleString()} ج.م</td>
-                                    </tr>
-                                )}
-                                <tr className="border-top border-secondary">
-                                    <td className="fs-4 fw-bold">إجمالي الفاتورة:</td>
-                                    <td className="text-end fs-4 fw-bold text-success">{Math.round(finalBilling.totalDue).toLocaleString()} ج.م</td>
-                                </tr>
-                            </tbody>
-                        </Table>
-                        {finalBilling.installmentCount > 1 && (
-                            <Alert variant="light" className="mt-3 text-dark">
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <span>قسط شهري ({finalBilling.installmentCount} دفعات):</span>
-                                    <span className="fw-bold fs-5 text-primary">{Math.round(finalBilling.installmentAmount).toLocaleString()} ج.م</span>
-                                </div>
-                            </Alert>
-                        )}
-                    </Card.Body>
-                </Card>
-              )}
-
-              <div className="d-flex justify-content-between gap-3 mt-5">
-                  <Button variant="secondary" onClick={() => navigate('/reviewer/home')}>عودة</Button>
-                  <Button variant="success" onClick={handleApprove} size="lg" disabled={isSaving}>
-                    {isSaving ? <Spinner size="sm" animation="border" /> : 'اعتماد وإرسال للمالية'}
                   </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+                </div>
+              </Card.Body>
+            </Card>
+
+            {/* ════════ نتيجة المعاينة ════════ */}
+            {previewResult && (
+              <>
+                <Card className="mb-4 shadow-sm border-0">
+                  <Card.Header className="bg-white border-bottom py-3">
+                    <SectionHeading icon="fa-file-invoice-dollar" label="نتيجة المعاينة الضريبية" color="info" />
+                  </Card.Header>
+                  <Card.Body>
+
+                    {/* رأس النتيجة */}
+                    <Row className="g-3 mb-4">
+                      <Col md={4}><InfoField label="المالك المستخدم في الحساب" value={previewResult.ownerName} primary /></Col>
+                      <Col md={4}><InfoField label="السنة الضريبية"            value={previewResult.taxYear} /></Col>
+                      <Col md={4}><InfoField label="وصف الموقع / العقار"       value={previewResult.zoneDescription} /></Col>
+                    </Row>
+
+                    {/* تفاصيل الأرقام */}
+                    <div className="rounded border p-3" style={{ background: "#f8f9fb" }}>
+                      <AmountRow
+                        label="القيمة الإيجارية السنوية"
+                        amount={previewResult.annualRent}
+                      />
+                      <AmountRow
+                        label={`خصم الصيانة / الاستهلاك (${previewResult.discountRate}%)`}
+                        amount={previewResult.discountAmount}
+                        variant="danger"
+                        minus
+                      />
+                      <AmountRow
+                        label="صافي القيمة الإيجارية السنوية"
+                        amount={previewResult.netAnnualRentalValue}
+                      />
+
+                      {Number(previewResult.exemptionAmount || 0) > 0 && (
+                        <AmountRow
+                          label={`إعفاء ضريبي${previewResult.exemptionReason ? ` – ${previewResult.exemptionReason}` : ""}`}
+                          amount={previewResult.exemptionAmount}
+                          variant="success"
+                          minus
+                        />
+                      )}
+
+                      <div className="my-2 border-top" />
+
+                      <AmountRow
+                        label={`الضريبة السنوية (${previewResult.taxRate}%)`}
+                        amount={previewResult.annualTax}
+                        variant="success"
+                        bold
+                      />
+                      <AmountRow
+                        label="رسوم الطعن"
+                        amount={previewResult.appealFee}
+                      />
+
+                      <div
+                        className="d-flex justify-content-between align-items-center mt-3 rounded p-3 border"
+                        style={{ background: "#fff" }}
+                      >
+                        <span className="fw-bold fs-5">إجمالي المستحق</span>
+                        <span className="fw-bold fs-4 text-primary">
+                          {Number(previewResult.totalDue ?? 0).toLocaleString("en-US")} ج.م
+                        </span>
+                      </div>
+
+                      {Number(previewResult.installmentCount || 1) > 1 && (
+                        <Alert variant="info" className="mt-3 mb-0 py-2">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="small">
+                              قيمة القسط ({previewResult.installmentCount} دفعات)
+                            </span>
+                            <span className="fw-bold text-primary">
+                              {Number(previewResult.installmentAmount ?? 0).toLocaleString("en-US")} ج.م
+                            </span>
+                          </div>
+                        </Alert>
+                      )}
+
+                      <div className="mt-2 text-muted small">
+                        {previewResult.isFromManualAnnualRent
+                          ? "تم الحساب باستخدام قيمة إيجارية مدخلة يدوياً."
+                          : "تم الحساب باستخدام التقدير التلقائي للقيمة الإيجارية."}
+                      </div>
+                    </div>
+                  </Card.Body>
+                </Card>
+
+                {/* ── زر الاعتماد ── */}
+                <div className="d-flex justify-content-end">
+                  <Button
+                    variant="success"
+                    size="lg"
+                    onClick={handleApprove}
+                    disabled={approving || previewLoading}
+                  >
+                    {approving ? (
+                      <><Spinner size="sm" className="me-2" />جاري الاعتماد...</>
+                    ) : (
+                      <><i className="fa-solid fa-check me-2" />اعتماد التقدير الضريبي</>
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+
+          </Col>
+        </Row>
+      </Container>
+
+      {/* ════════ مودال تأكيد الاعتماد ════════ */}
+      <Modal show={showConfirm} onHide={() => setShowConfirm(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">تأكيد الاعتماد</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-2">
+          <div className="d-flex gap-3 align-items-start">
+            <i className="fa-solid fa-triangle-exclamation text-warning fa-lg mt-1" />
+            <div>
+              <p className="mb-1 fw-semibold">هل أنت متأكد من اعتماد هذا التقدير الضريبي؟</p>
+              <p className="text-muted small mb-0">
+                سيتم حفظ التقييم وإرسال الإشعار للجهة المعنية. لا يمكن التراجع عن هذا الإجراء.
+              </p>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0">
+          <Button variant="outline-secondary" onClick={() => setShowConfirm(false)}>
+            إلغاء
+          </Button>
+          <Button variant="success" onClick={confirmApprove}>
+            <i className="fa-solid fa-check me-1" />
+            نعم، اعتماد
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 };
 

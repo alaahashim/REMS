@@ -16,20 +16,16 @@ export const createProperty = async (
   units
 ) => {
 
-  const unitsDto = units.map((u, index) => ({
-    propertyId: 0,
-    unitNumber: `${index + 1}`,
-    floor: Number(u.floor),
-    area: Number(u.area),
-
-    usageType: u.usage,
-
-    finishingType: "Finished",
-
-    unitType: u.unitType,
-
-    status: u.status
-  }));
+ const unitsDto = units.map((u) => ({
+  propertyId: 0,
+  unitNumber: u.unitNumber?.trim() || '',
+  floor: Number(u.floor),
+  area: Number(u.area),
+  usageType: u.usage,
+  finishingType: "Finished",
+  unitType: u.unitType,
+  status: u.status
+}));
 
   const dto = {
     governorateId: propertyData.governorateId,

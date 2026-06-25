@@ -2,12 +2,13 @@ using Core.DomainLayer.Entities.Common;
 using Core.Specifications;
 
 namespace Core.DomainLayer.Contracts
-{public interface IUnitOfWork
+{
+    public interface IUnitOfWork
     {
         IGenericRepository<TEntity, Tkey>
             GetRepository<TEntity, Tkey>()
             where TEntity : BaseEntity<Tkey>;
 
-        Task<int> SaveChangesAsync();
+            Task<int> SaveChangesAsync();
     }
 }
