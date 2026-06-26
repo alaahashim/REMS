@@ -26,7 +26,6 @@ import OwnerDetails from './Pages/DataEntry/OwnerDetails';
 import AddExemption from './pages/DataEntry/AddExemption';
 import EditProperty from "./pages/DataEntry/EditProperty"; 
 
-// ✅ إضافة استيراد صفحات التعديل الجديدة
 import EditAppeal from './pages/DataEntry/EditAppeal';
 import EditExemption from './pages/DataEntry/EditExemption';
 
@@ -52,7 +51,6 @@ import AuditLogs from './pages/Admin/AuditLogs';
 import CommitteeAppeals from './pages/Committee/Appeals';
 import CommitteeExemptions from './pages/Committee/Exemptions';
 
-// ✅ كومبوننت مساعد (احتفظنا به للمستقبل)
 const UnderConstruction = ({ message }) => {
   const navigate = useNavigate();
   return (
@@ -82,7 +80,6 @@ function App() {
     const handleSettingsChanged = (event) => {
       setSettings(event.detail);
     };
-
     window.addEventListener('tax-settings-changed', handleSettingsChanged);
     return () => window.removeEventListener('tax-settings-changed', handleSettingsChanged);
   }, []);
@@ -90,14 +87,10 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* صفحة الدخول */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
 
-  {/* صفحة الدخول */}
-  <Route path="/login" element={<Login />} />
-  <Route path="/unauthorized" element={<Unauthorized />} />
-
-        {/* التطبيق الرئيسي */}
         <Route path="/*" element={
           <ProtectedRoute>
             <div className="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -117,19 +110,17 @@ function App() {
                     <Route path="/data-entry/add" element={<AddProperty />} />
                     <Route path="/data-entry/link" element={<LinkOwner />} />
                     <Route path="/data-entry/appeal" element={<AddAppeal />} />
-                     <Route path="/data-entry/owner/:id" element={<OwnerDetails />} />
+                    <Route path="/data-entry/owner/:id" element={<OwnerDetails />} />
                     <Route path="/data-entry/exemption" element={<AddExemption />} />
                     <Route path="/data-entry/edit-property/:id" element={<EditProperty />} />
                     <Route path="/data-entry/edit-owner/:id" element={<EditOwner />} />
-
-
-                    {/* ✅ تعديل: ربط المسارات بالملفات الحقيقية */}
                     <Route path="/data-entry/edit-appeal/:id" element={<EditAppeal />} />
                     <Route path="/data-entry/edit-exemption/:id" element={<EditExemption />} />
 
                     {/* مسارات Reviewer */}
                     <Route path="/reviewer/home" element={<ReviewerHome />} />
-                    <Route path="/reviewer/calc/:id?" element={<TaxCalculation />} />
+                    {/* ✅ إزالة ? — الصفحة تتطلب id دائماً */}
+                    <Route path="/reviewer/calc/:id" element={<TaxCalculation />} />
 
                     {/* مسارات Finance */}
                     <Route path="/finance/home" element={<FinanceHome />} />
