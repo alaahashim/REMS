@@ -67,8 +67,7 @@ const CommitteeAppeals = () => {
     }
   };
 
-  const pendingAppeals = appeals.filter((appeal) => appeal.status === 'Pending');
-
+const pendingAppeals =appeals.filter(x=>x.status==="PendingCommittee");
   return (
     <Container fluid className="mt-4">
       <Card className="mb-3">
@@ -77,7 +76,6 @@ const CommitteeAppeals = () => {
             <h3 className="section-title mb-1">لجنة الطعون</h3>
             <p className="text-muted mb-0">عرض جميع الطعون والمراجعة قبل إرسال التوصية إلى المدير.</p>
           </div>
-          <Badge bg="info" className="fs-6">الطعون المعلقة: {pendingAppeals.length}</Badge>
         </Card.Body>
       </Card>
 
@@ -90,7 +88,7 @@ const CommitteeAppeals = () => {
               <thead>
                 <tr>
                   <th>رقم القضية</th>
-                  <th>رقم الوحدة</th>
+                  <th>كود الوحدة</th>
                   <th>المواطن</th>
                   <th>سبب الطعن</th>
                   <th>الحالة</th>
@@ -103,22 +101,33 @@ const CommitteeAppeals = () => {
                 ) : appeals.map((appeal) => (
                   <tr key={appeal.id} className="table-action-row">
                     <td className="fw-bold text-primary">#{appeal.id}</td>
-                    <td>{appeal.unitId}</td>
-                    <td>{appeal.citizen || appeal.personName || appeal.personId || '-'}</td>
+                    <td>{appeal.unitNumber}</td>
+                    <td>{appeal.personName ||  '-'}</td>
                     <td style={{ maxWidth: 260 }}>{appeal.appealReason || '-'}</td>
                     <td>
-                      {appeal.status === 'Pending' ? <Badge bg="warning">معلقة للجنة</Badge> :
-                       appeal.status === 'Pending_Manager_Appeal' ? <Badge bg="info">معروضة على المدير</Badge> :
+                      {appeal.status==="PendingCommittee" ? <Badge bg="warning">معلقة للجنة</Badge> :
+                       appeal.status==="PendingManager" ? <Badge bg="info">معروضة على المدير</Badge> :
                        <Badge bg="secondary">{appeal.status}</Badge>}
                     </td>
                     <td>
-                      {appeal.status === 'Pending' ? (
-                        <Button size="sm" variant="primary" onClick={() => openDecisionModal(appeal)}>
-                          إصدار توصية
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="secondary" disabled>تم الإرسال</Button>
-                      )}
+                      {appeal.status === "PendingCommittee" ? (
+    <Button
+      size="sm"
+      variant="primary"
+      onClick={() => openDecisionModal(appeal)}
+    >
+      إصدار توصية
+    </Button>
+) : (
+    <Button
+      size="sm"
+      variant="secondary"
+      disabled
+    >
+      تم الإرسال
+    </Button>
+)}
+                
                     </td>
                   </tr>
                 ))}
@@ -136,7 +145,7 @@ const CommitteeAppeals = () => {
           {selectedAppeal && (
             <>
               <Alert variant="secondary">
-                <strong>الوحدة:</strong> {selectedAppeal.unitId} | <strong>سبب الطعن:</strong> {selectedAppeal.appealReason || '-'}
+               <strong>الوحدة:</strong> {selectedAppeal.unitNumber}| <strong>سبب الطعن:</strong> {selectedAppeal.appealReason || '-'}
               </Alert>
 
               <Form.Group className="mb-3">

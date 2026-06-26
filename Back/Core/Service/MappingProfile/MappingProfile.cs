@@ -200,7 +200,53 @@ CreateMap<TaxAssessment, AppealAssessmentLookupDto>()
                 !string.IsNullOrWhiteSpace(s.Unit.Property.BuildingNo) ? $"مبنى {s.Unit.Property.BuildingNo}" : null
             }.Where(x => !string.IsNullOrWhiteSpace(x)))));
             #endregion
-        
+
+
+
+      #region Committee
+      CreateMap<Appeal, CommitteeAppealDto>()
+
+.ForMember(
+d => d.UnitNumber,
+o => o.MapFrom(s => s.TaxAssessment.Unit.UnitNumber))
+
+.ForMember(
+d => d.PersonName,
+o => o.MapFrom(s => s.TaxAssessment.Owner.FullName))
+
+.ForMember(
+d => d.Status,
+o => o.MapFrom(s => s.Status.ToString()))
+
+.ForMember(
+d => d.ProposedTax,
+o => o.MapFrom(s => s.TaxAssessment.AnnualTax));
+
+              CreateMap<Exemption, CommitteeExemptionDto>()
+
+    .ForMember(
+        d => d.UnitNumber,
+        o => o.MapFrom(s => s.Unit.UnitNumber))
+
+    .ForMember(
+        d => d.PersonName,
+        o => o.MapFrom(s => s.Owner.FullName))
+
+    .ForMember(
+        d => d.Status,
+        o => o.MapFrom(s => s.Status.ToString()))
+
+    .ForMember(
+        d => d.FileName,
+        o => o.MapFrom(s =>
+            s.Attachments.Any()
+                ? Path.GetFileName(s.Attachments.First().FilePath)
+                : null));
+
+
+
+
+#endregion  
         
         }
     

@@ -13,5 +13,9 @@ namespace Core.ServiceAbstraction
 
         Task<bool> UpdateAsync(int id, UpdateExemptionDto dto, AttachmentDto? attachment);
         Task<bool> DeleteAsync(int id);
-Task<TaxExemptionCheckResultDto> CheckTaxExemptionAsync(int ownerId, int unitId, int taxYear, decimal netAnnualRentalValue);    }
-}
+        Task<TaxExemptionCheckResultDto> CheckTaxExemptionAsync(int ownerId, int unitId, int taxYear, decimal netAnnualRentalValue);    
+     Task CommitteeDecisionAsync( int exemptionId,CommitteeDecisionDto dto,int committeeUserId);
+Task<IEnumerable<CommitteeExemptionDto>> GetCommitteeExemptionsAsync();
+
+Task<AttachmentDownloadDto?> GetAttachmentAsync(int exemptionId);
+}}

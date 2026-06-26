@@ -59,7 +59,7 @@ namespace Shared.DTOS
         public decimal TotalDue { get; set; }
         public DateTime AppealDate { get; set; }
         public string AppealReason { get; set; } = string.Empty;
-        public string Status { get; set; } = AppealStatus.Pending.ToString();
+        public string Status { get; set; } = AppealStatus.PendingCommittee.ToString();
         public string PropertyAddress { get; set; } = "-";
     }
 

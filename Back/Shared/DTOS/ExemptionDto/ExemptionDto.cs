@@ -95,4 +95,13 @@ namespace Shared.DTOS
 
     public string Type { get; set; } = null!; // "إعفاء" أو "طعن"
 }
+
+public class AttachmentDownloadDto
+{
+    public string FullPath { get; set; } = string.Empty;
+
+    public string FileName { get; set; } = string.Empty;
+
+    public string ContentType { get; set; } = "application/octet-stream";
+}
 }

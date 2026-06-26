@@ -15,5 +15,9 @@ namespace Core.ServiceAbstraction
         Task UpdateAppealAsync(int id, UpdateAppealDto dto);
 
         Task DeleteAppealAsync(int id, bool removeAppealFee = false);
+        Task CommitteeDecisionAsync(int appealId,CommitteeDecisionDto dto,int committeeUserId);
+     Task<IEnumerable<CommitteeAppealDto>>GetCommitteeAppealsAsync();
+   
+   
     }
 }

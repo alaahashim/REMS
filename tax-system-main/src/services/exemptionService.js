@@ -64,3 +64,12 @@ export const deleteExemption = async (id) => {
   const { data } = await api.delete(`/exemptions/${id}`);
   return data;
 };
+
+
+
+export const openExemptionAttachment = (id) => {
+  window.open(
+    `${api.defaults.baseURL}/exemptions/${id}/attachment`,
+    "_blank"
+  );
+};
