@@ -1,8 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Shared.DTOS.AdminDTOs
 {
     public class UpdateEmployeeDto
     {
         public string? FullName { get; set; }
+
+        [Required(ErrorMessage = "الرقم القومي مطلوب")]
+        [RegularExpression(@"^\d{14}$", ErrorMessage = "الرقم القومي يجب أن يتكون من 14 رقم")]
+        public string NationalId { get; set; } = null!;
 
         public string? JobTitle { get; set; }
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Core.ServiceAbstraction;
 using Shared.DTOS.AdminDTOs;
+using System.Security.Claims;
 
 namespace Presentation.Controllers
 {
@@ -10,6 +11,7 @@ namespace Presentation.Controllers
     {
         private readonly IServiceManager _serviceManager;
         private readonly IAuditLogService _auditLogService;
+        private const int FallbackAuditEmployeeId = 1;
 
         public AdminEmployeesController(
             IServiceManager serviceManager,
@@ -19,13 +21,27 @@ namespace Presentation.Controllers
             _auditLogService = auditLogService;
         }
 
+        private int GetCurrentEmployeeId()
+        {
+            var userIdClaim =
+                User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                User.FindFirstValue("id") ??
+                User.FindFirstValue("employeeId") ??
+                User.FindFirstValue("EmployeeId") ??
+                User.FindFirstValue("sub");
+
+            return int.TryParse(userIdClaim, out var employeeId)
+                ? employeeId
+                : FallbackAuditEmployeeId;
+        }
+
         /// <summary>
         /// Get all employees
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetAllEmployees()
+        public async Task<IActionResult> GetAllEmployees([FromQuery] string? searchQuery = null)
         {
-            var result = await _serviceManager.EmployeeService.GetAllEmployeesAsync();
+            var result = await _serviceManager.EmployeeService.GetAllEmployeesAsync(searchQuery);
             return Ok(result);
         }
 
@@ -60,13 +76,15 @@ namespace Presentation.Controllers
                 // 2. تأمين الـ Audit Log في بلوك try-catch منفصل
                 try
                 {
+                    var currentAdminId = GetCurrentEmployeeId();
+
                     await _auditLogService.LogActionAsync(
                         tableName: "Employees",
                         keyValue: result.Id.ToString(),
                         actionType: "CREATE",
                         oldValues: null,
-                        newValues: $"EmployeeCode: {result.EmployeeCode}, FullName: {result.FullName}",
-                        employeeId: 1 // ملحوظة: الـ ID ده ثابت وممكن يتغير لاحقاً بناءً على الـ Token
+                        newValues: $"تم إنشاء حساب جديد للموظف: {result.FullName} - الرقم القومي: {result.NationalId}",
+                        employeeId: currentAdminId
                     );
                 }
                 catch (Exception logEx)
@@ -79,7 +97,7 @@ namespace Presentation.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return Conflict(new { message = ex.Message });
             }
         }
 
@@ -109,7 +127,7 @@ namespace Presentation.Controllers
                     actionType: "UPDATE",
                     oldValues: $"IsActive: {oldStatus}",
                     newValues: $"IsActive: {!oldStatus}",
-                    employeeId: 1
+                    employeeId: GetCurrentEmployeeId()
                 );
             }
             catch (Exception logEx)
@@ -137,10 +155,18 @@ namespace Presentation.Controllers
 
             var oldValues = $"FullName: {employee.FullName}, JobTitle: {employee.JobTitle}, Department: {employee.Department}, OfficeId: {employee.OfficeId}";
 
-            var result = await _serviceManager.EmployeeService.UpdateEmployeeAsync(id, dto);
+            bool result;
+            try
+            {
+                result = await _serviceManager.EmployeeService.UpdateEmployeeAsync(id, dto);
 
-            if (!result)
-                return BadRequest(new { message = "Failed to update employee" });
+                if (!result)
+                    return BadRequest(new { message = "Failed to update employee" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
 
             var updatedEmployee = await _serviceManager.EmployeeService.GetEmployeeByIdAsync(id);
 
@@ -153,7 +179,7 @@ namespace Presentation.Controllers
                     actionType: "UPDATE",
                     oldValues: oldValues,
                     newValues: $"FullName: {updatedEmployee?.FullName}, JobTitle: {updatedEmployee?.JobTitle}, Department: {updatedEmployee?.Department}, OfficeId: {updatedEmployee?.OfficeId}",
-                    employeeId: 1
+                    employeeId: GetCurrentEmployeeId()
                 );
             }
             catch (Exception logEx)
@@ -189,7 +215,7 @@ namespace Presentation.Controllers
                     actionType: "DELETE",
                     oldValues: $"EmployeeCode: {employee.EmployeeCode}, FullName: {employee.FullName}",
                     newValues: null,
-                    employeeId: 1
+                    employeeId: GetCurrentEmployeeId()
                 );
             }
             catch (Exception logEx)

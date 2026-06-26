@@ -1,47 +1,58 @@
-import { useState, useEffect } from 'react';
-import { Table, Button, Form, Badge, Card, Container } from 'react-bootstrap';
+import { useEffect, useState } from 'react';
+import { Table, Button, Form, Badge, Card, Container, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { getEmployees, toggleEmployeeStatus } from '../../services/adminService';
+import { toggleEmployeeStatus } from '../../services/adminService';
+import { useDataContext } from '../../context/DataContext';
+
+const getEmployeeRole = (employee) => {
+  if (!employee) return '-';
+  const rawRole = employee.Role || employee.role || employee.Department || employee.department || '';
+  const roleText = String(rawRole).toLowerCase().trim();
+
+  if (roleText.includes("admin")) return "مدير النظام";
+  if (roleText.includes("data") || roleText.includes("entry")) return "مدخل بيانات";
+  if (roleText.includes("review") || roleText.includes("audit") || roleText.includes("reviewer")) return "مُراجع";
+  if (roleText.includes("financial") || roleText.includes("finance") || roleText.includes("مالي")) return "مالي";
+  if (roleText.includes("manager") || roleText.includes("مأمورية")) return "مدير مأمورية";
+  if (roleText.includes("committee") || roleText.includes("طعون")) return "لجنة الطعون";
+
+  return rawRole || '-';
+};
 
 const EmployeeList = () => {
   const navigate = useNavigate();
-  const [employees, setEmployees] = useState([]);
+  const { employees, refreshEmployees, refreshAuditLogs } = useDataContext();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
   useEffect(() => {
-    // 1. تعريف الدالة جوه الـ useEffect مباشرة
-    const fetchEmployees = async () => {
-      try {
-        const data = await getEmployees();
-        setEmployees(data);
-      } catch (error) {
-        console.error("خطأ في جلب الموظفين", error);
-      }
-    };
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, 300);
 
-    // 2. استدعاؤها فوراً في نفس المكان
-    fetchEmployees();
-  }, []); // المصفوفة فارغة تماماً ومستحيل تطلع إيرور هنا
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
-  // دالة تغيير حالة الموظف
-  const handleToggleStatus = async (id, currentStatus) => {
+  useEffect(() => {
+    refreshEmployees(debouncedSearchQuery).catch((error) => {
+      console.error('Error fetching employees', error);
+    });
+  }, [refreshEmployees, debouncedSearchQuery]);
+
+  const handleToggleStatus = async (id) => {
     try {
       await toggleEmployeeStatus(id);
-      
-      setEmployees(prevEmployees => 
-        prevEmployees.map(emp => 
-          emp.id === id ? { ...emp, isActive: !currentStatus } : emp
-        )
-      );
+      await Promise.all([refreshEmployees(debouncedSearchQuery), refreshAuditLogs()]);
     } catch (error) {
-      console.error("Error updating status:", error);
-      alert("عذراً، تعذر تحديث حالة حساب الموظف في قاعدة البيانات.");
+      console.error('Error updating status:', error);
+      alert('عذرا، تعذر تحديث حالة حساب الموظف في قاعدة البيانات.');
     }
   };
 
   return (
     <Container fluid className="mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4 className="fw-bold text-dark">👥 إدارة حسابات الموظفين</h4>
+        <h4 className="fw-bold text-dark">إدارة حسابات الموظفين</h4>
         <Button variant="dark" onClick={() => navigate('/admin/users')}>
           <i className="fa-solid fa-user-plus me-2"></i> إضافة موظف جديد
         </Button>
@@ -49,46 +60,63 @@ const EmployeeList = () => {
 
       <Card className="shadow-sm border-0">
         <Card.Body>
+          <Row className="mb-3">
+            <Col md={5} sm={12}>
+              <Form.Control
+                type="text"
+                placeholder="بحث باسم أو الرقم القومي للموظف..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </Col>
+          </Row>
+
           <Table hover responsive className="align-middle">
             <thead className="table-light">
               <tr>
                 <th>كود الموظف</th>
+                <th>الرقم القومي</th>
                 <th>الاسم بالكامل</th>
                 <th>المسمى الوظيفي</th>
-                <th>القسم</th>
+                <th>الصلاحية</th>
                 <th>اسم المستخدم</th>
                 <th>حالة الحساب</th>
-                <th>تغيير الحالة (Toggle)</th>
+                <th>تغيير الحالة</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="table-hover">
               {employees && employees.length > 0 ? (
-                employees.map((emp) => (
-                  <tr key={emp.id || emp.employeeCode}>
-                    <td><strong>{emp.employeeCode}</strong></td>
-                    <td>{emp.fullName}</td>
-                    <td>{emp.jobTitle}</td>
-                    <td>{emp.department}</td>
-                    <td>{emp.username}</td>
-                    <td>
-                      <Badge bg={emp.isActive ? 'success' : 'danger'}>
-                        {emp.isActive ? 'نشط' : 'معلق'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Form.Check 
-                        type="switch"
-                        id={`custom-switch-${emp.id || emp.employeeCode}`}
-                        checked={emp.isActive || false}
-                        onChange={() => handleToggleStatus(emp.id, emp.isActive)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </td>
-                  </tr>
-                ))
+                employees.map((emp) => {
+                  const isEmpActive = emp.isActive !== undefined ? emp.isActive : emp.IsActive;
+
+                  return (
+                    <tr key={emp.id || emp.employeeCode || emp.EmployeeCode}>
+                      <td><strong>{emp.employeeCode || emp.EmployeeCode || '-'}</strong></td>
+                      <td>{emp.nationalId || emp.NationalId || emp.nationalID || emp.NationalID || '-'}</td>
+                      <td>{emp.fullName || emp.FullName || '-'}</td>
+                      <td>{emp.jobTitle || emp.JobTitle || '-'}</td>
+                      <td>{getEmployeeRole(emp)}</td>
+                      <td>{emp.username || emp.Username || '-'}</td>
+                      <td>
+                        <Badge bg={isEmpActive ? 'success' : 'danger'}>
+                          {isEmpActive ? 'نشط' : 'معلق'}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Form.Check
+                          type="switch"
+                          id={`custom-switch-${emp.id || emp.employeeCode || emp.EmployeeCode}`}
+                          checked={isEmpActive || false}
+                          onChange={() => handleToggleStatus(emp.id)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center text-muted p-4">لا يوجد موظفين مسجلين حالياً.</td>
+                  <td colSpan="8" className="text-center text-muted p-4">لا يوجد موظفين مطابقين للبحث.</td>
                 </tr>
               )}
             </tbody>

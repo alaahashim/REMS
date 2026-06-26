@@ -4,7 +4,7 @@ namespace Core.ServiceAbstraction
 {
     public interface IEmployeeService
     {
-        Task<IEnumerable<EmployeeDto>> GetAllEmployeesAsync();
+        Task<IEnumerable<EmployeeDto>> GetAllEmployeesAsync(string? searchQuery = null);
 
         Task<EmployeeDto?> GetEmployeeByIdAsync(int id);
 

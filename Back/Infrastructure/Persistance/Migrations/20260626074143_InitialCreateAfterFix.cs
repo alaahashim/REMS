@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace Persistance.Data.Migrations
+namespace Persistance.Migrations
 {
     /// <inheritdoc />
-    public partial class CleanInitialDesign : Migration
+    public partial class InitialCreateAfterFix : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -39,8 +39,9 @@ namespace Persistance.Data.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    EmployeeCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EmployeeCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    NationalId = table.Column<string>(type: "nvarchar(14)", maxLength: 14, nullable: false),
                     JobTitle = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Department = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     OfficeId = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -247,13 +248,13 @@ namespace Persistance.Data.Migrations
                 columns: new[] { "Id", "CreatedAt", "Name" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(7527), "القاهرة" },
-                    { 2, new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8773), "الجيزة" },
-                    { 3, new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8775), "الإسكندرية" },
-                    { 4, new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8776), "أسيوط" },
-                    { 5, new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8778), "المنيا" },
-                    { 6, new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8849), "سوهاج" },
-                    { 7, new DateTime(2026, 6, 23, 19, 24, 10, 999, DateTimeKind.Utc).AddTicks(8851), "قنا" }
+                    { 1, new DateTime(2026, 6, 26, 7, 41, 37, 29, DateTimeKind.Utc).AddTicks(4888), "القاهرة" },
+                    { 2, new DateTime(2026, 6, 26, 7, 41, 37, 29, DateTimeKind.Utc).AddTicks(5615), "الجيزة" },
+                    { 3, new DateTime(2026, 6, 26, 7, 41, 37, 29, DateTimeKind.Utc).AddTicks(5617), "الإسكندرية" },
+                    { 4, new DateTime(2026, 6, 26, 7, 41, 37, 29, DateTimeKind.Utc).AddTicks(5618), "أسيوط" },
+                    { 5, new DateTime(2026, 6, 26, 7, 41, 37, 29, DateTimeKind.Utc).AddTicks(5620), "المنيا" },
+                    { 6, new DateTime(2026, 6, 26, 7, 41, 37, 29, DateTimeKind.Utc).AddTicks(5621), "سوهاج" },
+                    { 7, new DateTime(2026, 6, 26, 7, 41, 37, 29, DateTimeKind.Utc).AddTicks(5622), "قنا" }
                 });
 
             migrationBuilder.InsertData(
@@ -261,20 +262,20 @@ namespace Persistance.Data.Migrations
                 columns: new[] { "Id", "CreatedAt", "GovernorateId", "Name" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(5734), 1, "مدينة نصر" },
-                    { 2, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6810), 1, "المعادي" },
-                    { 3, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6813), 1, "حلوان" },
-                    { 4, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6814), 2, "الدقي" },
-                    { 5, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6816), 2, "الهرم" },
-                    { 6, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6818), 3, "سيدي جابر" },
-                    { 7, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6820), 3, "العجمي" },
-                    { 8, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6821), 4, "أسيوط" },
-                    { 9, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6823), 4, "البداري" },
-                    { 10, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6825), 4, "ديروط" },
-                    { 11, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6827), 4, "القوصية" },
-                    { 12, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6828), 5, "المنيا" },
-                    { 13, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6830), 6, "سوهاج" },
-                    { 14, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(6832), 7, "قنا" }
+                    { 1, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(5898), 1, "مدينة نصر" },
+                    { 2, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6595), 1, "المعادي" },
+                    { 3, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6597), 1, "حلوان" },
+                    { 4, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6598), 2, "الدقي" },
+                    { 5, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6600), 2, "الهرم" },
+                    { 6, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6601), 3, "سيدي جابر" },
+                    { 7, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6603), 3, "العجمي" },
+                    { 8, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6604), 4, "أسيوط" },
+                    { 9, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6606), 4, "البداري" },
+                    { 10, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6608), 4, "ديروط" },
+                    { 11, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6609), 4, "القوصية" },
+                    { 12, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6611), 5, "المنيا" },
+                    { 13, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6612), 6, "سوهاج" },
+                    { 14, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(6614), 7, "قنا" }
                 });
 
             migrationBuilder.InsertData(
@@ -282,12 +283,12 @@ namespace Persistance.Data.Migrations
                 columns: new[] { "Id", "CenterId", "CreatedAt", "Name", "Zone" },
                 values: new object[,]
                 {
-                    { 1, 1, new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(707), "الحي السابع", "A" },
-                    { 2, 1, new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1933), "الحي الثامن", "B" },
-                    { 3, 1, new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1935), "الحي العاشر", "C" },
-                    { 4, 8, new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1937), "غرب البلد", "A" },
-                    { 5, 8, new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1941), "شرق البلد", "B" },
-                    { 6, 8, new DateTime(2026, 6, 23, 19, 24, 11, 2, DateTimeKind.Utc).AddTicks(1943), "الأربعين", "C" }
+                    { 1, 1, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(8883), "الحي السابع", "A" },
+                    { 2, 1, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(9839), "الحي الثامن", "B" },
+                    { 3, 1, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(9842), "الحي العاشر", "C" },
+                    { 4, 8, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(9843), "غرب البلد", "A" },
+                    { 5, 8, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(9845), "شرق البلد", "B" },
+                    { 6, 8, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(9846), "الأربعين", "C" }
                 });
 
             migrationBuilder.InsertData(
@@ -295,18 +296,24 @@ namespace Persistance.Data.Migrations
                 columns: new[] { "Id", "CenterId", "CreatedAt", "Name" },
                 values: new object[,]
                 {
-                    { 1, 1, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(8541), "شارع النصر" },
-                    { 2, 1, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9416), "شارع عباس العقاد" },
-                    { 3, 1, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9418), "شارع مكرم عبيد" },
-                    { 4, 8, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9419), "شارع الجمهورية" },
-                    { 5, 8, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9421), "شارع الهلالي" },
-                    { 6, 8, new DateTime(2026, 6, 23, 19, 24, 11, 1, DateTimeKind.Utc).AddTicks(9422), "شارع يسري راغب" }
+                    { 1, 1, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(7425), "شارع النصر" },
+                    { 2, 1, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(8011), "شارع عباس العقاد" },
+                    { 3, 1, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(8014), "شارع مكرم عبيد" },
+                    { 4, 8, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(8015), "شارع الجمهورية" },
+                    { 5, 8, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(8016), "شارع الهلالي" },
+                    { 6, 8, new DateTime(2026, 6, 26, 7, 41, 37, 30, DateTimeKind.Utc).AddTicks(8017), "شارع يسري راغب" }
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Centers_GovernorateId",
                 table: "Centers",
                 column: "GovernorateId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Employees_NationalId",
+                table: "Employees",
+                column: "NationalId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Neighborhoods_CenterId",

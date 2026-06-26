@@ -8,7 +8,7 @@ namespace Core.DomainLayer.Entities.AdminModule
 
         public string FullName { get; set; } = null!;
 
-        // public string? NationalId { get; set; }
+        public string NationalId { get; set; } = null!;
 
         public string JobTitle { get; set; } = null!;
 

@@ -2,37 +2,50 @@
 import axios from 'axios';
 import { Form, Button, Card, Container, Row, Col, Alert, Spinner, Table, InputGroup, Pagination } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { addNewUser, getEmployees, toggleEmployeeStatus } from '../../services/adminService';
+import { addNewUser, toggleEmployeeStatus } from '../../services/adminService';
+import { useDataContext } from '../../context/DataContext';
 
 const EMPLOYEES_API_URL = 'http://localhost:5179/api/AdminEmployees';
 
-const roleMap = {
-  Admin: 'أدمن (مدير النظام)',
-  'Data Entry': 'مدخل بيانات',
-  Reviewer: 'مراجع',
-  Finance: 'مالي',
-  Manager: 'مدير مأمورية',
-  Committee: 'لجنة الطعون',
+// دالة موحدة ومرنة للغاية لتعريب الصلاحيات ومطابقتها مع الفلتر
+const getNormalizedArabicRole = (employee) => {
+  if (!employee) return 'مدخل بيانات';
+  const rawRole = employee.role || employee.Role || employee.department || employee.Department || '';
+  const roleText = String(rawRole).toLowerCase().trim();
+
+  if (roleText.includes("admin")) return "أدمن (مدير النظام)";
+  if (roleText.includes("data") || roleText.includes("entry")) return "مدخل بيانات";
+  if (roleText.includes("review") || roleText.includes("audit") || roleText.includes("reviewer")) return "مراجع";
+  if (roleText.includes("finance") || roleText.includes("financial") || roleText.includes("مالي")) return "مالي";
+  if (roleText.includes("manager") || roleText.includes("مأمورية")) return "مدير مأمورية";
+  if (roleText.includes("committee") || roleText.includes("طعون")) return "لجنة الطعون";
+
+  return rawRole || 'مدخل بيانات';
 };
 
 const UserManagement = () => {
   const navigate = useNavigate();
+  const { employees, refreshEmployees, refreshAuditLogs } = useDataContext();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
-  const [employees, setEmployees] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [typedPage, setTypedPage] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
 
+  // States لإدارة الـ Modal العربي الاحترافي
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [targetEmployee, setTargetEmployee] = useState(null);
+
   const [formData, setFormData] = useState({
     name: '',
     employeeCode: '',
+    nationalID: '',
     jobTitle: '',
     officeId: '',
     username: '',
     password: '',
-    role: 'مدخل بيانات',
+    role: 'Data Entry',
     isActive: true,
   });
 
@@ -40,19 +53,12 @@ const UserManagement = () => {
   const [jobTitleFilter, setJobTitleFilter] = useState('كل المسميات');
   const [roleFilter, setRoleFilter] = useState('كل الصلاحيات');
 
-  const loadEmployees = async () => {
-    try {
-      const data = await getEmployees();
-      setEmployees(Array.isArray(data) ? data : []);
-    } catch (error) {
+  useEffect(() => {
+    refreshEmployees().catch((error) => {
       console.error('Error fetching employees:', error);
       setMessage({ text: 'تعذر جلب بيانات الموظفين.', type: 'danger' });
-    }
-  };
-
-  useEffect(() => {
-    loadEmployees();
-  }, []);
+    });
+  }, [refreshEmployees]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -73,35 +79,36 @@ const UserManagement = () => {
     return match ? Number(match[1]) : null;
   };
 
-  const translatedRole = (employee) => {
-    return roleMap[employee.role] || employee.role || employee.department || '-';
-  };
-
   const isEmployeeActive = (employee) => {
-    const value = employee.status ?? employee.isActive;
+    const value = employee.status ?? employee.isActive ?? employee.IsActive;
     if (typeof value === 'string') {
       return /^(true|1|active|نشط)$/i.test(value);
     }
     return Boolean(value);
   };
 
-  const handleToggleStatus = async (employeeId, currentStatus) => {
-    const confirmationMessage = currentStatus
-      ? 'هل أنت متأكد من تعطيل هذا الموظف؟'
-      : 'هل أنت متأكد من تفعيل هذا الموظف؟';
+  const handleToggleStatus = (employeeId, currentStatus) => {
+    setTargetEmployee({ id: employeeId, isActive: currentStatus });
+    setShowConfirmModal(true);
+  };
 
-    if (!window.confirm(confirmationMessage)) return;
+  const confirmToggleStatus = async () => {
+    if (!targetEmployee) return;
 
+    const { id } = targetEmployee;
+    setShowConfirmModal(false); 
     setLoading(true);
+
     try {
-      await toggleEmployeeStatus(employeeId);
-      await loadEmployees();
+      await toggleEmployeeStatus(id);
+      await Promise.all([refreshEmployees(), refreshAuditLogs()]);
       setMessage({ text: 'تم تحديث حالة الموظف بنجاح.', type: 'success' });
     } catch (error) {
       console.error('Toggle status failed', error);
       setMessage({ text: 'تعذر تحديث حالة الموظف.', type: 'danger' });
     } finally {
       setLoading(false);
+      setTargetEmployee(null);
     }
   };
 
@@ -111,7 +118,7 @@ const UserManagement = () => {
     setLoading(true);
     try {
       await axios.delete(`${EMPLOYEES_API_URL}/${employeeId}`);
-      await loadEmployees();
+      await Promise.all([refreshEmployees(), refreshAuditLogs()]);
       setMessage({ text: 'تم حذف الموظف بنجاح.', type: 'success' });
     } catch (error) {
       console.error('Delete employee failed', error);
@@ -125,17 +132,18 @@ const UserManagement = () => {
     const query = searchQuery.trim().toLowerCase();
 
     return employees.filter((employee) => {
-      const employeeCode = String(employee.employeeCode || employee.id || '').toLowerCase();
-      const fullName = String(employee.fullName || '').toLowerCase();
-      const matchSearch = !query || fullName.includes(query) || employeeCode.includes(query);
+      const nationalID = String(employee.nationalID || employee.nationalId || employee.NationalID || '').toLowerCase();
+      const fullName = String(employee.fullName || employee.FullName || '').toLowerCase();
+      const matchSearch = !query || fullName.includes(query) || nationalID.includes(query);
 
       if (!matchSearch) return false;
 
-      if (jobTitleFilter !== 'كل المسميات' && (employee.jobTitle || '') !== jobTitleFilter) {
+      if (jobTitleFilter !== 'كل المسميات' && (employee.jobTitle || employee.JobTitle || '') !== jobTitleFilter) {
         return false;
       }
 
-      if (roleFilter !== 'كل الصلاحيات' && translatedRole(employee) !== roleFilter) {
+      // هنا نضمن مطابقة الفلتر المختار بدقة مع الدالة الموحدة
+      if (roleFilter !== 'كل الصلاحيات' && getNormalizedArabicRole(employee) !== roleFilter) {
         return false;
       }
 
@@ -145,8 +153,8 @@ const UserManagement = () => {
 
   const sortedEmployees = useMemo(() => {
     const employeeSorter = (a, b) => {
-      const aCode = normalizeCodeValue(a.employeeCode ?? a.id ?? '');
-      const bCode = normalizeCodeValue(b.employeeCode ?? b.id ?? '');
+      const aCode = normalizeCodeValue(a.employeeCode ?? a.EmployeeCode ?? a.id ?? '');
+      const bCode = normalizeCodeValue(b.employeeCode ?? b.EmployeeCode ?? b.id ?? '');
       const aNum = extractCodeNumber(aCode);
       const bNum = extractCodeNumber(bCode);
 
@@ -189,7 +197,7 @@ const UserManagement = () => {
   };
 
   const uniqueJobTitles = useMemo(() => {
-    const titles = [...new Set(employees.map((emp) => emp.jobTitle).filter(Boolean))];
+    const titles = [...new Set(employees.map((emp) => emp.jobTitle || emp.JobTitle).filter(Boolean))];
     return titles.sort((a, b) => a.localeCompare(b, 'ar'));
   }, [employees]);
 
@@ -215,14 +223,15 @@ const UserManagement = () => {
       setFormData({
         name: '',
         employeeCode: '',
+        nationalID: '',
         jobTitle: '',
         officeId: '',
         username: '',
         password: '',
-        role: 'مدخل بيانات',
+        role: 'Data Entry',
         isActive: true,
       });
-      await loadEmployees();
+      await Promise.all([refreshEmployees(), refreshAuditLogs()]);
       setCurrentPage(1);
     } catch (error) {
       const errorMsg = error?.response?.data?.message || error?.message || 'حدث خطأ أثناء حفظ البيانات';
@@ -257,10 +266,10 @@ const UserManagement = () => {
                   <Row className="g-3">
                     <Col md={4} sm={12}>
                       <Form.Group>
-                        <Form.Label className="mb-1">بحث باسم أو كود الموظف</Form.Label>
+                        <Form.Label className="mb-1">بحث باسم أو الرقم القومي للموظف</Form.Label>
                         <Form.Control
                           type="text"
-                          placeholder="بحث باسم أو كود الموظف..."
+                          placeholder="بحث باسم أو الرقم القومي للموظف..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -295,6 +304,7 @@ const UserManagement = () => {
                     <tr>
                       <th>الرقم (ID)</th>
                       <th>كود الموظف</th>
+                      <th>الرقم القومي</th>
                       <th>الاسم الثلاثي</th>
                       <th>المسمى الوظيفي</th>
                       <th>اسم المستخدم</th>
@@ -308,29 +318,30 @@ const UserManagement = () => {
                       currentRows.map((employee) => {
                         const active = isEmployeeActive(employee);
                         return (
-                          <tr key={employee.id || employee.employeeCode}>
+                          <tr key={employee.id || employee.employeeCode || employee.EmployeeCode}>
                             <td>{employee.id}</td>
-                            <td>{employee.employeeCode || '-'}</td>
-                            <td>{employee.fullName || '-'}</td>
-                            <td>{employee.jobTitle || '-'}</td>
-                            <td>{employee.username || '-'}</td>
-                            <td>{translatedRole(employee)}</td>
+                            <td>{employee.employeeCode || employee.EmployeeCode || '-'}</td>
+                            <td>{employee.nationalID || employee.nationalId || employee.NationalID || '-'}</td>
+                            <td>{employee.fullName || employee.FullName || '-'}</td>
+                            <td>{employee.jobTitle || employee.JobTitle || '-'}</td>
+                            <td>{employee.username || employee.Username || '-'}</td>
+                            <td>{getNormalizedArabicRole(employee)}</td>
                             <td>{active ? 'نشط' : 'معلق'}</td>
                             <td className="text-nowrap">
                               <Button
                                 size="sm"
                                 variant={active ? 'warning' : 'success'}
                                 className="me-2"
-                                onClick={() => handleToggleStatus(employee.id || employee.employeeCode, active)}
+                                onClick={() => handleToggleStatus(employee.id || employee.employeeCode || employee.EmployeeCode, active)}
                               >
                                 {active ? 'تعطيل' : 'تفعيل'}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="danger"
-                                onClick={() => handleDeleteEmployee(employee.id || employee.employeeCode)}
+                                onClick={() => handleDeleteEmployee(employee.id || employee.employeeCode || employee.EmployeeCode)}
                               >
-                                حذف
+                                  حذف
                               </Button>
                             </td>
                           </tr>
@@ -338,7 +349,7 @@ const UserManagement = () => {
                       })
                     ) : (
                       <tr>
-                        <td colSpan="8" className="text-center text-muted py-4">
+                        <td colSpan="9" className="text-center text-muted py-4">
                           لا يوجد موظفين مطابقين للبحث أو الفلاتر.
                         </td>
                       </tr>
@@ -422,6 +433,24 @@ const UserManagement = () => {
                         />
                       </Form.Group>
                     </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>الرقم القومي (National ID) <span className="text-danger">*</span></Form.Label>
+                        <Form.Control
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]{14}"
+                          maxLength={14}
+                          placeholder="14 رقم"
+                          required
+                          value={formData.nationalID}
+                          onChange={(e) => {
+                            const nationalID = e.target.value.replace(/\D/g, '').slice(0, 14);
+                            setFormData({ ...formData, nationalID });
+                          }}
+                        />
+                      </Form.Group>
+                    </Col>
                   </Row>
 
                   <Row>
@@ -496,12 +525,12 @@ const UserManagement = () => {
                           value={formData.role}
                           onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                         >
-                          <option value="مدخل بيانات">مدخل بيانات</option>
-                          <option value="مراجع">مراجع</option>
-                          <option value="مالي">مالي</option>
-                          <option value="مدير مأمورية">مدير مأمورية</option>
-                          <option value="أدمن (مدير النظام)">أدمن (مدير النظام)</option>
-                          <option value="لجنة الطعون">لجنة الطعون</option>
+                          <option value="Data Entry">مدخل بيانات</option>
+                          <option value="Reviewer">مراجع</option>
+                          <option value="Finance">مالي</option>
+                          <option value="Manager">مدير مأمورية</option>
+                          <option value="Admin">أدمن (مدير النظام)</option>
+                          <option value="Committee">لجنة الطعون</option>
                         </Form.Select>
                       </Form.Group>
                     </Col>
@@ -528,6 +557,47 @@ const UserManagement = () => {
           )}
         </Col>
       </Row>
+
+      <div className={`modal fade ${showConfirmModal ? 'show d-block' : ''}`} tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)', direction: 'rtl' }}>
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content border-0 shadow">
+          <div className="modal-header bg-dark text-white d-flex justify-content-between align-items-center w-100 px-3" style={{ direction: 'rtl' }}>
+  <h5 className="modal-title m-0 fw-bold text-white">تأكيد الإجراء</h5>
+  <button 
+    type="button" 
+    className="btn-close m-0 p-0" 
+    onClick={() => setShowConfirmModal(false)}
+    style={{ 
+      filter: 'none', 
+      background: 'none', 
+      fontSize: '1.8rem', 
+      color: '#ffffff', 
+      opacity: '1',
+      lineHeight: '1',
+      border: 'none'
+    }}
+  >
+    &times;
+  </button>
+</div>
+            <div className="modal-body text-end py-4">
+              <p className="mb-0 fs-5 text-dark">
+                {targetEmployee?.isActive 
+                  ? 'هل أنت متأكد من تعطيل هذا الموظف؟' 
+                  : 'هل أنت متأكد من تفعيل هذا الموظف؟'}
+              </p>
+            </div>
+            <div className="modal-footer d-flex justify-content-end gap-2 bg-light">
+              <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+                إلغاء الأمر
+              </Button>
+              <Button variant="primary" onClick={confirmToggleStatus} disabled={loading}>
+                {loading ? <Spinner size="sm" animation="border" /> : 'تأكيد وموافق'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
     </Container>
   );
 };

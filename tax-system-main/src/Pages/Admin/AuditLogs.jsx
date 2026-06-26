@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Container, Table, Spinner, Badge, Button, Pagination, Form, Row, Col } from 'react-bootstrap';
-import { getSystemLogs } from '../../services/adminService';
+import { useDataContext } from '../../context/DataContext';
 
 const actionMapFilter = {
   'إضافة': ['CREATE', 'INSERT'],
@@ -9,7 +9,9 @@ const actionMapFilter = {
 };
 
 const AuditLogs = () => {
-  const [logs, setLogs] = useState([]);
+  // جلب الموظفين والسجلات من الـ Context لضمان ربط البيانات بدقة واحترافية
+  const { auditLogs, employees, refreshAuditLogs, refreshEmployees } = useDataContext();
+  const logs = auditLogs;
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [typedPage, setTypedPage] = useState(1);
@@ -21,11 +23,13 @@ const AuditLogs = () => {
   const loadLogs = async () => {
     setLoading(true);
     try {
-      const data = await getSystemLogs();
-      setLogs(Array.isArray(data) ? data : []);
+      // جلب السجلات والموظفين معاً لضمان الربط الفوري للأسماء والأرقام القومية
+      await Promise.all([
+        refreshAuditLogs ? refreshAuditLogs() : Promise.resolve(),
+        refreshEmployees ? refreshEmployees() : Promise.resolve()
+      ]);
     } catch (error) {
-      console.error('Failed to load audit logs', error);
-      setLogs([]);
+      console.error('Failed to load audit logs data', error);
     } finally {
       setLoading(false);
       setCurrentPage(1);
@@ -34,6 +38,7 @@ const AuditLogs = () => {
 
   useEffect(() => {
     loadLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -47,11 +52,14 @@ const AuditLogs = () => {
 
   const translateUser = (log) => {
     if (!log) return '-';
-    const nameMatch = /FullName:\s*([^,|]+)/i.exec(log.details) || /Username:\s*([^,|]+)/i.exec(log.details);
-    if (nameMatch && nameMatch[1]) return nameMatch[1].trim();
+    const action = (log.action || '').toString().toUpperCase();
+    const entity = (log.entity || '').toString();
+    if ((entity === 'Employees' || entity === 'Employee') && (action === 'CREATE' || action === 'INSERT' || action === 'UPDATE')) {
+      return 'مدير النظام';
+    }
     if (/^Employee #/i.test(log.user)) return 'مدير النظام';
     if (log.user === 'System') return 'النظام';
-    return log.user || '-';
+    return log.user || 'مدير النظام';
   };
 
   const mapStatus = (value) => {
@@ -59,8 +67,6 @@ const AuditLogs = () => {
     const normalized = String(value).trim();
     if (/^(true|1)$/i.test(normalized)) return 'نشط';
     if (/^(false|0)$/i.test(normalized)) return 'معلق';
-    if (/^active$/i.test(normalized)) return 'نشط';
-    if (/^(inactive|suspended)$/i.test(normalized)) return 'معلق';
     return normalized;
   };
 
@@ -83,62 +89,122 @@ const AuditLogs = () => {
     return map[entity] || entity;
   };
 
+  const extractField = (text, field) => {
+    const match = new RegExp(field + '\\s*:\\s*([^,|\\|\\n]+)', 'i').exec(text || '');
+    return match ? match[1].trim() : null;
+  };
+
+  // وظيفة البحث الشامل والذكي والمزدوج لجلب بيانات الموظف كاملة في كل صف مع كل أكشن
+  const findEmployeeDataGlobally = (targetId) => {
+    if (!targetId) return { name: null, nationalId: null, empCode: null };
+
+    // أولاً: البحث في قائمة الموظفين الحية الحالية (الأدق والأحدث)
+    if (employees && employees.length > 0) {
+      const emp = employees.find(e => e.id?.toString() === targetId.toString());
+      if (emp) {
+        return {
+          name: emp.fullName || emp.name || null,
+          nationalId: emp.nationalId || null,
+          empCode: emp.employeeCode || null
+        };
+      }
+    }
+
+    // ثانياً: إذا لم يُعثر عليه (محذوف مثلاً)، نبحث عكسياً في تفاصيل السجلات القديمة
+    for (const log of logs) {
+      const detailsStr = log.details || '';
+      const keyVal = extractField(detailsStr, 'Key') || extractField(detailsStr, 'Id');
+
+      if (keyVal?.toString() === targetId.toString()) {
+        const name = extractField(detailsStr, 'FullName') || extractField(detailsStr, 'Name');
+        const nationalId = extractField(detailsStr, 'NationalId') || extractField(detailsStr, 'NationalID');
+        const empCode = extractField(detailsStr, 'EmployeeCode');
+
+        if (name || nationalId || empCode) {
+          return { name, nationalId, empCode };
+        }
+      }
+    }
+    return { name: null, nationalId: null, empCode: null };
+  };
+
   const formatDetails = (log) => {
     if (!log || !log.details) return <span className="text-muted">لا توجد تفاصيل</span>;
 
-    const parts = log.details.split(' | ').map((part) => part.trim());
-    const keyPart = parts.find((part) => /^Key:/i.test(part));
-    const newPart = parts.find((part) => /^New:/i.test(part));
-    const oldPart = parts.find((part) => /^Old:/i.test(part));
     const action = (log.action || '').toString().toUpperCase();
+    const detailsStr = log.details;
 
-    const extractField = (text, field) => {
-      const match = new RegExp(field + '\\s*:\\s*([^,|]+)', 'i').exec(text || '');
-      return match ? match[1].trim() : null;
+    // محاولة استخراج البيانات مباشرة من تفاصيل الصف الحالي أولاً
+    let name = extractField(detailsStr, 'FullName') || extractField(detailsStr, 'Name');
+    let nationalId = extractField(detailsStr, 'NationalId') || extractField(detailsStr, 'NationalID');
+    let empCode = extractField(detailsStr, 'EmployeeCode');
+    const keyVal = extractField(detailsStr, 'Key') || extractField(detailsStr, 'Id');
+
+    // تفعيل البحث الذكي المزدوج لملء الخانات الفارغة لضمان ظهور البيانات كاملة مع كل الأكشنز
+    if ((!name || !nationalId || !empCode) && keyVal) {
+      const globalData = findEmployeeDataGlobally(keyVal);
+      if (!name) name = globalData.name;
+      if (!nationalId) nationalId = globalData.nationalId;
+      if (!empCode) empCode = globalData.empCode;
+    }
+
+    // صياغة الهوية الثابتة والاحترافية والموحدة في كل الخلايا
+    const renderEmployeeIdentity = () => {
+      return (
+        <>
+          <strong className="text-dark">{name || 'غير معروف'}</strong>
+          {nationalId ? <> - الرقم القومي: <strong>{nationalId}</strong></> : ''}
+          {empCode ? ` (كود: ${empCode})` : ''}
+        </>
+      );
     };
 
-    if ((action === 'CREATE' || action === 'INSERT') && newPart) {
-      const name = extractField(newPart, 'FullName');
-      const code = extractField(newPart, 'EmployeeCode');
+    // 1. صياغة عملية الإضافة النظيفة
+    if (action === 'CREATE' || action === 'INSERT') {
       return (
         <div>
-          تم إنشاء حساب جديد للموظف: <strong>{name || '-'}</strong>
-          {code ? <span className="text-muted"> &nbsp;-&nbsp; كود: {code}</span> : null}
+          تم إنشاء حساب جديد للموظف: {renderEmployeeIdentity()}
         </div>
       );
     }
 
-    if (action === 'UPDATE' && keyPart) {
-      const keyVal = keyPart.split(':')[1]?.trim();
+    // 2. صياغة عملية التعديل (البيانات كاملة + تفاصيل التغيير إن وجدت)
+    if (action === 'UPDATE') {
+      const parts = detailsStr.split(' | ').map((part) => part.trim());
+      const oldPart = parts.find((part) => /^Old:/i.test(part));
+      const newPart = parts.find((part) => /^New:/i.test(part));
+
       const oldStatus = oldPart ? extractField(oldPart, 'isActive') || extractField(oldPart, 'Status') : null;
       const newStatus = newPart ? extractField(newPart, 'isActive') || extractField(newPart, 'Status') : null;
+
       if (oldStatus || newStatus) {
         return (
           <div>
-            تعديل حالة الحساب لرقم مسلسل: <strong>{keyVal}</strong>
+            تعديل حالة حساب الموظف: {renderEmployeeIdentity()}
             {oldStatus && newStatus ? (
-              <span> (من {mapStatus(oldStatus) || oldStatus} إلى {mapStatus(newStatus) || newStatus})</span>
+              <span> (من <Badge bg="secondary" className="mx-1">{mapStatus(oldStatus)}</Badge> إلى <Badge bg="success" className="mx-1">{mapStatus(newStatus)}</Badge>)</span>
             ) : null}
           </div>
         );
       }
-      return <div>تم تعديل الحساب (الرقم المسلسل: <strong>{keyVal}</strong>)</div>;
+
+      return (
+        <div>
+          تم تعديل بيانات الموظف: {renderEmployeeIdentity()}
+        </div>
+      );
     }
 
-    if (action === 'DELETE' && keyPart) {
-      const keyVal = keyPart.split(':')[1]?.trim();
-      return <div>تم حذف الحساب (الرقم المسلسل: <strong>{keyVal}</strong>)</div>;
+    // 3. صياغة عملية الحذف كاملة الهوية
+    if (action === 'DELETE') {
+      return (
+        <div>
+          تم حذف حساب الموظف: {renderEmployeeIdentity()}
+        </div>
+      );
     }
 
-    return (
-      <div style={{ fontSize: '0.95rem' }}>
-        {parts.map((part, idx) => (
-          <div key={idx} className="text-break">
-            • {part.replace(/FullName:/gi, 'الاسم:').replace(/EmployeeCode:/gi, 'كود الموظف:').replace(/Key:/gi, 'الرقم المسلسلي:').replace(/\bTrue\b/gi, 'نشط').replace(/\bFalse\b/gi, 'معلق')}
-          </div>
-        ))}
-      </div>
-    );
+    return <div className="text-break">{detailsStr}</div>;
   };
 
   const filteredLogs = useMemo(() => {
@@ -244,6 +310,7 @@ const AuditLogs = () => {
                 height: '28px',
                 margin: '0 5px',
                 padding: '4px',
+                direction: 'ltr'
               }}
             />
             <label className="mb-0" style={{ whiteSpace: 'nowrap' }}>من {totalPages}</label>
@@ -281,10 +348,10 @@ const AuditLogs = () => {
         <Row className="g-3 align-items-end">
           <Col md={4} sm={12}>
             <Form.Group>
-              <Form.Label className="mb-1">بحث باسم الموظف</Form.Label>
+              <Form.Label className="mb-1">بحث عن موظف</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="ابحث باسم الموظف"
+                placeholder="ابحث بالاسم، الرقم القومي، أو كود الموظف..."
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
               />
@@ -308,8 +375,6 @@ const AuditLogs = () => {
               <Form.Label className="mb-1">من تاريخ</Form.Label>
               <Form.Control
                 type="date"
-                data-placeholder="اليوم/الشهر/السنة"
-                aria-label="من تاريخ"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
               />
@@ -321,8 +386,6 @@ const AuditLogs = () => {
               <Form.Label className="mb-1">إلى تاريخ</Form.Label>
               <Form.Control
                 type="date"
-                data-placeholder="اليوم/الشهر/السنة"
-                aria-label="إلى تاريخ"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
               />
@@ -364,9 +427,26 @@ const AuditLogs = () => {
                   return (
                     <tr key={log.id} style={{ borderBottom: '2px solid #eef2f5' }}>
                       <td className="fw-bold text-muted">#{log.id}</td>
-                      <td style={{ fontSize: '0.9rem' }}>
-                        {log.date ? new Date(log.date).toLocaleString('ar-EG', { hour12: true }) : ''}
+                      
+                      <td>
+                        {log.date && (
+                          <div className="d-flex flex-column gap-1" style={{ fontSize: '0.88rem' }}>
+                            <div className="d-flex align-items-center text-nowrap">
+                              <i className="fa-regular fa-calendar-days text-muted" style={{ marginLeft: '6px' }}></i>
+                              <strong>
+                                {new Date(log.date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                              </strong>
+                            </div>
+                            <div className="d-flex align-items-center text-muted text-nowrap">
+                              <i className="fa-regular fa-clock" style={{ marginLeft: '6px' }}></i>
+                              <span>
+                                {new Date(log.date).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </td>
+
                       <td><strong>{userLabel}</strong></td>
                       <td>
                         <Badge bg={badge.variant} className={`fw-normal ${badge.textClass || ''}`}>
@@ -374,7 +454,7 @@ const AuditLogs = () => {
                         </Badge>
                       </td>
                       <td>{entityMap(log.entity)}</td>
-                      <td style={{ fontSize: '0.95rem', maxWidth: '320px' }} className="text-muted">
+                      <td style={{ fontSize: '0.95rem', minWidth: '480px', maxWidth: '750px', whiteSpace: 'normal' }} className="text-dark text-break">
                         {formatDetails(log)}
                       </td>
                     </tr>

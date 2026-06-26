@@ -21,6 +21,7 @@ const normalizeAuditLog = (log) => {
   return {
     id: log.id ?? log.Id,
     date: dateValue,
+    employeeId,
     user: employeeId ? `Employee #${employeeId}` : 'System',
     action: actionType,
     entity: tableName,
@@ -31,6 +32,7 @@ const normalizeAuditLog = (log) => {
 const mapCreateUserPayload = (userData) => ({
   EmployeeCode: userData.employeeCode,
   FullName: userData.name,
+  NationalId: userData.nationalID,
   JobTitle: userData.jobTitle,
   Department: userData.role ?? userData.department ?? '',
   OfficeId: userData.officeId,
@@ -50,8 +52,10 @@ export const addNewUser = async (userData) => {
   return extractResponseData(response);
 };
 
-export const getEmployees = async () => {
-  const response = await axios.get(EMPLOYEES_URL);
+export const getEmployees = async (searchQuery = '') => {
+  const response = await axios.get(EMPLOYEES_URL, {
+    params: searchQuery.trim() ? { searchQuery: searchQuery.trim() } : {},
+  });
   const data = extractResponseData(response);
   return Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
 };

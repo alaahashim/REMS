@@ -16,10 +16,18 @@ namespace Core.Service.Implementations
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<IEnumerable<EmployeeDto>> GetAllEmployeesAsync()
+        public async Task<IEnumerable<EmployeeDto>> GetAllEmployeesAsync(string? searchQuery = null)
         {
             var repo = _unitOfWork.GetRepository<Employee, int>();
             var employees = await repo.GetAllAsync();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var query = searchQuery.Trim();
+                employees = employees.Where(e =>
+                    e.FullName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    e.NationalId.Contains(query, StringComparison.OrdinalIgnoreCase));
+            }
 
             return employees.Select(e => MapToDto(e));
         }
@@ -36,17 +44,18 @@ namespace Core.Service.Implementations
         {
             var repo = _unitOfWork.GetRepository<Employee, int>();
 
-            // Check if employee code already exists
+            // Check if national ID already exists
             var existingEmployee = (await repo.GetAllAsync())
-                .FirstOrDefault(e => e.EmployeeCode == dto.EmployeeCode);
+                .FirstOrDefault(e => e.NationalId == dto.NationalId);
 
             if (existingEmployee != null)
-                throw new InvalidOperationException($"Employee with code {dto.EmployeeCode} already exists.");
+                throw new InvalidOperationException("الرقم القومي مسجل مسبقاً");
 
             var employee = new Employee
             {
                 EmployeeCode = dto.EmployeeCode,
                 FullName = dto.FullName,
+                NationalId = dto.NationalId,
                 JobTitle = dto.JobTitle,
                 Department = dto.Department,
                 OfficeId = dto.OfficeId,
@@ -86,6 +95,17 @@ namespace Core.Service.Implementations
 
             if (!string.IsNullOrEmpty(dto.FullName))
                 employee.FullName = dto.FullName;
+
+            if (!string.IsNullOrEmpty(dto.NationalId))
+            {
+                var existingEmployee = (await repo.GetAllAsync())
+                    .FirstOrDefault(e => e.Id != id && e.NationalId == dto.NationalId);
+
+                if (existingEmployee != null)
+                    throw new InvalidOperationException("الرقم القومي مسجل مسبقاً");
+
+                employee.NationalId = dto.NationalId;
+            }
 
             if (!string.IsNullOrEmpty(dto.JobTitle))
                 employee.JobTitle = dto.JobTitle;
@@ -132,6 +152,7 @@ namespace Core.Service.Implementations
                 Id = employee.Id,
                 EmployeeCode = employee.EmployeeCode,
                 FullName = employee.FullName,
+                NationalId = employee.NationalId,
                 JobTitle = employee.JobTitle,
                 Department = employee.Department,
                 OfficeId = employee.OfficeId,

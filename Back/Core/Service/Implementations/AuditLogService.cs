@@ -52,7 +52,13 @@ namespace Core.Service.Implementations
                 .ToList();
         }
 
-        public async Task LogActionAsync(string tableName, string keyValue, string actionType, string? oldValues, string? newValues, int employeeId)
+        public async Task LogActionAsync(
+            string tableName,
+            string keyValue,
+            string actionType,
+            string? oldValues,
+            string? newValues,
+            int employeeId)
         {
             var repo = _unitOfWork.GetRepository<AuditLog, int>();
 
