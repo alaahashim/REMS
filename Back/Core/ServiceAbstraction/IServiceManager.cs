@@ -10,10 +10,14 @@ namespace Core.ServiceAbstraction
 
         IOwnerService OwnerService { get; }
 
+        IEmployeeService EmployeeService { get; }
+
+        IAuditLogService AuditLogService { get; }
+
         IExemptionService ExemptionService { get; }
 
         ITaxAssessmentService TaxAssessmentService { get; }
-        IAppealService AppealService { get; }
 
+        IAppealService AppealService { get; }
     }
 }
