@@ -85,7 +85,6 @@ namespace Shared.DTOS
 {
     public int Id { get; set; }
 
-    public string NationalId { get; set; } = null!;
     public string OwnerName { get; set; } = null!;
         public string UnitNumber { get; set; } = null!;
 

@@ -52,21 +52,26 @@ namespace Core.Service.Implementations
                 .Distinct()
                 .ToHashSet();
 
-            var items = units.Select(unit =>
-            {
-                var dto = _mapper.Map<ReviewerTaxTaskListItemDto>(unit);
+        var items = units.Select(unit =>
+{
+    var dto = _mapper.Map<ReviewerTaxTaskListItemDto>(unit);
 
-                var primaryOwner = GetPrimaryOwner(unit);
+    var primaryOwner = GetPrimaryOwner(unit);
 
-                dto.OwnerName = primaryOwner?.Owner?.FullName ?? "-";
-                dto.PropertyAddress = BuildPropertyAddress(unit.Property);
-                dto.Usage = unit.UsageType ?? "-";
-                dto.TaxStatus = approvedUnitIds.Contains(unit.Id)
-                    ? TaxStatus.Approved
-                    : TaxStatus.PendingCalculation;
+    var latestAssessment = assessments
+        .Where(a => a.UnitId == unit.Id)
+        .OrderByDescending(a => a.TaxYear)
+        .ThenByDescending(a => a.CalculationDate)
+        .FirstOrDefault();
 
-                return dto;
-            });
+    dto.OwnerName = primaryOwner?.Owner?.FullName ?? "-";
+    dto.PropertyAddress = BuildPropertyAddress(unit.Property);
+    dto.Usage = unit.UsageType ?? "-";
+    dto.TaxStatus = latestAssessment?.Status ?? TaxStatus.PendingCalculation;
+    dto.TaxYear = latestAssessment?.TaxYear;
+
+    return dto;
+});
 
             items = ApplyReviewerTaskFilters(items, query);
 
@@ -158,7 +163,6 @@ namespace Core.Service.Implementations
                 AnnualRentOverride = dto.AnnualRentOverride,
                 PayerType = dto.PayerType,
                 PaymentPlan = dto.PaymentPlan,
-                IncludeAppealFee = dto.IncludeAppealFee
             };
 
             var preview = await PreviewCalculationAsync(previewRequest);
@@ -265,8 +269,8 @@ namespace Core.Service.Implementations
             var taxableAmount = Math.Max(0m, netAnnualRentalValue - exemption.ExemptionAmount);
             var annualTax = Math.Round(taxableAmount * taxRate, 2);
 
-            var appealFee = dto.IncludeAppealFee ? AppealFeeAmount : 0m;
-            var totalDue = annualTax + appealFee;
+           // var appealFee = dto.IncludeAppealFee ? AppealFeeAmount : 0m;
+            var totalDue = annualTax ;//+ appealFee;
 
             var installmentCount = dto.PaymentPlan == PaymentPlan.Installment_2 ? 2 : 1;
             var installmentAmount = installmentCount > 1
@@ -295,7 +299,7 @@ namespace Core.Service.Implementations
                 ExemptionAmount = exemption.ExemptionAmount,
                 ExemptionReason = exemption.ExemptionReason,
 
-                AppealFee = appealFee,
+              //  AppealFee = appealFee,
                 TotalDue = totalDue,
 
                 PayerType = dto.PayerType,
@@ -537,5 +541,169 @@ private static bool IsTenantRole(string? roleType)
         }
 
         #endregion
+  public async Task DeleteAssessmentAsync(int unitId, int taxYear, bool deleteRelatedAppeals = false)
+{
+    ValidateUnitYear(unitId, taxYear);
+
+    var assessmentRepo = _unitOfWork.GetRepository<TaxAssessment, int>();
+    var unitRepo = _unitOfWork.GetRepository<Unit, int>();
+    var appealRepo = _unitOfWork.GetRepository<Appeal, int>();
+    var appealAttachmentRepo = _unitOfWork.GetRepository<AppealAttachment, int>();
+
+    var assessment = (await assessmentRepo.GetAllAsync(
+        new TaxAssessmentByUnitYearSpec(unitId, taxYear)))
+        .FirstOrDefault();
+
+    if (assessment is null)
+        throw new NotFoundException("لا يوجد تقييم ضريبي لهذه الوحدة في السنة المحددة");
+
+    // الطعون المرتبطة بهذا التقييم
+    var allAppeals = await appealRepo.GetAllAsync();
+    var relatedAppeals = allAppeals
+        .Where(a => a.TaxAssessmentId == assessment.Id)
+        .ToList();
+
+    // لو فيه طعون ولم يوافق المستخدم على حذفها -> امنع التنفيذ
+    if (relatedAppeals.Any() && !deleteRelatedAppeals)
+    {
+        throw new ValidationException(new List<string>
+        {
+            "هذا التقييم الضريبي مرتبط بطعون. يجب تأكيد حذف الطعون المرتبطة أولاً."
+        });
+    }
+
+    // حذف مرفقات الطعون ثم حذف الطعون
+    if (relatedAppeals.Any())
+    {
+        var allAttachments = await appealAttachmentRepo.GetAllAsync();
+        var relatedAppealIds = relatedAppeals.Select(a => a.Id).ToHashSet();
+
+        var relatedAttachments = allAttachments
+            .Where(x => relatedAppealIds.Contains(x.AppealId))
+            .ToList();
+
+        foreach (var attachment in relatedAttachments)
+            appealAttachmentRepo.Remove(attachment);
+
+        foreach (var appeal in relatedAppeals)
+            appealRepo.Remove(appeal);
+    }
+
+    // حذف التقييم نفسه
+    assessmentRepo.Remove(assessment);
+
+    // تحديث حالة الوحدة بناءً على آخر تقييم متبقٍ
+    var allUnitAssessments = await assessmentRepo.GetAllAsync();
+    var remainingAssessments = allUnitAssessments
+        .Where(a => a.UnitId == unitId && a.Id != assessment.Id)
+        .OrderByDescending(a => a.TaxYear)
+        .ThenByDescending(a => a.CalculationDate)
+        .ToList();
+
+    var unit = await unitRepo.GetByIdAsync(unitId);
+    if (unit is null)
+        throw new NotFoundException($"الوحدة رقم {unitId} غير موجودة");
+
+    if (!remainingAssessments.Any())
+    {
+        unit.Status = TaxStatus.PendingCalculation.ToString();
+    }
+    else
+    {
+        var latestRemaining = remainingAssessments.First();
+        unit.Status = latestRemaining.Status.ToString();
+    }
+
+    unitRepo.Update(unit);
+    await _unitOfWork.SaveChangesAsync();
+}
+   
+
+ public async Task RevertApprovedAssessmentAsync(int unitId, int taxYear, bool deleteRelatedAppeals = false)
+{
+    ValidateUnitYear(unitId, taxYear);
+
+    var assessmentRepo = _unitOfWork.GetRepository<TaxAssessment, int>();
+    var unitRepo = _unitOfWork.GetRepository<Unit, int>();
+    var appealRepo = _unitOfWork.GetRepository<Appeal, int>();
+    var appealAttachmentRepo = _unitOfWork.GetRepository<AppealAttachment, int>();
+
+    var assessment = (await assessmentRepo.GetAllAsync(
+        new TaxAssessmentByUnitYearSpec(unitId, taxYear)))
+        .FirstOrDefault();
+
+    if (assessment is null)
+        throw new NotFoundException("لا يوجد تقييم ضريبي لهذه الوحدة في السنة المحددة");
+
+    if (assessment.Status != TaxStatus.Approved)
+        throw new ValidationException(new List<string>
+        {
+            "لا يمكن إرجاع تقييم غير معتمد إلى انتظار الحساب"
+        });
+
+    var allAppeals = await appealRepo.GetAllAsync();
+    var relatedAppeals = allAppeals
+        .Where(a => a.TaxAssessmentId == assessment.Id)
+        .ToList();
+
+    // لو يوجد طعون ولم يتم تأكيد حذفها -> امنع التنفيذ
+    if (relatedAppeals.Any() && !deleteRelatedAppeals)
+    {
+        throw new ValidationException(new List<string>
+        {
+            "هذا التقييم الضريبي مرتبط بطعون. يجب تأكيد حذف الطعون المرتبطة أولاً."
+        });
+    }
+
+    // لو وافق المستخدم نحذف الطعون ومرفقاتها
+    if (relatedAppeals.Any())
+    {
+        var allAttachments = await appealAttachmentRepo.GetAllAsync();
+        var relatedAppealIds = relatedAppeals.Select(a => a.Id).ToHashSet();
+
+        var relatedAttachments = allAttachments
+            .Where(x => relatedAppealIds.Contains(x.AppealId))
+            .ToList();
+
+        foreach (var attachment in relatedAttachments)
+            appealAttachmentRepo.Remove(attachment);
+
+        foreach (var appeal in relatedAppeals)
+            appealRepo.Remove(appeal);
+    }
+
+    // إرجاع التقييم نفسه إلى Pending
+    assessment.Status = TaxStatus.PendingCalculation;
+    assessment.CalculationDate = DateTime.UtcNow;
+
+    assessmentRepo.Update(assessment);
+
+    var unit = await unitRepo.GetByIdAsync(unitId);
+    if (unit is null)
+        throw new NotFoundException($"الوحدة رقم {unitId} غير موجودة");
+
+    unit.Status = TaxStatus.PendingCalculation.ToString();
+    unitRepo.Update(unit);
+
+    await _unitOfWork.SaveChangesAsync();
+}
+   
+   public async Task<bool> HasAppealsAsync(int unitId, int taxYear)
+{
+    ValidateUnitYear(unitId, taxYear);
+
+    var assessmentRepo = _unitOfWork.GetRepository<TaxAssessment, int>();
+    var appealRepo = _unitOfWork.GetRepository<Appeal, int>();
+
+    var assessment = (await assessmentRepo.GetAllAsync(
+        new TaxAssessmentByUnitYearSpec(unitId, taxYear)))
+        .FirstOrDefault();
+
+    if (assessment is null)
+        throw new NotFoundException("لا يوجد تقييم ضريبي لهذه الوحدة في السنة المحددة");
+
+    var appeals = await appealRepo.GetAllAsync();
+    return appeals.Any(a => a.TaxAssessmentId == assessment.Id);
+}
     }
 }

@@ -12,6 +12,8 @@ namespace Core.ServiceAbstraction
 
         IExemptionService ExemptionService { get; }
 
-ITaxAssessmentService TaxAssessmentService { get; }
+        ITaxAssessmentService TaxAssessmentService { get; }
+        IAppealService AppealService { get; }
+
     }
 }
