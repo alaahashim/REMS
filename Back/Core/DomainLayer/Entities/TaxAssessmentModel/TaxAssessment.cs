@@ -56,6 +56,7 @@ namespace Core.DomainLayer.Entities
         public TaxStatus Status { get; set; } = TaxStatus.Approved;
 
         public string? Notes { get; set; }
+        public Appeal? Appeal { get; set; }
     }
 
 

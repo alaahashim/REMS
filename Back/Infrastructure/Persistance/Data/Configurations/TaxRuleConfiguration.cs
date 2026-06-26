@@ -78,5 +78,13 @@ namespace Infrastructure.Persistence.Data.Configurations
             // لو تريدين منع أكثر من سجل لنفس الوحدة/السنة
             builder.HasIndex(x => new { x.UnitId, x.TaxYear })
                 .IsUnique();
+
+                  builder.HasIndex(x => new { x.UnitId, x.TaxYear }).IsUnique();
+
+            // 1:1 مع Appeal
+            builder.HasOne(x => x.Appeal)
+                .WithOne(a => a.TaxAssessment)
+                .HasForeignKey<Appeal>(a => a.TaxAssessmentId)
+                .OnDelete(DeleteBehavior.Cascade);
         }}
 }

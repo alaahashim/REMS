@@ -48,5 +48,39 @@ namespace Presentation.Controllers
 
             return Ok(result);
         }
+
+
+
+
+
+
+[HttpDelete("unit/{unitId:int}/year/{taxYear:int}")]
+public async Task<IActionResult> DeleteAssessment(
+    int unitId,
+    int taxYear,
+    [FromQuery] bool deleteRelatedAppeals = false)
+{
+    await service.TaxAssessmentService.DeleteAssessmentAsync(unitId, taxYear, deleteRelatedAppeals);
+    return Ok(new { success = true, message = "تم حذف التقييم الضريبي بنجاح" });
+}
+
+[HttpPost("unit/{unitId:int}/year/{taxYear:int}/revert")]
+public async Task<IActionResult> RevertApprovedAssessment(
+    int unitId,
+    int taxYear,
+    [FromQuery] bool deleteRelatedAppeals = false)
+{
+    await service.TaxAssessmentService.RevertApprovedAssessmentAsync(unitId, taxYear, deleteRelatedAppeals);
+    return Ok(new { success = true, message = "تم إرجاع التقييم إلى انتظار الحساب بنجاح" });
+}
+
+
+
+[HttpGet("unit/{unitId:int}/year/{taxYear:int}/has-appeals")]
+public async Task<IActionResult> HasAppeals(int unitId, int taxYear)
+{
+    var result = await service.TaxAssessmentService.HasAppealsAsync(unitId, taxYear);
+    return Ok(new { hasAppeals = result });
+}
     }
 }

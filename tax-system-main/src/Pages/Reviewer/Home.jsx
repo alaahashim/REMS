@@ -1,5 +1,5 @@
 // src/pages/Reviewer/Home.jsx
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Alert, Badge, Button, Card, Col, Container,
@@ -9,6 +9,9 @@ import {
 import {
   getReviewerTaskDetails,
   getReviewerTaxTasks,
+  deleteUnitTaxAssessment,
+  revertApprovedAssessment,
+  hasAppealsForAssessment,
 } from "../../services/taxService";
 import PaginationBar from "./PaginationBar";
 import ReviewerTaskExpandedDetails from "./ReviewerTaskExpandedDetails";
@@ -32,9 +35,6 @@ const STATUS_TABS = [
   },
 ];
 
-/* ──────────────────────────────────────────
-   مكوّن صغير: بادج الحالة الضريبية
-────────────────────────────────────────── */
 const TaxStatusBadge = ({ status }) =>
   String(status) === "Approved" ? (
     <Badge bg="success">معتمد</Badge>
@@ -42,9 +42,6 @@ const TaxStatusBadge = ({ status }) =>
     <Badge bg="warning" text="dark">بانتظار الحساب</Badge>
   );
 
-/* ══════════════════════════════════════════
-   الصفحة الرئيسية للمراجع
-══════════════════════════════════════════ */
 const ReviewerHome = () => {
   const navigate = useNavigate();
 
@@ -57,7 +54,16 @@ const ReviewerHome = () => {
   const [expandedUnitId,   setExpandedUnitId]   = useState(null);
   const [detailsLoadingId, setDetailsLoadingId] = useState(null);
   const [detailsMap,       setDetailsMap]       = useState({});
-  const [pagedResult,      setPagedResult]      = useState({
+  const [deletingUnitId,   setDeletingUnitId]   = useState(null);
+
+  const [suggestions,      setSuggestions]      = useState([]);
+  const [suggestLoading,   setSuggestLoading]   = useState(false);
+  const [showDropdown,     setShowDropdown]     = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const debounceRef = useRef(null);
+  const wrapperRef  = useRef(null);
+
+  const [pagedResult, setPagedResult] = useState({
     items: [], pageNumber: 1, pageSize: PAGE_SIZE, totalCount: 0, totalPages: 1,
   });
 
@@ -66,23 +72,158 @@ const ReviewerHome = () => {
     [activeTab],
   );
 
-  /* ── جلب البيانات ── */
+  /* ── إغلاق الـ dropdown عند الضغط خارجه ── */
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target))
+        setShowDropdown(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  /* ── جلب الاقتراحات (debounce 300ms) ── */
+  useEffect(() => {
+    const trimmed = searchInput.trim();
+    if (!trimmed) { setSuggestions([]); setShowDropdown(false); return; }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        setSuggestLoading(true);
+        const result = await getReviewerTaxTasks({
+          ownerName: trimmed, pageNumber: 1, pageSize: 8,
+        });
+        const items = Array.isArray(result?.items) ? result.items : [];
+        const seen  = new Set();
+        const unique = [];
+        for (const item of items) {
+          const name = item.ownerName?.trim();
+          if (name && !seen.has(name)) {
+            seen.add(name);
+            unique.push({ ownerName: name, unitId: item.unitId, taxStatus: item.taxStatus });
+          }
+        }
+        setSuggestions(unique);
+        setShowDropdown(unique.length > 0);
+        setActiveSuggestion(-1);
+      } catch {
+        setSuggestions([]);
+        setShowDropdown(false);
+      } finally {
+        setSuggestLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [searchInput]);
+
+  /* ── دالة مساعدة: التحقق من وجود طعون ── */
+  const checkHasAppeals = async (unitId, taxYear) => {
+    try {
+      return await hasAppealsForAssessment(unitId, taxYear);
+    } catch {
+      return false;
+    }
+  };
+
+  /* ── حذف التقييم ── */
+  const handleDeleteAssessment = async (task) => {
+    const { unitId, taxYear } = task;
+
+    if (!taxYear) {
+      setErrorMsg("لا يمكن حذف التقييم لأن السنة الضريبية غير متوفرة لهذه الوحدة");
+      return;
+    }
+
+    const hasAppeals = await checkHasAppeals(unitId, taxYear);
+
+    let deleteRelatedAppeals = false;
+    if (hasAppeals) {
+      const confirmAppeals = window.confirm(
+        "هذا التقييم مرتبط بطعون. هل تريد حذف الطعون المرتبطة أيضاً؟"
+      );
+      if (!confirmAppeals) return;
+      deleteRelatedAppeals = true;
+    } else {
+      const confirmed = window.confirm(
+        `هل أنت متأكد من حذف التقييم الضريبي للوحدة رقم ${unitId} لسنة ${taxYear}؟`
+      );
+      if (!confirmed) return;
+    }
+
+    setDeletingUnitId(unitId);
+    setErrorMsg("");
+
+    try {
+      await deleteUnitTaxAssessment(unitId, taxYear, deleteRelatedAppeals);
+      if (expandedUnitId === unitId) setExpandedUnitId(null);
+      setDetailsMap((prev) => { const u = { ...prev }; delete u[unitId]; return u; });
+      await loadTasks();
+    } catch (err) {
+      setErrorMsg(err?.message || "حدث خطأ أثناء حذف التقييم الضريبي");
+    } finally {
+      setDeletingUnitId(null);
+    }
+  };
+
+  /* ── إرجاع التقييم ── */
+  const handleRevertAssessment = async (task) => {
+    const { unitId, taxYear } = task;
+
+    if (!taxYear) {
+      setErrorMsg("لا يمكن إرجاع التقييم لأن السنة الضريبية غير متوفرة لهذه الوحدة");
+      return;
+    }
+
+    const hasAppeals = await checkHasAppeals(unitId, taxYear);
+
+    let deleteRelatedAppeals = false;
+    if (hasAppeals) {
+      const confirmAppeals = window.confirm(
+        "هذا التقييم مرتبط بطعون. هل تريد حذف الطعون المرتبطة أيضاً؟"
+      );
+      if (!confirmAppeals) return;
+      deleteRelatedAppeals = true;
+    } else {
+      const confirmed = window.confirm(
+        `هل أنت متأكد من إرجاع التقييم الضريبي للوحدة رقم ${unitId} لسنة ${taxYear} إلى انتظار الحساب؟`
+      );
+      if (!confirmed) return;
+    }
+
+    setDeletingUnitId(unitId);
+    setErrorMsg("");
+
+    try {
+      await revertApprovedAssessment(unitId, taxYear, deleteRelatedAppeals);
+      if (expandedUnitId === unitId) setExpandedUnitId(null);
+      setDetailsMap((prev) => { const u = { ...prev }; delete u[unitId]; return u; });
+      await loadTasks();
+    } catch (err) {
+      setErrorMsg(err?.message || "حدث خطأ أثناء إرجاع التقييم إلى انتظار الحساب");
+    } finally {
+      setDeletingUnitId(null);
+    }
+  };
+
+  /* ── جلب بيانات الجدول ── */
   const loadTasks = useCallback(async () => {
     setLoading(true);
     setErrorMsg("");
     try {
       const result = await getReviewerTaxTasks({
-        status: activeStatus,
+        status:    activeStatus,
         ownerName: ownerSearch || undefined,
         pageNumber,
-        pageSize: PAGE_SIZE,
+        pageSize:  PAGE_SIZE,
       });
       setPagedResult({
         items:      Array.isArray(result?.items) ? result.items : [],
-        pageNumber: result?.pageNumber  ?? pageNumber,
-        pageSize:   result?.pageSize    ?? PAGE_SIZE,
-        totalCount: result?.totalCount  ?? 0,
-        totalPages: result?.totalPages  ?? 1,
+        pageNumber: result?.pageNumber ?? pageNumber,
+        pageSize:   result?.pageSize   ?? PAGE_SIZE,
+        totalCount: result?.totalCount ?? 0,
+        totalPages: result?.totalPages ?? 1,
       });
     } catch (err) {
       setErrorMsg(err?.message || "حدث خطأ أثناء تحميل الوحدات");
@@ -102,10 +243,18 @@ const ReviewerHome = () => {
     setExpandedUnitId(null);
   };
 
-  const handleSearch = () => {
+  const applySearch = (name) => {
+    setSearchInput(name);
+    setOwnerSearch(name);
     setPageNumber(1);
     setExpandedUnitId(null);
-    setOwnerSearch(searchInput.trim());
+    setShowDropdown(false);
+    setSuggestions([]);
+  };
+
+  const handleSearch = () => {
+    setShowDropdown(false);
+    applySearch(searchInput.trim());
   };
 
   const clearSearch = () => {
@@ -113,6 +262,31 @@ const ReviewerHome = () => {
     setOwnerSearch("");
     setPageNumber(1);
     setExpandedUnitId(null);
+    setSuggestions([]);
+    setShowDropdown(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!showDropdown || suggestions.length === 0) {
+      if (e.key === "Enter") handleSearch();
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveSuggestion((prev) => Math.min(prev + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveSuggestion((prev) => Math.max(prev - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeSuggestion >= 0 && suggestions[activeSuggestion]) {
+        applySearch(suggestions[activeSuggestion].ownerName);
+      } else {
+        handleSearch();
+      }
+    } else if (e.key === "Escape") {
+      setShowDropdown(false);
+    }
   };
 
   const handleToggleDetails = async (task) => {
@@ -132,13 +306,11 @@ const ReviewerHome = () => {
     }
   };
 
-  /* ── الجدول ── */
   const activeTabMeta = STATUS_TABS.find((t) => t.key === activeTab);
 
   return (
     <Container fluid className="mt-4 mb-5">
 
-      {/* ── رأس الصفحة ── */}
       <Row className="mb-3">
         <Col>
           <h4 className="fw-bold text-primary mb-1">مراجعة الضريبة العقارية</h4>
@@ -161,7 +333,6 @@ const ReviewerHome = () => {
         <Card.Header className="bg-white border-bottom py-3">
           <Row className="g-2 align-items-center">
 
-            {/* تبويبات الحالة */}
             <Col xs={12} md="auto" className="d-flex gap-2 flex-wrap">
               {STATUS_TABS.map((tab) => (
                 <Button
@@ -185,27 +356,74 @@ const ReviewerHome = () => {
               </Button>
             </Col>
 
-            {/* بحث المالك */}
+            {/* ── بحث المالك مع Autocomplete ── */}
             <Col xs={12} md>
-              <InputGroup size="sm">
-                <InputGroup.Text>
-                  <i className="fa-solid fa-magnifying-glass text-muted" />
-                </InputGroup.Text>
-                <Form.Control
-                  placeholder="بحث باسم المالك..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                />
-                {ownerSearch && (
-                  <Button variant="outline-secondary" onClick={clearSearch} title="مسح البحث">
-                    <i className="fa-solid fa-xmark" />
+              <div ref={wrapperRef} style={{ position: "relative" }}>
+                <InputGroup size="sm">
+                  <InputGroup.Text>
+                    {suggestLoading
+                      ? <Spinner animation="border" size="sm" style={{ width: "0.8rem", height: "0.8rem" }} />
+                      : <i className="fa-solid fa-magnifying-glass text-muted" />
+                    }
+                  </InputGroup.Text>
+                  <Form.Control
+                    placeholder="بحث باسم المالك..."
+                    value={searchInput}
+                    onChange={(e) => { setSearchInput(e.target.value); setActiveSuggestion(-1); }}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => { if (suggestions.length > 0) setShowDropdown(true); }}
+                    autoComplete="off"
+                  />
+                  {(ownerSearch || searchInput) && (
+                    <Button variant="outline-secondary" onClick={clearSearch} title="مسح البحث">
+                      <i className="fa-solid fa-xmark" />
+                    </Button>
+                  )}
+                  <Button variant="primary" onClick={handleSearch} disabled={loading}>
+                    بحث
                   </Button>
+                </InputGroup>
+
+                {showDropdown && suggestions.length > 0 && (
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+                    zIndex: 1050, background: "#fff", border: "1px solid #dee2e6",
+                    borderRadius: "0.375rem", boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                    maxHeight: "260px", overflowY: "auto",
+                  }}>
+                    {suggestions.map((s, idx) => {
+                      const isActive = idx === activeSuggestion;
+                      const approved = String(s.taxStatus) === "Approved";
+                      return (
+                        <div
+                          key={`${s.ownerName}-${idx}`}
+                          onMouseDown={(e) => { e.preventDefault(); applySearch(s.ownerName); }}
+                          onMouseEnter={() => setActiveSuggestion(idx)}
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            padding: "8px 14px", cursor: "pointer",
+                            background: isActive ? "#f0f4ff" : "transparent",
+                            borderBottom: idx < suggestions.length - 1 ? "1px solid #f1f3f5" : "none",
+                            transition: "background 0.1s",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <i className="fa-solid fa-user" style={{ color: "#6c757d", fontSize: "0.75rem" }} />
+                            <span style={{ fontSize: "0.88rem", fontWeight: 500 }}>{s.ownerName}</span>
+                          </div>
+                          <Badge
+                            bg={approved ? "success" : "warning"}
+                            text={approved ? undefined : "dark"}
+                            style={{ fontSize: "0.68rem" }}
+                          >
+                            {approved ? "معتمد" : "بانتظار الحساب"}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
-                <Button variant="primary" onClick={handleSearch} disabled={loading}>
-                  بحث
-                </Button>
-              </InputGroup>
+              </div>
             </Col>
           </Row>
         </Card.Header>
@@ -259,10 +477,10 @@ const ReviewerHome = () => {
 
               <tbody>
                 {pagedResult.items.map((task, index) => {
-                  const isExpanded      = expandedUnitId === task.unitId;
-                  const isLoadingDet    = detailsLoadingId === task.unitId;
-                  const details         = detailsMap[task.unitId];
-                  const rowNumber       = (pagedResult.pageNumber - 1) * pagedResult.pageSize + index + 1;
+                  const isExpanded   = expandedUnitId === task.unitId;
+                  const isLoadingDet = detailsLoadingId === task.unitId;
+                  const details      = detailsMap[task.unitId];
+                  const rowNumber    = (pagedResult.pageNumber - 1) * pagedResult.pageSize + index + 1;
 
                   return (
                     <React.Fragment key={task.unitId}>
@@ -296,7 +514,7 @@ const ReviewerHome = () => {
                         <td><TaxStatusBadge status={task.taxStatus} /></td>
 
                         <td className="text-center">
-                          <div className="d-flex justify-content-center gap-2">
+                          <div className="d-flex justify-content-center gap-2 flex-wrap">
                             <Button
                               variant="primary"
                               size="sm"
@@ -305,17 +523,58 @@ const ReviewerHome = () => {
                               <i className="fa-solid fa-calculator me-1" />
                               حساب
                             </Button>
+
                             <Button
                               variant={isExpanded ? "secondary" : "outline-secondary"}
                               size="sm"
                               onClick={() => handleToggleDetails(task)}
                               disabled={isLoadingDet}
                             >
-                              {isLoadingDet
-                                ? <Spinner animation="border" size="sm" />
-                                : <><i className={`fa-solid fa-eye${isExpanded ? "-slash" : ""} me-1`} />{isExpanded ? "إخفاء" : "عرض"}</>
-                              }
+                              {isLoadingDet ? (
+                                <Spinner animation="border" size="sm" />
+                              ) : (
+                                <>
+                                  <i className={`fa-solid fa-eye${isExpanded ? "-slash" : ""} me-1`} />
+                                  {isExpanded ? "إخفاء" : "عرض"}
+                                </>
+                              )}
                             </Button>
+
+                            {activeTab === "pending" ? (
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => handleDeleteAssessment(task)}
+                                disabled={deletingUnitId === task.unitId || !task.taxYear}
+                                title={!task.taxYear ? "لا يوجد تقييم ضريبي مرتبط بهذه الوحدة" : "حذف التقييم الضريبي"}
+                              >
+                                {deletingUnitId === task.unitId ? (
+                                  <Spinner animation="border" size="sm" />
+                                ) : (
+                                  <>
+                                    <i className="fa-solid fa-trash me-1" />
+                                    حذف
+                                  </>
+                                )}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline-warning"
+                                size="sm"
+                                onClick={() => handleRevertAssessment(task)}
+                                disabled={deletingUnitId === task.unitId || !task.taxYear}
+                                title={!task.taxYear ? "لا يوجد تقييم ضريبي مرتبط بهذه الوحدة" : "إرجاع التقييم إلى انتظار الحساب"}
+                              >
+                                {deletingUnitId === task.unitId ? (
+                                  <Spinner animation="border" size="sm" />
+                                ) : (
+                                  <>
+                                    <i className="fa-solid fa-rotate-left me-1" />
+                                    إرجاع للحساب
+                                  </>
+                                )}
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

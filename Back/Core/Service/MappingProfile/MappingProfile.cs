@@ -81,7 +81,6 @@ namespace Core.Service.MappingProfiles
                 .ForMember(dest => dest.DecisionResult, opt => opt.Ignore());
 
             CreateMap<Exemption, RequestHomeDto>()
-                .ForMember(d => d.NationalId, o => o.MapFrom(s => s.Owner.NationalId))
                 .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName))
                 .ForMember(d => d.UnitNumber, o => o.MapFrom(s => s.UnitNumber))
                 .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
@@ -155,6 +154,54 @@ namespace Core.Service.MappingProfiles
                 .ForMember(d => d.TotalDue, o => o.MapFrom(s => s.TotalDue));
 
             #endregion
+        #region Appeal
+        CreateMap<AppealAttachment, AppealAttachmentDto>();
+
+CreateMap<CreateAppealAttachmentDto, AppealAttachment>();
+
+CreateMap<Appeal, AppealListItemDto>()
+    .ForMember(d => d.TaxAssessmentId, o => o.MapFrom(s => s.TaxAssessmentId))
+    .ForMember(d => d.UnitId, o => o.MapFrom(s => s.TaxAssessment.UnitId))
+    .ForMember(d => d.UnitNumber, o => o.MapFrom(s => s.TaxAssessment.Unit.UnitNumber))
+    .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.TaxAssessment.Owner != null ? s.TaxAssessment.Owner.FullName : "-"))
+    .ForMember(d => d.NationalId, o => o.MapFrom(s => s.TaxAssessment.Owner != null ? s.TaxAssessment.Owner.NationalId : null))
+    .ForMember(d => d.TaxYear, o => o.MapFrom(s => s.TaxAssessment.TaxYear))
+    .ForMember(d => d.AnnualTax, o => o.MapFrom(s => s.TaxAssessment.AnnualTax))
+    .ForMember(d => d.AppealFee, o => o.MapFrom(s => s.TaxAssessment.AppealFee))
+    .ForMember(d => d.TotalDue, o => o.MapFrom(s => s.TaxAssessment.TotalDue))
+    .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
+    .ForMember(d => d.PropertyAddress, o => o.MapFrom(s =>
+        s.TaxAssessment.Unit.Property == null
+            ? "-"
+            : string.Join(" - ", new[]
+            {
+                s.TaxAssessment.Unit.Property.Governorate != null ? s.TaxAssessment.Unit.Property.Governorate.Name : null,
+                s.TaxAssessment.Unit.Property.Neighborhood != null ? s.TaxAssessment.Unit.Property.Neighborhood.Name : null,
+                !string.IsNullOrWhiteSpace(s.TaxAssessment.Unit.Property.BuildingNo) ? $"مبنى {s.TaxAssessment.Unit.Property.BuildingNo}" : null
+            }.Where(x => !string.IsNullOrWhiteSpace(x)))));
+
+CreateMap<Appeal, AppealDetailsDto>()
+    .IncludeBase<Appeal, AppealListItemDto>();
+
+CreateMap<TaxAssessment, AppealAssessmentLookupDto>()
+    .ForMember(d => d.TaxAssessmentId, o => o.MapFrom(s => s.Id))
+    .ForMember(d => d.UnitId, o => o.MapFrom(s => s.UnitId))
+    .ForMember(d => d.UnitNumber, o => o.MapFrom(s => s.Unit.UnitNumber))
+    .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner != null ? s.Owner.FullName : "-"))
+    .ForMember(d => d.NationalId, o => o.MapFrom(s => s.Owner != null ? s.Owner.NationalId : null))
+    .ForMember(d => d.HasAppeal, o => o.MapFrom(s => s.Appeal != null))
+    .ForMember(d => d.PropertyAddress, o => o.MapFrom(s =>
+        s.Unit.Property == null
+            ? "-"
+            : string.Join(" - ", new[]
+            {
+                s.Unit.Property.Governorate != null ? s.Unit.Property.Governorate.Name : null,
+                s.Unit.Property.Neighborhood != null ? s.Unit.Property.Neighborhood.Name : null,
+                !string.IsNullOrWhiteSpace(s.Unit.Property.BuildingNo) ? $"مبنى {s.Unit.Property.BuildingNo}" : null
+            }.Where(x => !string.IsNullOrWhiteSpace(x)))));
+            #endregion
+        
+        
         }
     
     }}
