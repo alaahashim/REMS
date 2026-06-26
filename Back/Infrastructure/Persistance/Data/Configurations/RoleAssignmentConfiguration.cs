@@ -4,39 +4,32 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Persistence.Configurations
 {
-    public class RoleAssignmentConfiguration
-        : IEntityTypeConfiguration<RoleAssignment>
+    public class RoleAssignmentConfiguration : IEntityTypeConfiguration<RoleAssignment>
     {
-        public void Configure(
-            EntityTypeBuilder<RoleAssignment> builder)
+        public void Configure(EntityTypeBuilder<RoleAssignment> builder)
         {
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.RoleType)
-                .IsRequired()
-                .HasMaxLength(50);
+                   .IsRequired();
 
             builder.Property(x => x.ShareType)
-                .IsRequired()
-                .HasMaxLength(50);
+                   .IsRequired();
 
             builder.Property(x => x.SharePercentage)
-                .HasColumnType("decimal(18,2)");
+                   .HasDefaultValue(100);
 
+            // Owner -> Assignments
             builder.HasOne(x => x.Owner)
-                .WithMany(x => x.Assignments)
-                .HasForeignKey(x => x.OwnerId)
-                .OnDelete(DeleteBehavior.Restrict);
+                   .WithMany(x => x.Assignments)
+                   .HasForeignKey(x => x.OwnerId)
+                   .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(x => x.Property)
-                .WithMany(x => x.Assignments)
-                .HasForeignKey(x => x.PropertyId)
-                .OnDelete(DeleteBehavior.Cascade);
-
+            // Unit -> Assignments  ← دي أهم نقطة
             builder.HasOne(x => x.Unit)
-                .WithMany(x => x.Assignments)
-                .HasForeignKey(x => x.UnitId)
-                .OnDelete(DeleteBehavior.Restrict);
+                   .WithMany(u => u.Assignments)
+                   .HasForeignKey(x => x.UnitId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

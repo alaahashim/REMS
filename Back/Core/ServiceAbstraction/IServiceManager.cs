@@ -7,9 +7,17 @@ namespace Core.ServiceAbstraction
         IPropertyService PropertyService { get; }
 
         IAssignmentService AssignmentService { get; }
-            IOwnerService OwnerService { get; }
-          IEmployeeService EmployeeService { get; }
-    IAuditLogService AuditLogService { get;}// ضيفي السطر ده هنا
 
+        IOwnerService OwnerService { get; }
+
+        IEmployeeService EmployeeService { get; }
+
+        IAuditLogService AuditLogService { get; }
+
+        IExemptionService ExemptionService { get; }
+
+        ITaxAssessmentService TaxAssessmentService { get; }
+
+        IAppealService AppealService { get; }
     }
 }

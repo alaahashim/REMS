@@ -3,70 +3,144 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 
-const TopNavbar = () => {
-  const { user } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
+// ─── ثوابت ───────────────────────────────────────────────────────────────────
+const defaultNotifications = [
+  { id: 1, text: 'تمت إضافة مستخدم جديد إلى النظام', time: 'منذ 5 دقائق', type: 'success' },
+  { id: 2, text: 'يوجد طلبات معلقة تحتاج مراجعة',    time: 'منذ ساعة',    type: 'warning' },
+  { id: 3, text: 'تم تحديث سياسة الإشعارات',           time: 'منذ يوم',     type: 'info'    },
+];
+
+// ─── المكوّن الرئيسي ──────────────────────────────────────────────────────────
+const TopNavbar = ({ onToggleSidebar }) => {
+  const { user }                       = useAuth();
+  const location                       = useLocation();
+  const navigate                       = useNavigate();
   const { lang, toggleLanguage, translations } = useLanguage();
 
+  const role         = user?.role || 'Admin';
+  const displayName  = user?.name || user?.username || 'User';
+  const profileImage = user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
+
+  // عدد الإشعارات حسب الدور (منطق mariam-updates)
+  const notificationCount =
+    role === 'Finance' ? 2 :
+    role === 'Manager' ? 5 :
+    defaultNotifications.length;
+
+  // ─── عنوان الصفحة ────────────────────────────────────────────────────────
   const getPageTitle = () => {
     const path = location.pathname;
+    if (path === '/profile')           return translations[lang].profile;
+    if (path === '/notifications')     return translations[lang].notifications;
+    if (path === '/settings')          return translations[lang].settings;
     if (path.includes('/home') || path === '/') return translations[lang].dashboard;
-    if (path.includes('/add')) return translations[lang].addProperty;
-    if (path.includes('/link')) return translations[lang].linkOwner;
-    if (path.includes('/appeal')) return translations[lang].addAppeal;
-    if (path.includes('/exemption')) return translations[lang].addExemption;
-    if (path.includes('/calc')) return translations[lang].calcTax;
-    if (path.includes('/collect')) return translations[lang].collect;
-    if (path.includes('/users')) return translations[lang].users;
-    if (path.includes('/logs')) return translations[lang].logs;
-    if (path.includes('/verdict')) return translations[lang].verdict;
-    if (path.includes('/reports')) return translations[lang].reports;
+    if (path.includes('/add'))         return translations[lang].addProperty;
+    if (path.includes('/link'))        return translations[lang].linkOwner;
+    if (path.includes('/appeal'))      return translations[lang].addAppeal;
+    if (path.includes('/exemption'))   return translations[lang].addExemption;
+    if (path.includes('/calc'))        return translations[lang].calcTax;
+    if (path.includes('/collect'))     return translations[lang].collect;
+    if (path.includes('/users'))       return translations[lang].users;
+    if (path.includes('/logs'))        return translations[lang].logs;
+    if (path.includes('/verdict'))     return translations[lang].verdict;
+    if (path.includes('/reports'))     return translations[lang].reports;
     return translations[lang].mainSystem;
   };
 
-  const notificationCount = user?.role === 'Finance' ? 2 : (user?.role === 'Manager' ? 5 : 0);
-
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="top-bar bg-white shadow-sm py-5 px-4 d-flex justify-content-between align-items-center">
-      <h4 className="page-title m-0 fw-bold text-primary">{getPageTitle()}</h4>
+    <div className="top-bar bg-white shadow-sm py-2 py-md-3 px-3 px-md-4 d-flex justify-content-between align-items-center">
 
-      <div className="d-flex align-items-center gap-3">
+      {/* ── جانب العنوان ── */}
+      <div className="d-flex align-items-center gap-2">
+        {/* زر القائمة — يظهر على الموبايل فقط */}
         <button
-          className="btn p-2 text-primary"
-          style={{ backgroundColor: '#f0f8ff', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          className="btn btn-sm text-primary d-md-none border-0 p-1"
+          onClick={onToggleSidebar}
+          style={{ fontSize: '1.5rem' }}
+        >
+          <i className="fa-solid fa-bars" />
+        </button>
+
+        <h4
+          className="page-title m-0 fw-bold text-primary text-truncate"
+          style={{ fontSize: window.innerWidth < 768 ? '1rem' : '1.5rem' }}
+        >
+          {getPageTitle()}
+        </h4>
+      </div>
+
+      {/* ── جانب الأدوات ── */}
+      <div className="d-flex align-items-center gap-1 gap-md-3">
+
+        {/* زر تغيير اللغة */}
+        <button
+          className="btn d-flex align-items-center justify-content-center text-primary p-1 p-md-2"
+          style={{
+            backgroundColor: '#f0f8ff',
+            borderRadius: '999px',
+            minWidth: window.innerWidth < 768 ? '38px' : 'auto',
+            height: '38px',
+          }}
           onClick={toggleLanguage}
-          title="تغيير اللغة"
+          title={translations[lang].language}
         >
-          <i className="fa-solid fa-globe fs-5"></i>
-          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', marginLeft: '4px' }}>{lang === 'ar' ? 'EN' : 'AR'}</span>
+          <i className="fa-solid fa-globe" />
+          <span className="d-none d-md-inline ms-1" style={{ fontWeight: 600 }}>
+            {lang === 'ar' ? 'English' : 'العربية'}
+          </span>
         </button>
 
+        {/* زر المساعد الذكي — مخفي على الموبايل الصغير */}
         <button
-          className="btn p-2 text-primary"
-          style={{ backgroundColor: '#f0f8ff', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          className="btn p-1 p-md-2 text-primary d-none d-sm-block"
+          style={{ backgroundColor: '#f0f8ff', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => navigate('/chatbot')}
-          title="المساعد الذكي"
+          title={translations[lang].assistant}
         >
-          <i className="fa-solid fa-robot fs-5"></i>
+          <i className="fa-solid fa-robot fs-5" />
         </button>
 
-        <button className="btn p-2 text-secondary position-relative" style={{ width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="الإشعارات">
-          <i className="fa-solid fa-bell fs-5"></i>
+        {/* زر الإشعارات */}
+        <button
+          className="btn p-1 p-md-2 text-secondary position-relative"
+          style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => navigate('/notifications')}
+          title={translations[lang].notifications}
+        >
+          <i className="fa-solid fa-bell fs-5" />
           {notificationCount > 0 && (
-            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.6rem' }}>
+            <span
+              className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style={{ fontSize: '0.6rem' }}
+            >
               {notificationCount}
             </span>
           )}
         </button>
 
-        <button className="btn p-2 text-secondary" style={{ width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="الإعدادات">
-          <i className="fa-solid fa-gear fs-5"></i>
+        {/* زر الإعدادات — مخفي على الموبايل الصغير */}
+        <button
+          className="btn p-1 p-md-2 text-secondary d-none d-sm-block"
+          style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => navigate('/settings')}
+          title={translations[lang].settings}
+        >
+          <i className="fa-solid fa-gear fs-5" />
         </button>
 
-        <div className="rounded-circle overflow-hidden border border-2 border-primary" style={{ width: '50px', height: '50px' }}>
-          <img src={`https://ui-avatars.com/api/?name=${user?.name}&background=random`} alt="User" className="w-100 h-100 object-fit-cover" />
-        </div>
+        {/* صورة الملف الشخصي */}
+        <button
+          className="btn p-0 rounded-circle overflow-hidden border border-2 border-primary"
+          style={{
+            width:  window.innerWidth < 768 ? '35px' : '45px',
+            height: window.innerWidth < 768 ? '35px' : '45px',
+          }}
+          onClick={() => navigate('/profile')}
+          title={translations[lang].profile}
+        >
+          <img src={profileImage} alt="User" className="w-100 h-100 object-fit-cover" />
+        </button>
       </div>
     </div>
   );

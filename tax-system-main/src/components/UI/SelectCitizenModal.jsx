@@ -1,84 +1,182 @@
-import React, { useState } from 'react';
-import { Modal, Button, Form, Table } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Modal, Button, Form, Table, Spinner, Badge, Alert } from 'react-bootstrap';
+import { getOwners } from '../../services/assignmentService';
 
 const SelectCitizenModal = ({ show, handleClose, onSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // بيانات وهمية للمواطنين للاستعراض (يمكن ربطها بالـ Context لاحقاً)
-  const mockCitizens = [
-    { id: 101, name: 'شركة النور للمقاولات', type: 'Legal', nationalId: '12345678901234', phone: '01112223344', email: 'info@elnor.com' },
-    { id: 102, name: 'محمد محمود علي', type: 'Natural', nationalId: '2850101010101', phone: '01015556677', email: 'm.mahmoud@example.com' },
-    { id: 103, name: 'سارة أحمد محمود', type: 'Natural', nationalId: '2900505050505', phone: '01024446655', email: 's.ahmed@example.com' },
-    { id: 104, name: 'أحمد سعيد', type: 'Natural', nationalId: '2800555555555', phone: '01119998877', email: 'ahmed.saeed@example.com' },
-    { id: 105, name: 'أماني للخدمات', type: 'Legal', nationalId: '999888777666', phone: '01223334455', email: 'contact@amani.com' },
-  ];
+  const [citizens, setCitizens] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const filteredCitizens = mockCitizens.filter(c => 
-    c.name.includes(searchTerm)
-    || c.nationalId.includes(searchTerm)
-    || c.phone?.includes(searchTerm)
-    || c.email?.includes(searchTerm)
-  );
+  // ─────────────────────────────
+  // تحميل البيانات عند فتح المودال
+  // ─────────────────────────────
+  useEffect(() => {
+    if (!show) return;
 
-  const handleSelect = (citizen) => {
-    onSelect(citizen);
+    setSearchTerm('');
+    setError('');
+    loadOwners('');
+  }, [show]);
+
+  // ─────────────────────────────
+  // جلب الملاك من الـ API
+  // ─────────────────────────────
+  const loadOwners = async (search = '') => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const data = await getOwners(search);
+      setCitizens(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(
+        err?.message ||
+        'حدث خطأ أثناء تحميل البيانات'
+      );
+      setCitizens([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─────────────────────────────
+  // البحث
+  // ─────────────────────────────
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    loadOwners(value);
+  };
+
+  // ─────────────────────────────
+  // اختيار مالك
+  // ─────────────────────────────
+  const handleSelect = (owner) => {
+    onSelect({
+      id: owner.id,
+      name: owner.fullName,
+      phone: owner.phone,
+      address: owner.address,
+      nationalId: owner.nationalId,
+      type: owner.ownerType || 'Natural'
+    });
+
     setSearchTerm('');
     handleClose();
   };
 
+  // ─────────────────────────────
+  // reset عند الإغلاق
+  // ─────────────────────────────
+  const handleCloseModal = () => {
+    setSearchTerm('');
+    setCitizens([]);
+    setError('');
+    handleClose();
+  };
+
   return (
-    <Modal show={show} onHide={handleClose} size="lg" centered>
+    <Modal
+      show={show}
+      onHide={handleCloseModal}
+      size="lg"
+      centered
+      dir="rtl"
+    >
+      {/* ───── Header ───── */}
       <Modal.Header closeButton>
-        <Modal.Title>اختيار مواطن / مالك</Modal.Title>
+        <Modal.Title>
+          <i className="fa-solid fa-user me-2" />
+          اختيار مالك / مواطن
+        </Modal.Title>
       </Modal.Header>
+
+      {/* ───── Body ───── */}
       <Modal.Body>
+
+        {/* بحث */}
         <Form.Control
           type="text"
-          placeholder="ابحث بالاسم أو الرقم القومي..."
+          placeholder="ابحث بالاسم أو الرقم القومي أو الهاتف..."
           className="mb-3"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearch}
         />
-        
-        <Table striped hover responsive>
-          <thead>
-            <tr>
-              <th>الرقم القومي</th>
-              <th>الاسم</th>
-              <th>الهاتف</th>
-              <th>الإيميل</th>
-              <th>النوع</th>
-              <th>اختيار</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredCitizens.length > 0 ? (
-              filteredCitizens.map(citizen => (
-                <tr key={citizen.id}>
-                  <td>{citizen.nationalId}</td>
-                  <td>{citizen.name}</td>
-                  <td>{citizen.phone}</td>
-                  <td>{citizen.email}</td>
-                  <td>
-                    <span className={`badge ${citizen.type === 'Legal' ? 'bg-info text-dark' : 'bg-light text-dark'}`}>
-                      {citizen.type === 'Legal' ? 'اعتباري' : 'فرد (طبيعي)'}
-                    </span>
-                  </td>
-                  <td>
-                    <Button variant="primary" size="sm" onClick={() => handleSelect(citizen)}>
-                      اختيار
-                    </Button>
+
+        {/* Error */}
+        {error && (
+          <Alert variant="danger" className="py-2">
+            {error}
+          </Alert>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="text-center py-4">
+            <Spinner animation="border" size="sm" className="me-2" />
+            جارٍ تحميل البيانات...
+          </div>
+        )}
+
+        {/* Table */}
+        {!loading && (
+          <Table striped hover responsive>
+            <thead>
+              <tr>
+                <th>الرقم القومي</th>
+                <th>الاسم</th>
+                <th>الهاتف</th>
+                <th>العنوان</th>
+                <th>النوع</th>
+                <th>اختيار</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {citizens.length > 0 ? (
+                citizens.map((owner) => (
+                  <tr key={owner.id}>
+                    <td>{owner.nationalId}</td>
+                    <td>{owner.fullName}</td>
+                    <td>{owner.phone}</td>
+                    <td>{owner.address}</td>
+                    <td>
+                      <Badge
+                        bg={owner.ownerType === 'Legal' ? 'info' : 'secondary'}
+                      >
+                        {owner.ownerType === 'Legal' ? 'اعتباري' : 'طبيعي'}
+                      </Badge>
+                    </td>
+                    <td>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleSelect(owner)}
+                      >
+                        اختيار
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center text-muted">
+                    لا توجد نتائج
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" className="text-center text-muted">لا توجد نتائج مطابقة للبحث.</td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
+              )}
+            </tbody>
+          </Table>
+        )}
       </Modal.Body>
+
+      {/* ───── Footer ───── */}
+      <Modal.Footer>
+        <Button variant="secondary" onClick={handleCloseModal}>
+          إغلاق
+        </Button>
+      </Modal.Footer>
     </Modal>
   );
 };

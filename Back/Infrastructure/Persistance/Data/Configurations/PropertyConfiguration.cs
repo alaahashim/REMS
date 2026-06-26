@@ -13,29 +13,40 @@ namespace Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasMaxLength(50);
 
-            builder.Property(p => p.Status)
-                .IsRequired()
-                .HasMaxLength(50);
+    
 
             builder.HasMany(p => p.Units)
                 .WithOne(u => u.Property)
                 .HasForeignKey(u => u.PropertyId)
                 .OnDelete(DeleteBehavior.Cascade);
+                builder.HasOne(p => p.Neighborhood)
+       .WithMany()
+       .HasForeignKey(p => p.NeighborhoodId)
+       .OnDelete(DeleteBehavior.Restrict);
+
+builder.HasOne(p => p.Governorate)
+       .WithMany()
+       .HasForeignKey(p => p.GovernorateId)
+       .OnDelete(DeleteBehavior.Restrict);
         }
     }
 
-        public class UnitConfiguration
-        : IEntityTypeConfiguration<Unit>
+        public class UnitConfiguration : IEntityTypeConfiguration<Unit>
+{
+    public void Configure(EntityTypeBuilder<Unit> builder)
     {
-        public void Configure(EntityTypeBuilder<Unit> builder)
-        {
-            builder.Property(u => u.UnitNumber)
-                .IsRequired()
-                .HasMaxLength(50);
+        builder.Property(u => u.UnitNumber)
+               .IsRequired()
+               .HasMaxLength(50);
 
-            builder.Property(u => u.Status)
-                .HasMaxLength(50);
-        }
+        builder.Property(u => u.Status)
+               .HasMaxLength(50);
+
+        builder.HasMany(u => u.Assignments)
+               .WithOne(a => a.Unit)
+               .HasForeignKey(a => a.UnitId)
+               .OnDelete(DeleteBehavior.Restrict);
     }
+}
 
 }

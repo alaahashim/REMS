@@ -1,19 +1,14 @@
 using Shared.DTOS;
 
-namespace Core.ServiceAbstraction
+public interface IOwnerService
 {
-    
+    Task<IEnumerable<OwnerDto>> GetAllAsync(string? search);
+    Task<OwnerDto> GetByIdAsync(int id);
+    Task<OwnerDto?> GetByNationalIdAsync(string nationalId);
+    Task<int> CreateAsync(CreateOwnerDto dto);
+Task<IEnumerable<OwnerUnitDto>> GetUnitsByOwnerIdAsync(int ownerId);
 
-    public interface IOwnerService
-{
-    Task<IEnumerable<OwnerDto>> GetOwnersAsync();
-
-    Task<OwnerDto?> GetOwnerByIdAsync(int id);
-
-    Task<int> CreateOwnerAsync(CreateOwnerDto dto);
-
-    Task UpdateOwnerAsync(int id, UpdateOwnerDto dto);
-
-    Task DeleteOwnerAsync(int id);
-}
+Task UpdateAsync(int id, UpdateOwnerDto dto);
+Task DeleteAsync(int id);
+Task<IEnumerable<OwnerUnitEditDto>> GetUnitsForEditAsync(int ownerId);
 }

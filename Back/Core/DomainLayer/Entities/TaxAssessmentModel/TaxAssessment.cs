@@ -1,27 +1,64 @@
 using Core.DomainLayer.Entities.Common;
-namespace Core.DomainLayer.Entities{
-public class TaxAssessment :BaseEntity<int>
+namespace Core.DomainLayer.Entities
 {
-    // المعرفات الأساسية والأجنبية
-    public int Id { get; set; }
-    public int UnitId { get; set; }
-    public int TaxYear { get; set; }
+    public class TaxAssessment : BaseEntity<int>
+    {
+        public int UnitId { get; set; }
+        public Unit Unit { get; set; } = null!;
 
-    // القيم المالية يفضل دائماً استخدام decimal لدقة الحسابات
-    public decimal AnnualRent { get; set; }
-    public decimal MaintenanceDiscountAmount { get; set; }
-    public decimal NetTaxBase { get; set; }
-    public decimal TaxRate { get; set; }
-    public decimal AnnualTax { get; set; }
+        // المالك الأساسي وقت التقدير
+        public int? OwnerId { get; set; }
+        public Owner? Owner { get; set; }
 
-    // حقل منطقي (صح/خطأ)
-    public bool IsExempted { get; set; }
+        public int TaxYear { get; set; }
 
-    // التواريخ
-    public DateTime CalculationDate { get; set; }
+        // القيمة الإيجارية السنوية
+        public decimal AnnualRent { get; set; }
 
-    // معرفات المستخدمين والموظفين المرتبطة
-    public int CalculatedByUserId { get; set; }
-    public int ApprovedByUserId { get; set; }
-    public int EmployeeId { get; set; }
-}}
+        // نسبة خصم الصيانة (0.30 أو 0.32)
+        public decimal MaintenanceDiscountRate { get; set; }
+
+        // قيمة خصم الصيانة
+        public decimal MaintenanceDiscountAmount { get; set; }
+
+        // صافي القيمة الإيجارية بعد الخصم
+        public decimal NetAnnualRentalValue { get; set; }
+
+        // نسبة الضريبة (مثلاً 0.10)
+        public decimal TaxRate { get; set; }
+
+        // الضريبة السنوية قبل الرسوم
+        public decimal AnnualTax { get; set; }
+
+        // هل يوجد إعفاء؟
+        public bool IsExempted { get; set; }
+
+        // قيمة الإعفاء المطبق
+        public decimal ExemptionAmount { get; set; }
+
+        public string? ExemptionReason { get; set; }
+
+        // من المسؤول عن الدفع؟ owner / tenant
+        public PayerType PayerType { get; set; } = PayerType.Owner;
+
+        // full / installment_2
+        public PaymentPlan PaymentPlan { get; set; } =  PaymentPlan.Full;
+
+        // رسوم إضافية (مثل رسوم طعن)
+        public decimal AppealFee { get; set; }
+
+        // الإجمالي النهائي = AnnualTax + AppealFee
+        public decimal TotalDue { get; set; }
+
+        public DateTime CalculationDate { get; set; } = DateTime.UtcNow;
+
+        // Draft / Approved / Cancelled
+        public TaxStatus Status { get; set; } = TaxStatus.Approved;
+
+        public string? Notes { get; set; }
+        public Appeal? Appeal { get; set; }
+    }
+
+
+
+}

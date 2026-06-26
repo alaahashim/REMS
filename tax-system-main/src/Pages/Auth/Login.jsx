@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
@@ -31,7 +33,7 @@ const Login = () => {
           navigate('/manager/home');
           break;
         case 'Committee':
-          navigate('/committee/home');
+          navigate('/committee/appeals');
           break;
         case 'Admin':
           navigate('/admin/home');
@@ -50,7 +52,7 @@ const Login = () => {
       <div className="card shadow p-4" style={{ width: '400px' }}>
         <div className="text-center mb-4">
           <h3 className="text-primary">نظام الضرائب العقارية</h3>
-          <p className="text-muted">تسجيل دخول الموظفين</p>
+          <p className="text-muted">{t('employeeLogin')}</p>
         </div>
         
         {/* معلومات المساعدة */}
@@ -68,7 +70,7 @@ const Login = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label">اسم المستخدم</label>
+            <label className="form-label">{t('username')}</label>
             <input 
               type="text" 
               className="form-control" 
@@ -78,7 +80,7 @@ const Login = () => {
             />
           </div>
           <div className="mb-3">
-            <label className="form-label">كلمة المرور</label>
+            <label className="form-label">{t('password')}</label>
             <input 
               type="password" 
               className="form-control" 
@@ -87,7 +89,7 @@ const Login = () => {
               required 
             />
           </div>
-          <button type="submit" className="btn btn-primary w-100">دخول</button>
+          <button type="submit" className="btn btn-primary w-100">{t('enter')}</button>
         </form>
       </div>
     </div>

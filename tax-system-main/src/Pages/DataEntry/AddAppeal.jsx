@@ -1,156 +1,409 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom'; // ✅ تأكد من وجود هذين
-import { Form, Button, Card, Container, Row, Col, Alert, Spinner, Badge } from 'react-bootstrap';
-import { createAppeal } from '../../services/appealService'; 
-import { getAssignmentById } from '../../services/assignmentService'; // ✅ تأكد من وجود هذا أيضاً
-import { useAuth } from '../../context/AuthContext';
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Form,
+  Button,
+  Card,
+  Container,
+  Row,
+  Col,
+  Alert,
+  Spinner,
+  Badge,
+  Table,
+  InputGroup
+} from "react-bootstrap";
+import { createAppeal, searchAssessmentsForAppeal } from "../../services/appealService";
+
+const PAGE_SIZE = 8;
 
 const AddAppeal = () => {
-  const navigate = useNavigate(); // ✅ موجود
-  const { user } = useAuth();       // ✅ موجود
-  
-  // ✅ استخدمن useParams هنا لقراءة رقم الطلب من الرابط
-  const { id } = useParams(); 
+  const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ text: '', type: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState({ text: "", type: "" });
 
+  // --- Assessment lookup state ---
+  const [searchText, setSearchText]     = useState("");
+  const [taxYearFilter, setTaxYearFilter] = useState("");
+  const [assessments, setAssessments]   = useState([]);
+  const [totalCount, setTotalCount]     = useState(0);
+  const [currentPage, setCurrentPage]   = useState(1);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const [searchPerformed, setSearchPerformed] = useState(false);
+
+  // --- Selected assessment ---
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+
+  // --- Form data ---
   const [formData, setFormData] = useState({
-    personId: '',
-    unitId: '',
-    disputedAmount: '', 
-    appealReason: '',
-    appealDate: new Date().toISOString().split('T')[0],
-    file: null 
+    appealDate: new Date().toISOString().split("T")[0],
+    appealReason: "",
+    file: null
   });
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData({ ...formData, file: e.target.files[0] });
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  // -------------------------------------------------------
+  const fetchAssessments = useCallback(async (page = 1) => {
+    setLoadingSearch(true);
+    setMessage({ text: "", type: "" });
+    try {
+      const result = await searchAssessmentsForAppeal({
+        search: searchText,
+        taxYear: taxYearFilter,
+        pageNumber: page,
+        pageSize: PAGE_SIZE
+      });
+      const items      = result?.items      ?? result?.Items      ?? [];
+      const totalItems = result?.totalCount ?? result?.TotalCount ?? result?.total ?? items.length;
+      setAssessments(items);
+      setTotalCount(totalItems);
+      setCurrentPage(page);
+      setSearchPerformed(true);
+    } catch (err) {
+      setMessage({ text: err.message || "تعذر تحميل الربطات الضريبية", type: "danger" });
+    } finally {
+      setLoadingSearch(false);
+    }
+  }, [searchText, taxYearFilter]);
+
+  // Search on Enter key
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      fetchAssessments(1);
     }
   };
 
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchAssessments(page);
+  };
+
+  // -------------------------------------------------------
+  const handleSelectAssessment = (item) => {
+    setSelectedAssessment(item);
+    // Scroll down to form
+    setTimeout(() => {
+      document.getElementById("appeal-form-section")?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
+  // -------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage({ text: '', type: '' });
+    setSubmitting(true);
+    setMessage({ text: "", type: "" });
 
     try {
-      if (!formData.personId || !formData.unitId) {
-        throw new Error("يجب اختيار المالك والوحدة أولاً");
-      }
+      if (!selectedAssessment) throw new Error("يجب اختيار الربط الضريبي أولاً");
+      if (!formData.appealReason.trim()) throw new Error("سبب الطعن مطلوب");
 
-      await createAppeal(formData, user.id);
-      
-      setMessage({ 
-        text: 'تم تسجيل الطعن بنجاح! يرجى العلم بأنه يوجد رسم تقديم قدره 100 ج.م يجب سداده لإحالة الطلب للجنة.', 
-        type: 'success' 
+      const payload = {
+        taxAssessmentId: Number(selectedAssessment.taxAssessmentId ?? selectedAssessment.id),
+        appealDate: formData.appealDate,
+        appealReason: formData.appealReason.trim()
+      };
+
+      const result = await createAppeal(payload);
+
+      setMessage({
+        text: result?.message || "تم تسجيل الطعن بنجاح، وتم إضافة رسم الطعن على السجل",
+        type: "success"
       });
-      
-      setTimeout(() => navigate('/data-entry/home'), 3000);
+
+      setTimeout(() => navigate("/data-entry/home"), 1800);
     } catch (error) {
-      if (error.message) setMessage({ text: error.message, type: 'danger' });
-      console.error("Error submitting appeal:", error);
+      const errors = error?.errors || [];
+      setMessage({
+        text: [error.message, ...errors].filter(Boolean).join(" - "),
+        type: "danger"
+      });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
+  // -------------------------------------------------------
   return (
     <Container fluid className="mt-4">
       <Row className="justify-content-center">
-        <Col md={10} lg={8}>
-          <Card className="shadow-sm border-0 border-top border-5 border-primary">
+        <Col md={11} lg={10}>
+
+          {/* ===== Page Header ===== */}
+          <Card className="shadow-sm border-0 border-top border-5 border-primary mb-4">
             <Card.Header className="bg-primary text-white py-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                    <small className="text-white">تعديل طلب</small>
-                    {/* ✅ هنا نعرض الرقم المستخدم من الرابط */}
-                    <Card.Title className="mb-0 fs-4 fw-bold">تعديل طلب ضريبي (رقم: {id})</Card.Title>
+                  <small className="text-white-50">تقديم طلب جديد</small>
+                  <Card.Title className="mb-0 fs-4 fw-bold">تسجيل طعن ضريبي</Card.Title>
                 </div>
-                <Badge bg="warning" className="fs-6">تحديث</Badge>
+                <Badge bg="success" className="fs-6">إضافة</Badge>
               </div>
             </Card.Header>
-            
-            <Card.Body>
-              {message.text && <Alert variant={message.type} className="mb-4">{message.text}</Alert>}
 
-              <Form onSubmit={handleSubmit}>
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="text-primary fw-bold">رقم قومي المالك <span className="text-danger">*</span></Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="personId"
-                        placeholder="أدخل الرقم القومي..."
-                        value={formData.personId}
-                        onChange={(e) => setFormData({ ...formData, personId: e.target.value })}
-                        required
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="text-primary fw-bold">رقم الوحدة (Unit ID) <span className="text-danger">*</span></Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="unitId"
-                        placeholder="مثال: 1024"
-                        value={formData.unitId}
-                        onChange={(e) => setFormData({ ...formData, unitId: e.target.value })}
-                        required
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
+            <Card.Body className="pb-2">
+              {message.text && (
+                <Alert variant={message.type} className="mb-3">{message.text}</Alert>
+              )}
 
-                <Row>
-                  <Col md={12}>
-                        <Form.Group className="mb-3">
-                            <Form.Label className="text-primary fw-bold">المبلغ المتنازع عليه (ج.م)</Form.Label>
-                            <Form.Control 
-                                type="number" 
-                                name="disputedAmount"
-                                value={formData.disputedAmount}
-                                onChange={(e) => setFormData({ ...formData, disputedAmount: e.target.value })}
-                            />
-                        </Form.Group>
-                    </Col>
-                </Row>
+              {/* ===== STEP 1: Search ===== */}
+              <h6 className="text-primary fw-bold mb-3">
+                <span className="badge bg-primary me-2">1</span>
+                ابحث عن الربط الضريبي المراد الطعن عليه
+              </h6>
 
-                <Form.Group className="mb-3">
-                  <Form.Label className="text-primary fw-bold">سبب الطعن <span className="text-danger">*</span></Form.Label>
+              <Row className="g-2 mb-3">
+                <Col md={6}>
+                  <InputGroup>
+                    <InputGroup.Text><i className="bi bi-search" /></InputGroup.Text>
+                    <Form.Control
+                      placeholder="اسم المالك، الرقم القومي، أو كود الوحدة..."
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      onKeyDown={handleSearchKeyDown}
+                    />
+                  </InputGroup>
+                </Col>
+                <Col md={3}>
                   <Form.Control
-                    as="textarea"
-                    rows={4}
-                    name="appealReason"
-                    placeholder="اكتب تفاصيل الاعتراض..."
-                    value={formData.appealReason}
-                    onChange={(e) => setFormData({ ...formData, appealReason: e.target.value })}
-                    required
+                    type="number"
+                    placeholder="السنة الضريبية (اختياري)"
+                    value={taxYearFilter}
+                    onChange={(e) => setTaxYearFilter(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
+                    min={2000}
+                    max={2100}
                   />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label className="text-primary fw-bold">رفع المستندات (محضر / أدلة) <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="file"
-                    onChange={handleFileChange}
-                    accept=".pdf,.jpg,.png"
-                    required
-                  />
-                </Form.Group>
-
-                <div className="d-flex justify-content-between gap-3 mt-5">
-                  <Button variant="secondary" onClick={() => navigate('/data-entry/home')}>إلغاء</Button>
-                  <Button variant="success" type="submit" disabled={loading} size="lg" className="fw-bold">
-                    {loading ? <Spinner size="sm" animation="border" /> : 'حفظ التعديلات'}
+                </Col>
+                <Col md={3}>
+                  <Button
+                    variant="primary"
+                    className="w-100"
+                    onClick={() => fetchAssessments(1)}
+                    disabled={loadingSearch}
+                  >
+                    {loadingSearch
+                      ? <><Spinner size="sm" animation="border" className="me-1" />جاري البحث...</>
+                      : "بحث"}
                   </Button>
-                </div>
-              </Form>
+                </Col>
+              </Row>
+
+              {/* ===== Search Results Table ===== */}
+              {searchPerformed && (
+                <>
+                  {assessments.length === 0 ? (
+                    <Alert variant="info" className="py-2">لا توجد نتائج مطابقة للبحث</Alert>
+                  ) : (
+                    <>
+                      <div className="table-responsive mb-2">
+                        <Table hover bordered size="sm" className="mb-0">
+                          <thead className="table-light text-center">
+                            <tr>
+                              <th>#</th>
+                              <th>اسم المالك</th>
+                              <th>كود الوحدة</th>
+                              <th>عنوان العقار</th>
+                              <th>السنة الضريبية</th>
+                              <th>القيمة الإيجارية</th>
+                              <th>الضريبة السنوية</th>
+                              <th>اختيار</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-center">
+                            {assessments.map((item, idx) => {
+                              const itemId = item.taxAssessmentId ?? item.id;
+                              const selectedId = selectedAssessment?.taxAssessmentId ?? selectedAssessment?.id;
+                              const isSelected = String(itemId) === String(selectedId);
+                              return (
+                                <tr
+                                  key={itemId}
+                                  className={isSelected ? "table-success" : ""}
+                                  style={{ cursor: "pointer" }}
+                                  onClick={() => handleSelectAssessment(item)}
+                                >
+                                  <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
+                                  <td className="text-start">{item.ownerName || "-"}</td>
+                                  <td>{item.unitNumber || item.unitCode || "-"}</td>
+                                  <td className="text-start">{item.propertyAddress || "-"}</td>
+                                  <td>{item.taxYear || "-"}</td>
+                                  <td>{item.annualRentalValue != null ? `${item.annualRentalValue} ج.م` : "-"}</td>
+                                  <td className="fw-bold text-danger">
+                                    {item.annualTax != null ? `${item.annualTax} ج.م` : "-"}
+                                  </td>
+                                  <td>
+                                    {isSelected
+                                      ? <Badge bg="success">✓ مختار</Badge>
+                                      : <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleSelectAssessment(item); }}>اختيار</Button>
+                                    }
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </Table>
+                      </div>
+
+                      {/* Pagination */}
+                      {totalPages > 1 && (
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <small className="text-muted">
+                            إجمالي النتائج: <strong>{totalCount}</strong> — صفحة {currentPage} من {totalPages}
+                          </small>
+                          <div className="d-flex gap-1">
+                            <Button size="sm" variant="outline-secondary" disabled={currentPage === 1} onClick={() => handlePageChange(1)}>«</Button>
+                            <Button size="sm" variant="outline-secondary" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>‹</Button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                              .filter(p => Math.abs(p - currentPage) <= 2)
+                              .map(p => (
+                                <Button
+                                  key={p}
+                                  size="sm"
+                                  variant={p === currentPage ? "primary" : "outline-secondary"}
+                                  onClick={() => handlePageChange(p)}
+                                >
+                                  {p}
+                                </Button>
+                              ))}
+                            <Button size="sm" variant="outline-secondary" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>›</Button>
+                            <Button size="sm" variant="outline-secondary" disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)}>»</Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
             </Card.Body>
           </Card>
+
+          {/* ===== STEP 2: Appeal Form ===== */}
+          <div id="appeal-form-section">
+            <Card className={`shadow-sm border-0 border-top border-5 ${selectedAssessment ? "border-success" : "border-secondary"}`}>
+              <Card.Header className={`${selectedAssessment ? "bg-success" : "bg-secondary"} text-white py-3`}>
+                <h6 className="mb-0 fw-bold">
+                  <span className="badge bg-white text-dark me-2">2</span>
+                  بيانات الطعن
+                  {!selectedAssessment && <small className="ms-2 opacity-75">(اختر ربطاً ضريبياً أولاً)</small>}
+                </h6>
+              </Card.Header>
+
+              <Card.Body>
+                {/* Selected assessment summary */}
+                {selectedAssessment && (
+                  <Card className="mb-4 bg-light border-success border-2">
+                    <Card.Body>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <Card.Title className="text-success mb-0 h6">✓ الربط الضريبي المختار</Card.Title>
+                        <Button size="sm" variant="outline-danger" onClick={() => setSelectedAssessment(null)}>
+                          تغيير الاختيار
+                        </Button>
+                      </div>
+                      <Row>
+                        <Col md={3} sm={6} className="mb-2">
+                          <div className="text-secondary small fw-bold mb-1">اسم المالك</div>
+                          <div className="fw-bold">{selectedAssessment.ownerName || "-"}</div>
+                        </Col>
+                        <Col md={3} sm={6} className="mb-2">
+                          <div className="text-secondary small fw-bold mb-1">كود الوحدة</div>
+                          <div className="fw-bold">{selectedAssessment.unitNumber || selectedAssessment.unitCode || "-"}</div>
+                        </Col>
+                        <Col md={3} sm={6} className="mb-2">
+                          <div className="text-secondary small fw-bold mb-1">السنة الضريبية</div>
+                          <div className="fw-bold">{selectedAssessment.taxYear || "-"}</div>
+                        </Col>
+                        <Col md={3} sm={6} className="mb-2">
+                          <div className="text-secondary small fw-bold mb-1">الضريبة السنوية</div>
+                          <div className="fw-bold text-danger fs-5">{selectedAssessment.annualTax != null ? `${selectedAssessment.annualTax} ج.م` : "-"}</div>
+                        </Col>
+                        {selectedAssessment.propertyAddress && (
+                          <Col md={12} className="mt-1">
+                            <div className="text-secondary small fw-bold mb-1">عنوان العقار</div>
+                            <div className="fw-bold">{selectedAssessment.propertyAddress}</div>
+                          </Col>
+                        )}
+                        {selectedAssessment.annualRentalValue != null && (
+                          <Col md={3} sm={6} className="mt-2">
+                            <div className="text-secondary small fw-bold mb-1">القيمة الإيجارية السنوية</div>
+                            <div className="fw-bold">{selectedAssessment.annualRentalValue} ج.م</div>
+                          </Col>
+                        )}
+                      </Row>
+                    </Card.Body>
+                  </Card>
+                )}
+
+                <Form onSubmit={handleSubmit}>
+                  <Row className="mt-2">
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="text-primary fw-bold">
+                          تاريخ تقديم الطعن
+                        </Form.Label>
+                        <Form.Control
+                          type="date"
+                          value={formData.appealDate}
+                          onChange={(e) => setFormData({ ...formData, appealDate: e.target.value })}
+                          required
+                          disabled={!selectedAssessment}
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="text-primary fw-bold">
+                          رفع المستندات الداعمة
+                        </Form.Label>
+                        <Form.Control
+                          type="file"
+                          onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          disabled={!selectedAssessment}
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-primary fw-bold">
+                      تفاصيل وسبب الطعن <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={4}
+                      placeholder={selectedAssessment ? "اكتب هنا أسباب الاعتراض على القيمة الضريبية المحسوبة..." : "اختر الربط الضريبي أولاً"}
+                      value={formData.appealReason}
+                      onChange={(e) => setFormData({ ...formData, appealReason: e.target.value })}
+                      required
+                      disabled={!selectedAssessment}
+                    />
+                  </Form.Group>
+
+                  <div className="d-flex justify-content-between gap-3 mt-4">
+                    <Button variant="secondary" onClick={() => navigate("/data-entry/home")}>
+                      إلغاء والعودة
+                    </Button>
+                    <Button
+                      variant="success"
+                      type="submit"
+                      disabled={submitting || !selectedAssessment}
+                      size="lg"
+                      className="fw-bold px-5"
+                    >
+                      {submitting ? (
+                        <><Spinner size="sm" animation="border" className="me-2" />جاري التسجيل...</>
+                      ) : (
+                        "تسجيل الطعن"
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+              </Card.Body>
+            </Card>
+          </div>
+
         </Col>
       </Row>
     </Container>

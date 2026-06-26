@@ -4,7 +4,8 @@ namespace Core.DomainLayer.Entities
 {
  public class Property : BaseEntity<int>
 {
-    public string BuildingNo { get; set; }
+
+    public string? BuildingNo { get; set; }
 
 
     public int GovernorateId { get; set; }
@@ -13,7 +14,7 @@ namespace Core.DomainLayer.Entities
 
     public int StreetId { get; set; }
     public int NeighborhoodId { get; set; }
-    public string CurrentPropertyNo { get; set; }
+    public string? CurrentPropertyNo { get; set; }
 
     public string? OldPropertyNo { get; set; }
 
@@ -23,10 +24,14 @@ namespace Core.DomainLayer.Entities
 
     public string? Description { get; set; }
 
-    public string Status { get; set; }
 
     public ICollection<Unit> Units { get; set; }
         = new HashSet<Unit>();
 public ICollection<RoleAssignment> Assignments { get; set; }
-    = new HashSet<RoleAssignment>();}
+    = new HashSet<RoleAssignment>();
+    
+    
+     public Neighborhood? Neighborhood { get; set; }   // ← أضف هذا
+    public Governorate?  Governorate  { get; set; }   // ← أضف هذا
+    }
 }

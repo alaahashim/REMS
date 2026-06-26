@@ -4,74 +4,94 @@ using Shared.DTOS;
 
 namespace Presentation.Controllers
 {
-   [ApiController]
-[Route("api/[controller]")]
-public class PropertiesController(IServiceManager service) : ControllerBase
-{
-    [HttpPost]
-    public async Task<IActionResult> AddProperty([FromBody] CreatePropertyWithUnitsDto dto)
-    {
-        var id = await service.PropertyService.AddPropertyAsync(dto);
+    // 🔧 DTO صغير عشان نستقبل { status: "..." } بشكل صحيح بدل ما نستنى string خام
+    public record UpdateStatusRequest(string Status);
 
-        return Ok(new
+    [ApiController]
+    [Route("api/[controller]")]
+    public class PropertiesController(IServiceManager service) : ControllerBase
+    {
+         [HttpPost]
+        public async Task<IActionResult> AddProperty([FromBody] CreatePropertyWithUnitsDto dto)
         {
-            success = true,
-            propertyId = id
-        });
+            var id = await service.PropertyService.AddPropertyAsync(dto);
+
+            return Ok(new
+            {
+                success = true,
+                propertyId = id
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProperties()
+            => Ok(await service.PropertyService.GetPropertiesForHomeAsync());
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPropertyById(int id)
+        {
+            var result = await service.PropertyService.GetPropertyByIdAsync(id);
+
+            if (result is null)
+                return NotFound();
+
+            return Ok(result);
+        }
+
+        [HttpGet("{propertyId}/units")]
+        public async Task<IActionResult> GetUnits(int propertyId)
+        {
+            var units = await service.PropertyService.GetUnitsAsync(propertyId);
+            return Ok(units);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProperty(int id, UpdatePropertyDto dto)
+        {
+            await service.PropertyService.UpdatePropertyAsync(id, dto);
+            return Ok(new { success = true });
+        }
+
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusRequest request)
+        {
+            await service.PropertyService.UpdatePropertyStatusAsync(id, request.Status);
+            return Ok(new { success = true });
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProperty(int id)
+        {
+            await service.PropertyService.DeletePropertyAsync(id);
+            return Ok(new { success = true });
+        }
+
+        [HttpPut("unit/{unitId}")]
+        public async Task<IActionResult> UpdateUnit(int unitId, UnitDto dto)
+        {
+            await service.PropertyService.UpdateUnitAsync(unitId, dto);
+            return Ok(new { success = true });
+        }
+
+        // 🔧 كان ناقص بالكامل! propertyService.js في الفرونت بينادي عليه (updateUnitStatus)
+        [HttpPut("unit/{unitId}/status")]
+        public async Task<IActionResult> UpdateUnitStatus(int unitId, [FromBody] UpdateStatusRequest request)
+        {
+            await service.PropertyService.UpdateUnitStatusAsync(unitId, request.Status);
+            return Ok(new { success = true });
+        }
+
+        [HttpDelete("unit/{unitId}")]
+        public async Task<IActionResult> DeleteUnit(int unitId)
+        {
+            await service.PropertyService.DeleteUnitAsync(unitId);
+            return Ok(new { success = true });
+        }
+
+        [HttpGet("with-units")]
+        public async Task<IActionResult> GetWithUnits()
+        {
+            return Ok(await service.PropertyService.GetPropertiesWithUnitsAsync());
+        }
     }
-
-    [HttpGet]
-    public async Task<IActionResult> GetProperties()
-        => Ok(await service.PropertyService.GetPropertiesAsync());
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetPropertyById(int id)
-    {
-        var result = await service.PropertyService.GetPropertyByIdAsync(id);
-
-        if (result is null)
-            return NotFound();
-
-        return Ok(result);
-    }
-
-    [HttpGet("units")]
-    public async Task<IActionResult> GetUnits([FromQuery] int? propertyId)
-        => Ok(await service.PropertyService.GetUnitsAsync(propertyId));
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateProperty(int id, UpdatePropertyDto dto)
-    {
-        await service.PropertyService.UpdatePropertyAsync(id, dto);
-        return Ok(new { success = true });
-    }
-
-    [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
-    {
-        await service.PropertyService.UpdatePropertyStatusAsync(id, status);
-        return Ok(new { success = true });
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteProperty(int id)
-    {
-        await service.PropertyService.DeletePropertyAsync(id);
-        return Ok(new { success = true });
-    }
-
-    [HttpPut("unit/{unitId}")]
-    public async Task<IActionResult> UpdateUnit(int unitId, UnitDto dto)
-    {
-        await service.PropertyService.UpdateUnitAsync(unitId, dto);
-        return Ok(new { success = true });
-    }
-
-    [HttpDelete("unit/{unitId}")]
-    public async Task<IActionResult> DeleteUnit(int unitId)
-    {
-        await service.PropertyService.DeleteUnitAsync(unitId);
-        return Ok(new { success = true });
-    }
-}
 }

@@ -23,20 +23,8 @@ namespace Infrastructure.Persistence.Configurations
             builder.Property(x => x.Phone)
                 .HasMaxLength(20);
 
-            builder.Property(x => x.Address)
-                .HasMaxLength(500);
+           
 
-            builder.Property(x => x.OwnerType)
-                .IsRequired()
-                .HasMaxLength(50);
-
-            builder.HasIndex(x => x.NationalId)
-                .IsUnique();
-
-            builder.HasMany(x => x.Assignments)
-                .WithOne(x => x.Owner)
-                .HasForeignKey(x => x.OwnerId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

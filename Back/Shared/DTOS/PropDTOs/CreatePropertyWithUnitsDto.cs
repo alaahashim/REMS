@@ -12,9 +12,9 @@ namespace Shared.DTOS
 
     public int StreetId { get; set; }
 
-    public string BuildingNo { get; set; }
+    public string? BuildingNo { get; set; }
 
-    public string CurrentPropertyNo { get; set; }
+    public string? CurrentPropertyNo { get; set; }
 
     public string? OldPropertyNo { get; set; }
 

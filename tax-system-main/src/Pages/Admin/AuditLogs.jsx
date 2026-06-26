@@ -1,32 +1,83 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Container, Table, Spinner, Badge, Button, Pagination, Form, Row, Col } from 'react-bootstrap';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Card,
+  Container,
+  Table,
+  Spinner,
+  Badge,
+  Button,
+  Pagination,
+  Form,
+  Row,
+  Col,
+} from 'react-bootstrap';
 import { useDataContext } from '../../context/DataContext';
 
-const actionMapFilter = {
+// ─── خريطة تصفية الإجراءات ───────────────────────────────────────────────────
+const ACTION_MAP_FILTER = {
   'إضافة': ['CREATE', 'INSERT'],
   'تعديل': ['UPDATE'],
-  'حذف': ['DELETE'],
+  'حذف':   ['DELETE'],
 };
 
-const AuditLogs = () => {
-  // جلب الموظفين والسجلات من الـ Context لضمان ربط البيانات بدقة واحترافية
-  const { auditLogs, employees, refreshAuditLogs, refreshEmployees } = useDataContext();
-  const logs = auditLogs;
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [typedPage, setTypedPage] = useState(1);
-  const [searchName, setSearchName] = useState('');
-  const [actionFilter, setActionFilter] = useState('كل الإجراءات');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+const ROWS_PER_PAGE = 8;
 
+// ─── مساعدات خارج المكوّن (لا تعتمد على state) ───────────────────────────────
+const extractField = (text, field) => {
+  const match = new RegExp(`${field}\\s*:\\s*([^,|\\n]+)`, 'i').exec(text || '');
+  return match ? match[1].trim() : null;
+};
+
+const mapStatus = (value) => {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).trim();
+  if (/^(true|1)$/i.test(normalized))  return 'نشط';
+  if (/^(false|0)$/i.test(normalized)) return 'معلق';
+  return normalized;
+};
+
+const actionBadge = (raw) => {
+  const action = (raw || '').toString().toUpperCase();
+  if (action === 'CREATE' || action === 'INSERT')
+    return { text: 'إضافة',         variant: 'success'  };
+  if (action === 'UPDATE')
+    return { text: 'تعديل',         variant: 'warning',  textClass: 'text-dark' };
+  if (action === 'DELETE')
+    return { text: 'حذف',           variant: 'danger'   };
+  if (action === 'LOGIN')
+    return { text: 'تسجيل دخول',   variant: 'primary'  };
+  return   { text: action || 'نشاط', variant: 'secondary' };
+};
+
+const entityLabel = (entity) => {
+  const map = {
+    Employees: 'الموظفين',
+    Employee:  'الموظف',
+    Users:     'المستخدمين',
+  };
+  return map[entity] || entity || '-';
+};
+
+// ─── المكوّن الرئيسي ──────────────────────────────────────────────────────────
+const AuditLogs = () => {
+  const { auditLogs, employees, refreshAuditLogs, refreshEmployees } = useDataContext();
+  const logs = auditLogs ?? [];
+
+  const [loading,       setLoading]       = useState(true);
+  const [currentPage,   setCurrentPage]   = useState(1);
+  const [typedPage,     setTypedPage]     = useState(1);
+  const [searchName,    setSearchName]    = useState('');
+  const [actionFilter,  setActionFilter]  = useState('كل الإجراءات');
+  const [dateFrom,      setDateFrom]      = useState('');
+  const [dateTo,        setDateTo]        = useState('');
+
+  // ─── تحميل البيانات ───────────────────────────────────────────────────────
   const loadLogs = async () => {
     setLoading(true);
     try {
-      // جلب السجلات والموظفين معاً لضمان الربط الفوري للأسماء والأرقام القومية
       await Promise.all([
-        refreshAuditLogs ? refreshAuditLogs() : Promise.resolve(),
-        refreshEmployees ? refreshEmployees() : Promise.resolve()
+        refreshAuditLogs?.() ?? Promise.resolve(),
+        refreshEmployees?.() ?? Promise.resolve(),
       ]);
     } catch (error) {
       console.error('Failed to load audit logs data', error);
@@ -41,194 +92,149 @@ const AuditLogs = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // إعادة ضبط الصفحة عند تغيّر أي فلتر
   useEffect(() => {
     setCurrentPage(1);
     setTypedPage(1);
   }, [searchName, actionFilter, dateFrom, dateTo]);
 
+  // مزامنة حقل الإدخال مع الصفحة الحالية
   useEffect(() => {
     setTypedPage(currentPage);
   }, [currentPage]);
 
+  // ─── مساعدات تعتمد على بيانات المكوّن ───────────────────────────────────
   const translateUser = (log) => {
     if (!log) return '-';
     const action = (log.action || '').toString().toUpperCase();
     const entity = (log.entity || '').toString();
-    if ((entity === 'Employees' || entity === 'Employee') && (action === 'CREATE' || action === 'INSERT' || action === 'UPDATE')) {
-      return 'مدير النظام';
-    }
+
+    if (
+      (entity === 'Employees' || entity === 'Employee') &&
+      (action === 'CREATE' || action === 'INSERT' || action === 'UPDATE')
+    ) return 'مدير النظام';
+
     if (/^Employee #/i.test(log.user)) return 'مدير النظام';
-    if (log.user === 'System') return 'النظام';
+    if (log.user === 'System')         return 'النظام';
     return log.user || 'مدير النظام';
   };
 
-  const mapStatus = (value) => {
-    if (value === null || value === undefined) return null;
-    const normalized = String(value).trim();
-    if (/^(true|1)$/i.test(normalized)) return 'نشط';
-    if (/^(false|0)$/i.test(normalized)) return 'معلق';
-    return normalized;
-  };
-
-  const actionBadge = (raw) => {
-    const action = (raw || '').toString().toUpperCase();
-    if (action === 'CREATE' || action === 'INSERT') return { text: 'إضافة', variant: 'success' };
-    if (action === 'UPDATE') return { text: 'تعديل', variant: 'warning', textClass: 'text-dark' };
-    if (action === 'DELETE') return { text: 'حذف', variant: 'danger' };
-    if (action === 'LOGIN') return { text: 'تسجيل دخول', variant: 'primary' };
-    return { text: action || 'نشاط', variant: 'secondary' };
-  };
-
-  const entityMap = (entity) => {
-    if (!entity) return '-';
-    const map = {
-      Employees: 'الموظفين',
-      Employee: 'الموظف',
-      Users: 'المستخدمين',
-    };
-    return map[entity] || entity;
-  };
-
-  const extractField = (text, field) => {
-    const match = new RegExp(field + '\\s*:\\s*([^,|\\|\\n]+)', 'i').exec(text || '');
-    return match ? match[1].trim() : null;
-  };
-
-  // وظيفة البحث الشامل والذكي والمزدوج لجلب بيانات الموظف كاملة في كل صف مع كل أكشن
+  /**
+   * يبحث عن بيانات الموظف أولاً في القائمة الحية،
+   * ثم يعود إلى تفاصيل السجلات التاريخية (للموظفين المحذوفين).
+   */
   const findEmployeeDataGlobally = (targetId) => {
     if (!targetId) return { name: null, nationalId: null, empCode: null };
 
-    // أولاً: البحث في قائمة الموظفين الحية الحالية (الأدق والأحدث)
-    if (employees && employees.length > 0) {
-      const emp = employees.find(e => e.id?.toString() === targetId.toString());
+    if (employees?.length) {
+      const emp = employees.find((e) => e.id?.toString() === targetId.toString());
       if (emp) {
         return {
-          name: emp.fullName || emp.name || null,
-          nationalId: emp.nationalId || null,
-          empCode: emp.employeeCode || null
+          name:       emp.fullName || emp.name || null,
+          nationalId: emp.nationalId                 || null,
+          empCode:    emp.employeeCode               || null,
         };
       }
     }
 
-    // ثانياً: إذا لم يُعثر عليه (محذوف مثلاً)، نبحث عكسياً في تفاصيل السجلات القديمة
     for (const log of logs) {
-      const detailsStr = log.details || '';
-      const keyVal = extractField(detailsStr, 'Key') || extractField(detailsStr, 'Id');
+      const d      = log.details || '';
+      const keyVal = extractField(d, 'Key') || extractField(d, 'Id');
+      if (keyVal?.toString() !== targetId.toString()) continue;
 
-      if (keyVal?.toString() === targetId.toString()) {
-        const name = extractField(detailsStr, 'FullName') || extractField(detailsStr, 'Name');
-        const nationalId = extractField(detailsStr, 'NationalId') || extractField(detailsStr, 'NationalID');
-        const empCode = extractField(detailsStr, 'EmployeeCode');
+      const name       = extractField(d, 'FullName') || extractField(d, 'Name');
+      const nationalId = extractField(d, 'NationalId') || extractField(d, 'NationalID');
+      const empCode    = extractField(d, 'EmployeeCode');
 
-        if (name || nationalId || empCode) {
-          return { name, nationalId, empCode };
-        }
-      }
+      if (name || nationalId || empCode) return { name, nationalId, empCode };
     }
+
     return { name: null, nationalId: null, empCode: null };
   };
 
   const formatDetails = (log) => {
-    if (!log || !log.details) return <span className="text-muted">لا توجد تفاصيل</span>;
+    if (!log?.details)
+      return <span className="text-muted">لا توجد تفاصيل</span>;
 
-    const action = (log.action || '').toString().toUpperCase();
+    const action     = (log.action || '').toString().toUpperCase();
     const detailsStr = log.details;
 
-    // محاولة استخراج البيانات مباشرة من تفاصيل الصف الحالي أولاً
-    let name = extractField(detailsStr, 'FullName') || extractField(detailsStr, 'Name');
+    let name       = extractField(detailsStr, 'FullName') || extractField(detailsStr, 'Name');
     let nationalId = extractField(detailsStr, 'NationalId') || extractField(detailsStr, 'NationalID');
-    let empCode = extractField(detailsStr, 'EmployeeCode');
-    const keyVal = extractField(detailsStr, 'Key') || extractField(detailsStr, 'Id');
+    let empCode    = extractField(detailsStr, 'EmployeeCode');
+    const keyVal   = extractField(detailsStr, 'Key') || extractField(detailsStr, 'Id');
 
-    // تفعيل البحث الذكي المزدوج لملء الخانات الفارغة لضمان ظهور البيانات كاملة مع كل الأكشنز
+    // تكملة الخانات الفارغة من المصادر الأخرى
     if ((!name || !nationalId || !empCode) && keyVal) {
-      const globalData = findEmployeeDataGlobally(keyVal);
-      if (!name) name = globalData.name;
-      if (!nationalId) nationalId = globalData.nationalId;
-      if (!empCode) empCode = globalData.empCode;
+      const global = findEmployeeDataGlobally(keyVal);
+      if (!name)       name       = global.name;
+      if (!nationalId) nationalId = global.nationalId;
+      if (!empCode)    empCode    = global.empCode;
     }
 
-    // صياغة الهوية الثابتة والاحترافية والموحدة في كل الخلايا
-    const renderEmployeeIdentity = () => {
-      return (
-        <>
-          <strong className="text-dark">{name || 'غير معروف'}</strong>
-          {nationalId ? <> - الرقم القومي: <strong>{nationalId}</strong></> : ''}
-          {empCode ? ` (كود: ${empCode})` : ''}
-        </>
-      );
-    };
+    const EmployeeIdentity = () => (
+      <>
+        <strong className="text-dark">{name || 'غير معروف'}</strong>
+        {nationalId && <> - الرقم القومي: <strong>{nationalId}</strong></>}
+        {empCode    && ` (كود: ${empCode})`}
+      </>
+    );
 
-    // 1. صياغة عملية الإضافة النظيفة
     if (action === 'CREATE' || action === 'INSERT') {
-      return (
-        <div>
-          تم إنشاء حساب جديد للموظف: {renderEmployeeIdentity()}
-        </div>
-      );
+      return <div>تم إنشاء حساب جديد للموظف: <EmployeeIdentity /></div>;
     }
 
-    // 2. صياغة عملية التعديل (البيانات كاملة + تفاصيل التغيير إن وجدت)
     if (action === 'UPDATE') {
-      const parts = detailsStr.split(' | ').map((part) => part.trim());
-      const oldPart = parts.find((part) => /^Old:/i.test(part));
-      const newPart = parts.find((part) => /^New:/i.test(part));
-
+      const parts     = detailsStr.split(' | ').map((p) => p.trim());
+      const oldPart   = parts.find((p) => /^Old:/i.test(p));
+      const newPart   = parts.find((p) => /^New:/i.test(p));
       const oldStatus = oldPart ? extractField(oldPart, 'isActive') || extractField(oldPart, 'Status') : null;
       const newStatus = newPart ? extractField(newPart, 'isActive') || extractField(newPart, 'Status') : null;
 
       if (oldStatus || newStatus) {
         return (
           <div>
-            تعديل حالة حساب الموظف: {renderEmployeeIdentity()}
-            {oldStatus && newStatus ? (
-              <span> (من <Badge bg="secondary" className="mx-1">{mapStatus(oldStatus)}</Badge> إلى <Badge bg="success" className="mx-1">{mapStatus(newStatus)}</Badge>)</span>
-            ) : null}
+            تعديل حالة حساب الموظف: <EmployeeIdentity />
+            {oldStatus && newStatus && (
+              <span>
+                {' '}(من{' '}
+                <Badge bg="secondary" className="mx-1">{mapStatus(oldStatus)}</Badge>
+                إلى{' '}
+                <Badge bg="success"   className="mx-1">{mapStatus(newStatus)}</Badge>)
+              </span>
+            )}
           </div>
         );
       }
 
-      return (
-        <div>
-          تم تعديل بيانات الموظف: {renderEmployeeIdentity()}
-        </div>
-      );
+      return <div>تم تعديل بيانات الموظف: <EmployeeIdentity /></div>;
     }
 
-    // 3. صياغة عملية الحذف كاملة الهوية
     if (action === 'DELETE') {
-      return (
-        <div>
-          تم حذف حساب الموظف: {renderEmployeeIdentity()}
-        </div>
-      );
+      return <div>تم حذف حساب الموظف: <EmployeeIdentity /></div>;
     }
 
     return <div className="text-break">{detailsStr}</div>;
   };
 
+  // ─── الفلترة والترتيب ────────────────────────────────────────────────────
   const filteredLogs = useMemo(() => {
     const query = searchName.trim().toLowerCase();
 
     return logs.filter((log) => {
-      const userLabel = translateUser(log).toLowerCase();
+      const userLabel     = translateUser(log).toLowerCase();
       const searchableText = `${userLabel} ${(log.details || '').toLowerCase()}`;
 
-      if (query && !searchableText.includes(query)) {
-        return false;
-      }
+      if (query && !searchableText.includes(query)) return false;
 
       if (actionFilter !== 'كل الإجراءات') {
-        const allowed = actionMapFilter[actionFilter] || [];
-        if (!allowed.includes((log.action || '').toString().toUpperCase())) {
-          return false;
-        }
+        const allowed = ACTION_MAP_FILTER[actionFilter] ?? [];
+        if (!allowed.includes((log.action || '').toString().toUpperCase())) return false;
       }
 
       const logDate = new Date(log.date);
       if (dateFrom) {
-        const start = new Date(dateFrom);
-        if (logDate < start) return false;
+        if (logDate < new Date(dateFrom)) return false;
       }
       if (dateTo) {
         const end = new Date(dateTo);
@@ -238,49 +244,41 @@ const AuditLogs = () => {
 
       return true;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logs, searchName, actionFilter, dateFrom, dateTo]);
 
   const sortedLogs = useMemo(
     () => [...filteredLogs].sort((a, b) => new Date(b.date) - new Date(a.date)),
-    [filteredLogs]
+    [filteredLogs],
   );
 
-  const indexOfLastRow = currentPage * 8;
-  const indexOfFirstRow = indexOfLastRow - 8;
-  const currentRows = sortedLogs.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.max(1, Math.ceil(sortedLogs.length / 8));
+  // ─── ترقيم الصفحات ───────────────────────────────────────────────────────
+  const totalPages   = Math.max(1, Math.ceil(sortedLogs.length / ROWS_PER_PAGE));
+  const indexOfLast  = currentPage * ROWS_PER_PAGE;
+  const currentRows  = sortedLogs.slice(indexOfLast - ROWS_PER_PAGE, indexOfLast);
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
+    if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
+
+  const handleTypedPageSubmit = (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const pageNum = parseInt(typedPage, 10);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      setCurrentPage(pageNum);
+    } else {
+      setTypedPage(currentPage);
+    }
+  };
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
-    const pages = [];
-
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i += 1) {
-        pages.push(i);
-      }
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push('left-ellipsis');
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-      for (let i = start; i <= end; i += 1) {
-        pages.push(i);
-      }
-      if (currentPage < totalPages - 2) pages.push('right-ellipsis');
-      pages.push(totalPages);
-    }
-
     return (
       <div className="d-flex justify-content-center mt-3">
         <Pagination>
           <Pagination.Prev
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
           >
             الصفحة السابقة
@@ -292,17 +290,7 @@ const AuditLogs = () => {
               type="text"
               value={typedPage}
               onChange={(e) => setTypedPage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  const pageNum = parseInt(typedPage, 10);
-                  if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
-                    setCurrentPage(pageNum);
-                  } else {
-                    setTypedPage(currentPage);
-                  }
-                }
-              }}
+              onKeyDown={handleTypedPageSubmit}
               className="form-control form-control-sm"
               style={{
                 width: '45px',
@@ -310,14 +298,14 @@ const AuditLogs = () => {
                 height: '28px',
                 margin: '0 5px',
                 padding: '4px',
-                direction: 'ltr'
+                direction: 'ltr',
               }}
             />
             <label className="mb-0" style={{ whiteSpace: 'nowrap' }}>من {totalPages}</label>
           </span>
 
           <Pagination.Next
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
             الصفحة التالية
@@ -335,15 +323,18 @@ const AuditLogs = () => {
     setCurrentPage(1);
   };
 
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <Container className="p-4">
+      {/* ترويسة الصفحة */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h3 className="fw-bold">سجل نظام التدقيق</h3>
         <Button variant="outline-secondary" size="sm" onClick={loadLogs}>
-          <i className="fa-solid fa-rotate-right"></i> تحديث
+          <i className="fa-solid fa-rotate-right" /> تحديث
         </Button>
       </div>
 
+      {/* شريط الفلاتر */}
       <Card className="mb-3 p-3">
         <Row className="g-3 align-items-end">
           <Col md={4} sm={12}>
@@ -400,6 +391,7 @@ const AuditLogs = () => {
         </Row>
       </Card>
 
+      {/* جدول السجلات */}
       <Card style={{ background: 'white', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         {loading ? (
           <div className="text-center p-5">
@@ -422,39 +414,54 @@ const AuditLogs = () => {
               </thead>
               <tbody>
                 {currentRows.map((log) => {
-                  const userLabel = translateUser(log);
                   const badge = actionBadge(log.action);
                   return (
                     <tr key={log.id} style={{ borderBottom: '2px solid #eef2f5' }}>
                       <td className="fw-bold text-muted">#{log.id}</td>
-                      
+
                       <td>
                         {log.date && (
                           <div className="d-flex flex-column gap-1" style={{ fontSize: '0.88rem' }}>
                             <div className="d-flex align-items-center text-nowrap">
-                              <i className="fa-regular fa-calendar-days text-muted" style={{ marginLeft: '6px' }}></i>
+                              <i
+                                className="fa-regular fa-calendar-days text-muted"
+                                style={{ marginLeft: '6px' }}
+                              />
                               <strong>
-                                {new Date(log.date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                {new Date(log.date).toLocaleDateString('ar-EG', {
+                                  day: 'numeric', month: 'long', year: 'numeric',
+                                })}
                               </strong>
                             </div>
                             <div className="d-flex align-items-center text-muted text-nowrap">
-                              <i className="fa-regular fa-clock" style={{ marginLeft: '6px' }}></i>
+                              <i className="fa-regular fa-clock" style={{ marginLeft: '6px' }} />
                               <span>
-                                {new Date(log.date).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                {new Date(log.date).toLocaleTimeString('ar-EG', {
+                                  hour: 'numeric', minute: '2-digit', hour12: true,
+                                })}
                               </span>
                             </div>
                           </div>
                         )}
                       </td>
 
-                      <td><strong>{userLabel}</strong></td>
+                      <td><strong>{translateUser(log)}</strong></td>
+
                       <td>
-                        <Badge bg={badge.variant} className={`fw-normal ${badge.textClass || ''}`}>
+                        <Badge
+                          bg={badge.variant}
+                          className={`fw-normal ${badge.textClass || ''}`}
+                        >
                           {badge.text}
                         </Badge>
                       </td>
-                      <td>{entityMap(log.entity)}</td>
-                      <td style={{ fontSize: '0.95rem', minWidth: '480px', maxWidth: '750px', whiteSpace: 'normal' }} className="text-dark text-break">
+
+                      <td>{entityLabel(log.entity)}</td>
+
+                      <td
+                        className="text-dark text-break"
+                        style={{ fontSize: '0.95rem', minWidth: '480px', maxWidth: '750px', whiteSpace: 'normal' }}
+                      >
                         {formatDetails(log)}
                       </td>
                     </tr>
@@ -462,6 +469,7 @@ const AuditLogs = () => {
                 })}
               </tbody>
             </Table>
+
             {renderPagination()}
           </div>
         )}

@@ -16,20 +16,16 @@ export const createProperty = async (
   units
 ) => {
 
-  const unitsDto = units.map((u, index) => ({
-    propertyId: 0,
-    unitNumber: `${index + 1}`,
-    floor: Number(u.floor),
-    area: Number(u.area),
-
-    usageType: u.usage,
-
-    finishingType: "Finished",
-
-    unitType: u.unitType,
-
-    status: "Active"
-  }));
+ const unitsDto = units.map((u) => ({
+  propertyId: 0,
+  unitNumber: u.unitNumber?.trim() || '',
+  floor: Number(u.floor),
+  area: Number(u.area),
+  usageType: u.usage,
+  finishingType: "Finished",
+  unitType: u.unitType,
+  status: u.status
+}));
 
   const dto = {
     governorateId: propertyData.governorateId,
@@ -44,7 +40,7 @@ export const createProperty = async (
 
     planningNo: "",
 
-    buildYear: new Date().getFullYear(),
+    buildYear: Number(propertyData.buildYear),
 
     description: propertyData.description,
 
@@ -79,16 +75,8 @@ export const deleteProperty = async (
   );
 };
 
-export const getUnits = async (
-  propertyId = null
-) => {
-  const res = await axios.get(
-    `${API}/units`,
-    {
-      params: { propertyId }
-    }
-  );
-
+export const getUnits = async (propertyId) => {
+  const res = await axios.get(`${API}/${propertyId}/units`);
   return res.data;
 };
 
@@ -133,6 +121,10 @@ export const updatePropertyStatus =
       }
     );
   };
+export const getPropertiesWithUnits = async () => {
+  const res = await axios.get(`${API}/with-units`);
+  return res.data;
+};
 
 export const updateUnitStatus =
   async (unitId, status) => {

@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'; 
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Button } from 'react-bootstrap'; 
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import Chatbot from './pages/Shared/Chatbot';
@@ -12,16 +12,20 @@ import TopNavbar from './components/Layout/Navbar';
 import Login from './pages/Auth/Login';
 import { Unauthorized } from './pages/Unauthorized';
 import Dashboard from './pages/Shared/Dashboard'; 
+import ProfilePage from './pages/Shared/Profile';
+import NotificationsPage from './pages/Shared/Notifications';
+import SettingsPage from './pages/Shared/Settings';
 
 // Data Entry
+import EditOwner from './Pages/DataEntry/EditOwner';
 import DataEntryHome from './pages/DataEntry/DataEntryHome'; 
 import AddProperty from './pages/DataEntry/AddProperty';
 import LinkOwner from './pages/DataEntry/LinkOwner';
 import AddAppeal from './pages/DataEntry/AddAppeal';
+import OwnerDetails from './Pages/DataEntry/OwnerDetails';
 import AddExemption from './pages/DataEntry/AddExemption';
 import EditProperty from "./pages/DataEntry/EditProperty"; 
 
-// ✅ إضافة استيراد صفحات التعديل الجديدة
 import EditAppeal from './pages/DataEntry/EditAppeal';
 import EditExemption from './pages/DataEntry/EditExemption';
 
@@ -44,9 +48,9 @@ import UserManagement from './pages/Admin/UserManagement';
 import AuditLogs from './pages/Admin/AuditLogs';
 
 // Committee
-import CommitteeHome from './pages/Committee/Home';
+import CommitteeAppeals from './pages/Committee/Appeals';
+import CommitteeExemptions from './pages/Committee/Exemptions';
 
-// ✅ كومبوننت مساعد (احتفظنا به للمستقبل)
 const UnderConstruction = ({ message }) => {
   const navigate = useNavigate();
   return (
@@ -58,57 +62,86 @@ const UnderConstruction = ({ message }) => {
 };
 
 function App() {
+  const [settings, setSettings] = useState(() => {
+    const saved = JSON.parse(localStorage.getItem('tax_settings') || '{}');
+    return {
+      emailAlerts: saved.emailAlerts ?? true,
+      darkMode: saved.darkMode ?? false,
+      compactView: saved.compactView ?? false
+    };
+  });
+
+  // ✅ 1. حالة التحكم في فتح وإغلاق الـ Sidebar للموبايل
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.toggle('dark-mode', settings.darkMode);
+    document.body.classList.toggle('compact-view', settings.compactView);
+  }, [settings]);
+
+  useEffect(() => {
+    const handleSettingsChanged = (event) => {
+      setSettings(event.detail);
+    };
+    window.addEventListener('tax-settings-changed', handleSettingsChanged);
+    return () => window.removeEventListener('tax-settings-changed', handleSettingsChanged);
+  }, []);
+
   return (
     <Router>
       <Routes>
-        {/* صفحة الدخول */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* التطبيق الرئيسي */}
         <Route path="/*" element={
           <ProtectedRoute>
-            <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#f4f6f9' }}>
-              <Sidebar />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <TopNavbar />
-                <main className="content-area p-4" style={{ flex: 1, overflowY: 'auto' }}>
+            <div className="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+              
+              {/* ✅ 2. تمرير حالات الـ Sidebar */}
+              <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+              
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                
+                {/* ✅ 3. تمرير دالة فتح القائمة للـ Navbar */}
+                <TopNavbar onToggleSidebar={() => setIsSidebarOpen(prev => !prev)} />
+                
+                <main className="content-area p-3 p-md-4" style={{ flex: 1, overflowY: 'auto' }}>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
-                    <Route path="/chatbot" element={<Chatbot />} /> 
+                    <Route path="/chatbot" element={<Chatbot />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
                     
-                    {/* مسارات Data Entry */}
                     <Route path="/data-entry/home" element={<DataEntryHome />} />
                     <Route path="/data-entry/add" element={<AddProperty />} />
                     <Route path="/data-entry/link" element={<LinkOwner />} />
                     <Route path="/data-entry/appeal" element={<AddAppeal />} />
+                    <Route path="/data-entry/owner/:id" element={<OwnerDetails />} />
                     <Route path="/data-entry/exemption" element={<AddExemption />} />
                     <Route path="/data-entry/edit-property/:id" element={<EditProperty />} />
-
-                    {/* ✅ تعديل: ربط المسارات بالملفات الحقيقية */}
+                    <Route path="/data-entry/edit-owner/:id" element={<EditOwner />} />
                     <Route path="/data-entry/edit-appeal/:id" element={<EditAppeal />} />
                     <Route path="/data-entry/edit-exemption/:id" element={<EditExemption />} />
 
-                    {/* مسارات Reviewer */}
                     <Route path="/reviewer/home" element={<ReviewerHome />} />
-                    <Route path="/reviewer/calc/:id?" element={<TaxCalculation />} />
+                    {/* ✅ إزالة ? — الصفحة تتطلب id دائماً */}
+                    <Route path="/reviewer/calc/:id" element={<TaxCalculation />} />
 
-                    {/* مسارات Finance */}
                     <Route path="/finance/home" element={<FinanceHome />} />
                     <Route path="/finance/collect" element={<FinanceCollection />} />
 
-                    {/* مسارات Manager */}
                     <Route path="/manager/home" element={<ManagerHome />} />
                     <Route path="/manager/verdict" element={<ManagerVerdict />} />
                     <Route path="/manager/reports" element={<ManagerReports />} />
 
-                    {/* مسارات Admin */}
                     <Route path="/admin/home" element={<AdminHome />} />
                     <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="/admin/logs" element={<AuditLogs />} />
 
-                    {/* مسارات Committee */}
-                    <Route path="/committee/home" element={<CommitteeHome />} />
+                    <Route path="/committee/appeals" element={<CommitteeAppeals />} />
+                    <Route path="/committee/exemptions" element={<CommitteeExemptions />} />
                   </Routes>
                 </main>
               </div>

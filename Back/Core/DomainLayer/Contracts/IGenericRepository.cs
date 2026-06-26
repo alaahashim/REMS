@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Core.DomainLayer.Entities.Common;
 using Core.Specifications;
 
@@ -26,5 +27,8 @@ namespace Core.DomainLayer.Contracts
         void Remove(TEntity entity);
            Task<TEntity?> FirstOrDefaultAsync(
             ISpecifications<TEntity, Tkey> specifications);
+
+            Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate);
+
     }
 }

@@ -1,92 +1,111 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Form, Button, Card, Container, Row, Col, Alert, Spinner, Table, InputGroup, Pagination } from 'react-bootstrap';
+import {
+  Form, Button, Card, Container, Row, Col,
+  Alert, Spinner, Table, InputGroup, Pagination,
+} from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { addNewUser, toggleEmployeeStatus } from '../../services/adminService';
 import { useDataContext } from '../../context/DataContext';
 
+// ─── ثوابت ───────────────────────────────────────────────────────────────────
 const EMPLOYEES_API_URL = 'http://localhost:5179/api/AdminEmployees';
+const ROWS_PER_PAGE     = 5;
 
-// دالة موحدة ومرنة للغاية لتعريب الصلاحيات ومطابقتها مع الفلتر
-const getNormalizedArabicRole = (employee) => {
-  if (!employee) return 'مدخل بيانات';
-  const rawRole = employee.role || employee.Role || employee.department || employee.Department || '';
-  const roleText = String(rawRole).toLowerCase().trim();
+const ROLE_OPTIONS = [
+  'كل الصلاحيات',
+  'أدمن (مدير النظام)',
+  'مدخل بيانات',
+  'مراجع',
+  'مالي',
+  'مدير مأمورية',
+  'لجنة الطعون',
+];
 
-  if (roleText.includes("admin")) return "أدمن (مدير النظام)";
-  if (roleText.includes("data") || roleText.includes("entry")) return "مدخل بيانات";
-  if (roleText.includes("review") || roleText.includes("audit") || roleText.includes("reviewer")) return "مراجع";
-  if (roleText.includes("finance") || roleText.includes("financial") || roleText.includes("مالي")) return "مالي";
-  if (roleText.includes("manager") || roleText.includes("مأمورية")) return "مدير مأمورية";
-  if (roleText.includes("committee") || roleText.includes("طعون")) return "لجنة الطعون";
-
-  return rawRole || 'مدخل بيانات';
+const INITIAL_FORM = {
+  name:         '',
+  employeeCode: '',
+  nationalID:   '',
+  jobTitle:     '',
+  officeId:     '',
+  username:     '',
+  password:     '',
+  role:         'Data Entry',
+  isActive:     true,
 };
 
+// ─── مساعدات ثابتة خارج المكوّن ──────────────────────────────────────────────
+
+/** تحويل صلاحية الموظف إلى عرض عربي موحد */
+const getNormalizedArabicRole = (employee) => {
+  if (!employee) return 'مدخل بيانات';
+  const raw  = employee.role || employee.Role || employee.department || employee.Department || '';
+  const text = String(raw).toLowerCase().trim();
+
+  if (text.includes('admin'))                                          return 'أدمن (مدير النظام)';
+  if (text.includes('data') || text.includes('entry'))                return 'مدخل بيانات';
+  if (text.includes('review') || text.includes('audit') || text.includes('reviewer')) return 'مراجع';
+  if (text.includes('finance') || text.includes('financial') || text.includes('مالي')) return 'مالي';
+  if (text.includes('manager') || text.includes('مأمورية'))          return 'مدير مأمورية';
+  if (text.includes('committee') || text.includes('طعون'))           return 'لجنة الطعون';
+
+  return raw || 'مدخل بيانات';
+};
+
+/** هل الموظف نشط؟ */
+const isEmployeeActive = (employee) => {
+  const value = employee.status ?? employee.isActive ?? employee.IsActive;
+  if (typeof value === 'string') return /^(true|1|active|نشط)$/i.test(value);
+  return Boolean(value);
+};
+
+/** كود الموظف كنص موحد */
+const normalizeCodeValue = (value) => String(value ?? '').toUpperCase();
+
+/** استخراج الرقم من نهاية الكود */
+const extractCodeNumber = (code) => {
+  const match = String(code).match(/(\d+)$/);
+  return match ? Number(match[1]) : null;
+};
+
+// ─── المكوّن الرئيسي ──────────────────────────────────────────────────────────
 const UserManagement = () => {
   const navigate = useNavigate();
   const { employees, refreshEmployees, refreshAuditLogs } = useDataContext();
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ text: '', type: '' });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [typedPage, setTypedPage] = useState(1);
-  const [showPassword, setShowPassword] = useState(false);
 
-  // States لإدارة الـ Modal العربي الاحترافي
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [targetEmployee, setTargetEmployee] = useState(null);
+  const [showForm,          setShowForm]          = useState(false);
+  const [loading,           setLoading]           = useState(false);
+  const [message,           setMessage]           = useState({ text: '', type: '' });
+  const [currentPage,       setCurrentPage]       = useState(1);
+  const [typedPage,         setTypedPage]         = useState(1);
+  const [showPassword,      setShowPassword]      = useState(false);
+  const [showConfirmModal,  setShowConfirmModal]  = useState(false);
+  const [targetEmployee,    setTargetEmployee]    = useState(null);
+  const [formData,          setFormData]          = useState(INITIAL_FORM);
+  const [searchQuery,       setSearchQuery]       = useState('');
+  const [jobTitleFilter,    setJobTitleFilter]    = useState('كل المسميات');
+  const [roleFilter,        setRoleFilter]        = useState('كل الصلاحيات');
 
-  const [formData, setFormData] = useState({
-    name: '',
-    employeeCode: '',
-    nationalID: '',
-    jobTitle: '',
-    officeId: '',
-    username: '',
-    password: '',
-    role: 'Data Entry',
-    isActive: true,
-  });
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [jobTitleFilter, setJobTitleFilter] = useState('كل المسميات');
-  const [roleFilter, setRoleFilter] = useState('كل الصلاحيات');
-
+  // ─── تحميل الموظفين ────────────────────────────────────────────────────────
   useEffect(() => {
-    refreshEmployees().catch((error) => {
-      console.error('Error fetching employees:', error);
+    refreshEmployees().catch((err) => {
+      console.error('Error fetching employees:', err);
       setMessage({ text: 'تعذر جلب بيانات الموظفين.', type: 'danger' });
     });
   }, [refreshEmployees]);
 
+  // إعادة ضبط الصفحة عند تغيّر الفلاتر
   useEffect(() => {
     setCurrentPage(1);
     setTypedPage(1);
   }, [searchQuery, jobTitleFilter, roleFilter]);
 
+  // مزامنة حقل إدخال الصفحة
   useEffect(() => {
     setTypedPage(currentPage);
   }, [currentPage]);
 
-  const normalizeCodeValue = (value) => {
-    if (!value) return '';
-    return String(value).toUpperCase();
-  };
-
-  const extractCodeNumber = (code) => {
-    const match = String(code).match(/(\d+)$/);
-    return match ? Number(match[1]) : null;
-  };
-
-  const isEmployeeActive = (employee) => {
-    const value = employee.status ?? employee.isActive ?? employee.IsActive;
-    if (typeof value === 'string') {
-      return /^(true|1|active|نشط)$/i.test(value);
-    }
-    return Boolean(value);
-  };
-
+  // ─── إجراءات الموظفين ──────────────────────────────────────────────────────
   const handleToggleStatus = (employeeId, currentStatus) => {
     setTargetEmployee({ id: employeeId, isActive: currentStatus });
     setShowConfirmModal(true);
@@ -94,13 +113,10 @@ const UserManagement = () => {
 
   const confirmToggleStatus = async () => {
     if (!targetEmployee) return;
-
-    const { id } = targetEmployee;
-    setShowConfirmModal(false); 
+    setShowConfirmModal(false);
     setLoading(true);
-
     try {
-      await toggleEmployeeStatus(id);
+      await toggleEmployeeStatus(targetEmployee.id);
       await Promise.all([refreshEmployees(), refreshAuditLogs()]);
       setMessage({ text: 'تم تحديث حالة الموظف بنجاح.', type: 'success' });
     } catch (error) {
@@ -114,7 +130,6 @@ const UserManagement = () => {
 
   const handleDeleteEmployee = async (employeeId) => {
     if (!window.confirm('هل أنت متأكد من حذف هذا الموظف نهائياً؟')) return;
-
     setLoading(true);
     try {
       await axios.delete(`${EMPLOYEES_API_URL}/${employeeId}`);
@@ -128,109 +143,14 @@ const UserManagement = () => {
     }
   };
 
-  const filteredEmployees = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    return employees.filter((employee) => {
-      const nationalID = String(employee.nationalID || employee.nationalId || employee.NationalID || '').toLowerCase();
-      const fullName = String(employee.fullName || employee.FullName || '').toLowerCase();
-      const matchSearch = !query || fullName.includes(query) || nationalID.includes(query);
-
-      if (!matchSearch) return false;
-
-      if (jobTitleFilter !== 'كل المسميات' && (employee.jobTitle || employee.JobTitle || '') !== jobTitleFilter) {
-        return false;
-      }
-
-      // هنا نضمن مطابقة الفلتر المختار بدقة مع الدالة الموحدة
-      if (roleFilter !== 'كل الصلاحيات' && getNormalizedArabicRole(employee) !== roleFilter) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [employees, searchQuery, jobTitleFilter, roleFilter]);
-
-  const sortedEmployees = useMemo(() => {
-    const employeeSorter = (a, b) => {
-      const aCode = normalizeCodeValue(a.employeeCode ?? a.EmployeeCode ?? a.id ?? '');
-      const bCode = normalizeCodeValue(b.employeeCode ?? b.EmployeeCode ?? b.id ?? '');
-      const aNum = extractCodeNumber(aCode);
-      const bNum = extractCodeNumber(bCode);
-
-      if (aNum !== null && bNum !== null) {
-        if (bNum !== aNum) return bNum - aNum;
-      }
-
-      if (aCode !== bCode) {
-        return bCode.localeCompare(aCode, undefined, { numeric: true, sensitivity: 'base' });
-      }
-
-      return (b.id ?? 0) - (a.id ?? 0);
-    };
-
-    return [...filteredEmployees].sort(employeeSorter);
-  }, [filteredEmployees]);
-
-  const totalPages = Math.max(1, Math.ceil(sortedEmployees.length / 5));
-  const indexOfLastRow = currentPage * 5;
-  const indexOfFirstRow = indexOfLastRow - 5;
-  const currentRows = sortedEmployees.slice(indexOfFirstRow, indexOfLastRow);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-      setTypedPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
-
-  const handlePaginationKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const pageNum = parseInt(typedPage, 10);
-      if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
-        setCurrentPage(pageNum);
-      } else {
-        setTypedPage(currentPage);
-      }
-    }
-  };
-
-  const uniqueJobTitles = useMemo(() => {
-    const titles = [...new Set(employees.map((emp) => emp.jobTitle || emp.JobTitle).filter(Boolean))];
-    return titles.sort((a, b) => a.localeCompare(b, 'ar'));
-  }, [employees]);
-
-  const roleOptions = [
-    'كل الصلاحيات',
-    'أدمن (مدير النظام)',
-    'مدخل بيانات',
-    'مراجع',
-    'مالي',
-    'مدير مأمورية',
-    'لجنة الطعون',
-  ];
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage({ text: '', type: '' });
-
     try {
       await addNewUser(formData);
       setMessage({ text: 'تم إضافة المستخدم بنجاح', type: 'success' });
       setShowForm(false);
-      setFormData({
-        name: '',
-        employeeCode: '',
-        nationalID: '',
-        jobTitle: '',
-        officeId: '',
-        username: '',
-        password: '',
-        role: 'Data Entry',
-        isActive: true,
-      });
+      setFormData(INITIAL_FORM);
       await Promise.all([refreshEmployees(), refreshAuditLogs()]);
       setCurrentPage(1);
     } catch (error) {
@@ -241,27 +161,91 @@ const UserManagement = () => {
     }
   };
 
+  // ─── الفلترة والترتيب ────────────────────────────────────────────────────
+  const filteredEmployees = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return employees.filter((emp) => {
+      const nationalID = String(emp.nationalID || emp.nationalId || emp.NationalID || '').toLowerCase();
+      const fullName   = String(emp.fullName   || emp.FullName   || '').toLowerCase();
+      if (query && !fullName.includes(query) && !nationalID.includes(query)) return false;
+      if (jobTitleFilter !== 'كل المسميات' && (emp.jobTitle || emp.JobTitle || '') !== jobTitleFilter) return false;
+      if (roleFilter !== 'كل الصلاحيات' && getNormalizedArabicRole(emp) !== roleFilter) return false;
+      return true;
+    });
+  }, [employees, searchQuery, jobTitleFilter, roleFilter]);
+
+  const sortedEmployees = useMemo(() => {
+    return [...filteredEmployees].sort((a, b) => {
+      const aCode = normalizeCodeValue(a.employeeCode ?? a.EmployeeCode ?? a.id ?? '');
+      const bCode = normalizeCodeValue(b.employeeCode ?? b.EmployeeCode ?? b.id ?? '');
+      const aNum  = extractCodeNumber(aCode);
+      const bNum  = extractCodeNumber(bCode);
+
+      if (aNum !== null && bNum !== null && aNum !== bNum) return bNum - aNum;
+      if (aCode !== bCode) return bCode.localeCompare(aCode, undefined, { numeric: true, sensitivity: 'base' });
+      return (b.id ?? 0) - (a.id ?? 0);
+    });
+  }, [filteredEmployees]);
+
+  // ─── ترقيم الصفحات ───────────────────────────────────────────────────────
+  const totalPages  = Math.max(1, Math.ceil(sortedEmployees.length / ROWS_PER_PAGE));
+  const indexOfLast = currentPage * ROWS_PER_PAGE;
+  const currentRows = sortedEmployees.slice(indexOfLast - ROWS_PER_PAGE, indexOfLast);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+      setTypedPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const handlePaginationKeyDown = (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const pageNum = parseInt(typedPage, 10);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      setCurrentPage(pageNum);
+    } else {
+      setTypedPage(currentPage);
+    }
+  };
+
+  const uniqueJobTitles = useMemo(() => {
+    const titles = [...new Set(employees.map((emp) => emp.jobTitle || emp.JobTitle).filter(Boolean))];
+    return titles.sort((a, b) => a.localeCompare(b, 'ar'));
+  }, [employees]);
+
+  // ─── مساعد تحديث نموذج الإضافة ───────────────────────────────────────────
+  const setField = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <Container fluid className="mt-4">
       <Row className="justify-content-center">
         <Col md={10}>
-          <div style={{ marginBottom: '20px' }}>
-            <button className="btn btn-secondary" onClick={() => navigate('/admin/home')}>
-              <i className="fa-solid fa-arrow-right"></i> عودة للرئيسية
-            </button>
+          {/* زر العودة */}
+          <div className="mb-3">
+            <Button variant="secondary" onClick={() => navigate('/admin/home')}>
+              <i className="fa-solid fa-arrow-right" /> عودة للرئيسية
+            </Button>
           </div>
 
+          {/* ────── عرض الجدول ────── */}
           {!showForm ? (
             <Card className="shadow-sm border-0 border-top border-5 border-dark">
               <Card.Header className="bg-dark text-white d-flex justify-content-between align-items-center">
-                <h5 className="mb-0"><i className="fa-solid fa-users me-2"></i> قائمة الموظفين</h5>
+                <h5 className="mb-0">
+                  <i className="fa-solid fa-users me-2" /> قائمة الموظفين
+                </h5>
                 <Button variant="primary" onClick={() => setShowForm(true)}>
                   + إضافة موظف جديد
                 </Button>
               </Card.Header>
+
               <Card.Body>
                 {message.text && <Alert variant={message.type}>{message.text}</Alert>}
 
+                {/* شريط الفلاتر */}
                 <Card className="mb-3 p-3 border-secondary border-opacity-10">
                   <Row className="g-3">
                     <Col md={4} sm={12}>
@@ -290,8 +274,8 @@ const UserManagement = () => {
                       <Form.Group>
                         <Form.Label className="mb-1">الصلاحية العامة</Form.Label>
                         <Form.Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-                          {roleOptions.map((roleOption) => (
-                            <option key={roleOption} value={roleOption}>{roleOption}</option>
+                          {ROLE_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </Form.Select>
                       </Form.Group>
@@ -299,6 +283,7 @@ const UserManagement = () => {
                   </Row>
                 </Card>
 
+                {/* جدول الموظفين */}
                 <Table responsive hover className="align-middle">
                   <thead className="table-light">
                     <tr>
@@ -314,40 +299,39 @@ const UserManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {currentRows.length > 0 ? (
-                      currentRows.map((employee) => {
-                        const active = isEmployeeActive(employee);
-                        return (
-                          <tr key={employee.id || employee.employeeCode || employee.EmployeeCode}>
-                            <td>{employee.id}</td>
-                            <td>{employee.employeeCode || employee.EmployeeCode || '-'}</td>
-                            <td>{employee.nationalID || employee.nationalId || employee.NationalID || '-'}</td>
-                            <td>{employee.fullName || employee.FullName || '-'}</td>
-                            <td>{employee.jobTitle || employee.JobTitle || '-'}</td>
-                            <td>{employee.username || employee.Username || '-'}</td>
-                            <td>{getNormalizedArabicRole(employee)}</td>
-                            <td>{active ? 'نشط' : 'معلق'}</td>
-                            <td className="text-nowrap">
-                              <Button
-                                size="sm"
-                                variant={active ? 'warning' : 'success'}
-                                className="me-2"
-                                onClick={() => handleToggleStatus(employee.id || employee.employeeCode || employee.EmployeeCode, active)}
-                              >
-                                {active ? 'تعطيل' : 'تفعيل'}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="danger"
-                                onClick={() => handleDeleteEmployee(employee.id || employee.employeeCode || employee.EmployeeCode)}
-                              >
-                                  حذف
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
+                    {currentRows.length > 0 ? currentRows.map((emp) => {
+                      const active = isEmployeeActive(emp);
+                      const empId  = emp.id || emp.employeeCode || emp.EmployeeCode;
+                      return (
+                        <tr key={empId}>
+                          <td>{emp.id}</td>
+                          <td>{emp.employeeCode || emp.EmployeeCode || '-'}</td>
+                          <td>{emp.nationalID   || emp.nationalId  || emp.NationalID || '-'}</td>
+                          <td>{emp.fullName      || emp.FullName   || '-'}</td>
+                          <td>{emp.jobTitle      || emp.JobTitle   || '-'}</td>
+                          <td>{emp.username      || emp.Username   || '-'}</td>
+                          <td>{getNormalizedArabicRole(emp)}</td>
+                          <td>{active ? 'نشط' : 'معلق'}</td>
+                          <td className="text-nowrap">
+                            <Button
+                              size="sm"
+                              variant={active ? 'warning' : 'success'}
+                              className="me-2"
+                              onClick={() => handleToggleStatus(empId, active)}
+                            >
+                              {active ? 'تعطيل' : 'تفعيل'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => handleDeleteEmployee(empId)}
+                            >
+                              حذف
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    }) : (
                       <tr>
                         <td colSpan="9" className="text-center text-muted py-4">
                           لا يوجد موظفين مطابقين للبحث أو الفلاتر.
@@ -357,11 +341,12 @@ const UserManagement = () => {
                   </tbody>
                 </Table>
 
+                {/* ترقيم الصفحات */}
                 {sortedEmployees.length > 0 && (
-                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 mt-3">
+                  <div className="d-flex justify-content-center mt-3">
                     <Pagination className="mb-0">
                       <Pagination.Prev
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                         disabled={currentPage === 1}
                       >
                         الصفحة السابقة
@@ -375,19 +360,13 @@ const UserManagement = () => {
                           onChange={(e) => setTypedPage(e.target.value)}
                           onKeyDown={handlePaginationKeyDown}
                           className="form-control form-control-sm"
-                          style={{
-                            width: '45px',
-                            textAlign: 'center',
-                            height: '28px',
-                            margin: '0 5px',
-                            padding: '4px',
-                          }}
+                          style={{ width: '45px', textAlign: 'center', height: '28px', margin: '0 5px', padding: '4px' }}
                         />
                         <label className="mb-0" style={{ whiteSpace: 'nowrap' }}>من {totalPages}</label>
                       </span>
 
                       <Pagination.Next
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                         disabled={currentPage === totalPages}
                       >
                         الصفحة التالية
@@ -397,14 +376,19 @@ const UserManagement = () => {
                 )}
               </Card.Body>
             </Card>
+
           ) : (
+            /* ────── نموذج إضافة موظف ────── */
             <Card className="shadow-sm border-0 border-top border-5 border-dark">
               <Card.Header className="bg-dark text-white d-flex justify-content-between align-items-center">
-                <h5 className="mb-0"><i className="fa-solid fa-user-plus me-2"></i> إضافة حساب موظف جديد (Employee)</h5>
+                <h5 className="mb-0">
+                  <i className="fa-solid fa-user-plus me-2" /> إضافة حساب موظف جديد (Employee)
+                </h5>
                 <Button variant="secondary" onClick={() => setShowForm(false)}>
                   ← عودة لجدول الموظفين
                 </Button>
               </Card.Header>
+
               <Card.Body>
                 {message.text && <Alert variant={message.type}>{message.text}</Alert>}
 
@@ -417,7 +401,7 @@ const UserManagement = () => {
                           type="text"
                           required
                           value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          onChange={(e) => setField('name', e.target.value)}
                         />
                       </Form.Group>
                     </Col>
@@ -429,7 +413,7 @@ const UserManagement = () => {
                           placeholder="مثال: EMP-005"
                           required
                           value={formData.employeeCode}
-                          onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                          onChange={(e) => setField('employeeCode', e.target.value)}
                         />
                       </Form.Group>
                     </Col>
@@ -444,10 +428,7 @@ const UserManagement = () => {
                           placeholder="14 رقم"
                           required
                           value={formData.nationalID}
-                          onChange={(e) => {
-                            const nationalID = e.target.value.replace(/\D/g, '').slice(0, 14);
-                            setFormData({ ...formData, nationalID });
-                          }}
+                          onChange={(e) => setField('nationalID', e.target.value.replace(/\D/g, '').slice(0, 14))}
                         />
                       </Form.Group>
                     </Col>
@@ -462,17 +443,14 @@ const UserManagement = () => {
                           placeholder="مثال: مراجع ضرائب أول"
                           required
                           value={formData.jobTitle}
-                          onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                          onChange={(e) => setField('jobTitle', e.target.value)}
                         />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label>المأمورية التابعة (OfficeID)</Form.Label>
-                        <Form.Select
-                          value={formData.officeId}
-                          onChange={(e) => setFormData({ ...formData, officeId: e.target.value })}
-                        >
+                        <Form.Select value={formData.officeId} onChange={(e) => setField('officeId', e.target.value)}>
                           <option value="">اختر المأمورية...</option>
                           <option value="1">مأمورية مدينة نصر - القاهرة</option>
                           <option value="2">مأمورية الدقي - الجيزة</option>
@@ -491,7 +469,7 @@ const UserManagement = () => {
                           type="text"
                           required
                           value={formData.username}
-                          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                          onChange={(e) => setField('username', e.target.value)}
                         />
                       </Form.Group>
                     </Col>
@@ -503,14 +481,14 @@ const UserManagement = () => {
                             type={showPassword ? 'text' : 'password'}
                             required
                             value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            onChange={(e) => setField('password', e.target.value)}
                           />
                           <Button
                             variant="outline-secondary"
                             type="button"
                             onClick={() => setShowPassword((prev) => !prev)}
                           >
-                            <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                            <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
                           </Button>
                         </InputGroup>
                       </Form.Group>
@@ -521,10 +499,7 @@ const UserManagement = () => {
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label>الصلاحية العامة (Role)</Form.Label>
-                        <Form.Select
-                          value={formData.role}
-                          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        >
+                        <Form.Select value={formData.role} onChange={(e) => setField('role', e.target.value)}>
                           <option value="Data Entry">مدخل بيانات</option>
                           <option value="Reviewer">مراجع</option>
                           <option value="Finance">مالي</option>
@@ -539,7 +514,7 @@ const UserManagement = () => {
                         <Form.Label>حالة الحساب (Status)</Form.Label>
                         <Form.Select
                           value={formData.isActive ? '1' : '0'}
-                          onChange={(e) => setFormData({ ...formData, isActive: e.target.value === '1' })}
+                          onChange={(e) => setField('isActive', e.target.value === '1')}
                         >
                           <option value="1">نشط (Active)</option>
                           <option value="0">معلق (Suspended)</option>
@@ -558,46 +533,54 @@ const UserManagement = () => {
         </Col>
       </Row>
 
-      <div className={`modal fade ${showConfirmModal ? 'show d-block' : ''}`} tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)', direction: 'rtl' }}>
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content border-0 shadow">
-          <div className="modal-header bg-dark text-white d-flex justify-content-between align-items-center w-100 px-3" style={{ direction: 'rtl' }}>
-  <h5 className="modal-title m-0 fw-bold text-white">تأكيد الإجراء</h5>
-  <button 
-    type="button" 
-    className="btn-close m-0 p-0" 
-    onClick={() => setShowConfirmModal(false)}
-    style={{ 
-      filter: 'none', 
-      background: 'none', 
-      fontSize: '1.8rem', 
-      color: '#ffffff', 
-      opacity: '1',
-      lineHeight: '1',
-      border: 'none'
-    }}
-  >
-    &times;
-  </button>
-</div>
-            <div className="modal-body text-end py-4">
-              <p className="mb-0 fs-5 text-dark">
-                {targetEmployee?.isActive 
-                  ? 'هل أنت متأكد من تعطيل هذا الموظف؟' 
-                  : 'هل أنت متأكد من تفعيل هذا الموظف؟'}
-              </p>
-            </div>
-            <div className="modal-footer d-flex justify-content-end gap-2 bg-light">
-              <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
-                إلغاء الأمر
-              </Button>
-              <Button variant="primary" onClick={confirmToggleStatus} disabled={loading}>
-                {loading ? <Spinner size="sm" animation="border" /> : 'تأكيد وموافق'}
-              </Button>
+      {/* ────── Modal تأكيد تغيير الحالة ────── */}
+      {showConfirmModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)', direction: 'rtl' }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow">
+              <div
+                className="modal-header bg-dark text-white d-flex justify-content-between align-items-center w-100 px-3"
+                style={{ direction: 'rtl' }}
+              >
+                <h5 className="modal-title m-0 fw-bold text-white">تأكيد الإجراء</h5>
+                <button
+                  type="button"
+                  className="btn-close m-0 p-0"
+                  onClick={() => setShowConfirmModal(false)}
+                  style={{
+                    filter: 'none', background: 'none',
+                    fontSize: '1.8rem', color: '#ffffff',
+                    opacity: '1', lineHeight: '1', border: 'none',
+                  }}
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="modal-body text-end py-4">
+                <p className="mb-0 fs-5 text-dark">
+                  {targetEmployee?.isActive
+                    ? 'هل أنت متأكد من تعطيل هذا الموظف؟'
+                    : 'هل أنت متأكد من تفعيل هذا الموظف؟'}
+                </p>
+              </div>
+
+              <div className="modal-footer d-flex justify-content-end gap-2 bg-light">
+                <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+                  إلغاء الأمر
+                </Button>
+                <Button variant="primary" onClick={confirmToggleStatus} disabled={loading}>
+                  {loading ? <Spinner size="sm" animation="border" /> : 'تأكيد وموافق'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </Container>
   );
 };

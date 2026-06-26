@@ -6,6 +6,8 @@ using Core.DomainLayer.Contracts;
 using Core.Service.Implementations;
 using AutoMapper;
 using Core.Service.MappingProfiles;
+using Presentation.Middlewares;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
+var mapperConfig = builder.Services.BuildServiceProvider()
+    .GetRequiredService<IMapper>();
 
 // =========================
 // DB Context
@@ -34,7 +38,12 @@ builder.Services.AddDbContext<StoreDbContext>(options =>
         .GetConnectionString("DefaultConnection"));
 });
 
-
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
+    {
+        opt.JsonSerializerOptions.Converters
+           .Add(new JsonStringEnumConverter());
+    });
 // =========================
 // CORS
 // =========================
@@ -55,7 +64,7 @@ builder.Services.AddCors(options =>
 // =========================
 // Dependency Injection
 // =========================
-
+builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IServiceManager, ServiceManager>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
@@ -65,9 +74,8 @@ builder.Services.AddScoped(
     typeof(GenericRepository<,>)
 );
 
-builder.Services.AddScoped<
-    ILocationService,
-    LocationService>();
+
+
 
 
 var app = builder.Build();
@@ -75,6 +83,7 @@ var app = builder.Build();
 
 // =========================
 // Middleware
+app.UseMiddleware<ExceptionMiddleware>();
 // =========================
 
 app.UseSwagger();

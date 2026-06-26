@@ -10,7 +10,13 @@ namespace Core.Specifications
         protected BaseSpecifications()
         {
         }
-
+  ////////////////////////////////////////////////////////////////////////////////
+public List<string> IncludeStrings { get; } = [];
+protected void AddInclude(string includeString)
+{
+    IncludeStrings.Add(includeString);
+}
+///////////////////////////////////////////////////////////////////////////////
         protected BaseSpecifications(
             Expression<Func<TEntity, bool>> criteriaExpression)
         {
@@ -64,5 +70,11 @@ namespace Core.Specifications
 
             Skip = (pageIndex - 1) * pageSize;
         }
+
+/*public List<Func<IQueryable<TEntity>, IQueryable<TEntity>>> IncludeQueries { get; } = [];
+protected void AddInclude(Func<IQueryable<TEntity>, IQueryable<TEntity>> includeQuery)
+{
+    IncludeQueries.Add(includeQuery);
+}*/
     }
 }

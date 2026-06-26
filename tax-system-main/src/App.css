@@ -87,3 +87,63 @@
     font-weight: bold;
     border-radius: 10px;
 }
+/* ========================================== */
+/*          Responsive Sidebar Logic          */
+/* ========================================== */
+
+/* الخلفية السوداء الشفافة */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1030;
+  transition: opacity 0.3s ease;
+}
+
+/* --- على شاشات الموبايل والتابلت --- */
+@media (max-width: 767.98px) {
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1040;
+    transform: translateX(-100%); /* يختبئ خارج الشاشة لليسار */
+    transition: transform 0.3s ease-in-out;
+    width: 280px !important;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+  }
+
+  /* عندما تضيف الكلاس is-open (لما يضغط على الزر) */
+  .sidebar.is-open {
+    transform: translateX(0); /* ينزلق للداخل */
+  }
+
+  /* إظهار الخلفية المعتمة لما السايدبار مفتوح */
+  .sidebar.is-open + .sidebar-backdrop {
+    display: block !important;
+  }
+}
+
+/* --- على شاشات الكمبيوتر (الوضع الطبيعي) --- */
+@media (min-width: 768px) {
+  /* إخفاء الخلفية المعتمة تماماً */
+  .sidebar-backdrop {
+    display: none !important;
+  }
+  
+  /* الـ Sidebar يبقى ثابت في مكانه الطبيعي بجوار المحتوى */
+  .sidebar {
+    position: relative !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* منع scroll للصفحة لما السايدبار مفتوح على الموبايل */
+body.sidebar-open {
+  overflow: hidden;
+}

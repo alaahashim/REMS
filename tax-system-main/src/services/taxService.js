@@ -1,55 +1,53 @@
 // src/services/taxService.js
+import api from "./apiClient";
 
-/**
- * دالة حساب الضريبة
- * تأخذ البيانات المدخلة وتعيد النتيجة
- */
-export const calculateTax = ({ area, usage, locationZone = 'B', isFirstHome = false }) => {
-  // تحويل القيمة لرقم
-  const areaNum = parseFloat(area) || 0;
+export const getReviewerTaxTasks = async (query = {}) => {
+  const params = new URLSearchParams();
+  if (query.status) params.append("status", query.status);
+  if (query.ownerName) params.append("ownerName", query.ownerName);
+  if (query.pageNumber) params.append("pageNumber", query.pageNumber);
+  if (query.pageSize) params.append("pageSize", query.pageSize);
+  const { data } = await api.get(`/taxassessments/reviewer-tasks?${params.toString()}`);
+  return data;
+};
 
-  // تحديد سعر المتر التقديري (مثال)
-  let pricePerMeter = 30;
-  if (usage === 'Commercial') pricePerMeter = 60;
-  if (usage === 'Industrial') pricePerMeter = 40;
+export const getReviewerTaskDetails = async (unitId) => {
+  const { data } = await api.get(`/taxassessments/reviewer-tasks/${unitId}/details`);
+  return data;
+};
 
-  // تعديل حسب المنطقة الضريبية
-  const zoneMultiplier = locationZone === 'A' ? 1.15 : locationZone === 'C' ? 0.90 : 1;
-  const zoneDescription = locationZone === 'A' ? 'منطقة A (سعر أعلى)' : locationZone === 'C' ? 'منطقة C (سعر مخفض)' : 'منطقة B (السعر القياسي)';
+export const previewTaxCalculation = async (payload) => {
+  const { data } = await api.post("/taxassessments/preview", payload);
+  return data;
+};
 
-  // 1. القيمة الإيجارية السنوية التقديرية
-  const annualRent = areaNum * pricePerMeter * 12 * zoneMultiplier;
+export const approveTaxCalculation = async (payload) => {
+  const { data } = await api.post("/taxassessments/approve", payload);
+  return data;
+};
 
-  // 2. نسبة الخصم
-  const discountRate = (usage === 'Residential') ? 0.30 : 0.32;
-  const discountAmount = annualRent * discountRate;
+export const getUnitTaxAssessment = async (unitId, taxYear) => {
+  const { data } = await api.get(`/taxassessments/unit/${unitId}/year/${taxYear}`);
+  return data;
+};
 
-  // 3. الوعاء الضريبي
-  const taxBase = annualRent - discountAmount;
+export const deleteUnitTaxAssessment = async (unitId, taxYear, deleteRelatedAppeals = false) => {
+  const { data } = await api.delete(
+    `/taxassessments/unit/${unitId}/year/${taxYear}?deleteRelatedAppeals=${deleteRelatedAppeals}`
+  );
+  return data;
+};
 
-  // 4. الإعفاء الخاص بالوحدة الأساسية
-  let exemptionAmount = 0;
-  let exemptionLabel = '';
-  if (usage === 'Residential' && isFirstHome) {
-    exemptionAmount = taxBase;
-    exemptionLabel = 'وحدة سكنية أساسية معفاة';
-  }
+export const revertApprovedAssessment = async (unitId, taxYear, deleteRelatedAppeals = false) => {
+  const { data } = await api.post(
+    `/taxassessments/unit/${unitId}/year/${taxYear}/revert?deleteRelatedAppeals=${deleteRelatedAppeals}`
+  );
+  return data;
+};
 
-  const netTax = Math.max(0, taxBase - exemptionAmount) * 0.10;
-
-  return {
-    annualRent,
-    discountAmount,
-    taxBase,
-    netRent: taxBase,
-    exemptionAmount,
-    exemptionLabel,
-    netTax,
-    tax: netTax,
-    pricePerMeter,
-    zoneMultiplier,
-    zoneDescription,
-    discountRate: discountRate * 100,
-    taxRate: 10
-  };
+export const hasAppealsForAssessment = async (unitId, taxYear) => {
+  const { data } = await api.get(
+    `/taxassessments/unit/${unitId}/year/${taxYear}/has-appeals`
+  );
+  return data?.hasAppeals ?? false;
 };
