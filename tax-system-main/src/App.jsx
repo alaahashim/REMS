@@ -71,6 +71,9 @@ function App() {
     };
   });
 
+  // ✅ 1. حالة التحكم في فتح وإغلاق الـ Sidebar للموبايل
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   useEffect(() => {
     document.body.classList.toggle('dark-mode', settings.darkMode);
     document.body.classList.toggle('compact-view', settings.compactView);
@@ -94,10 +97,16 @@ function App() {
         <Route path="/*" element={
           <ProtectedRoute>
             <div className="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-              <Sidebar />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <TopNavbar />
-                <main className="content-area p-4" style={{ flex: 1, overflowY: 'auto' }}>
+              
+              {/* ✅ 2. تمرير حالات الـ Sidebar */}
+              <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+              
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                
+                {/* ✅ 3. تمرير دالة فتح القائمة للـ Navbar */}
+                <TopNavbar onToggleSidebar={() => setIsSidebarOpen(prev => !prev)} />
+                
+                <main className="content-area p-3 p-md-4" style={{ flex: 1, overflowY: 'auto' }}>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/chatbot" element={<Chatbot />} />
@@ -105,7 +114,6 @@ function App() {
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     
-                    {/* مسارات Data Entry */}
                     <Route path="/data-entry/home" element={<DataEntryHome />} />
                     <Route path="/data-entry/add" element={<AddProperty />} />
                     <Route path="/data-entry/link" element={<LinkOwner />} />
@@ -117,26 +125,21 @@ function App() {
                     <Route path="/data-entry/edit-appeal/:id" element={<EditAppeal />} />
                     <Route path="/data-entry/edit-exemption/:id" element={<EditExemption />} />
 
-                    {/* مسارات Reviewer */}
                     <Route path="/reviewer/home" element={<ReviewerHome />} />
                     {/* ✅ إزالة ? — الصفحة تتطلب id دائماً */}
                     <Route path="/reviewer/calc/:id" element={<TaxCalculation />} />
 
-                    {/* مسارات Finance */}
                     <Route path="/finance/home" element={<FinanceHome />} />
                     <Route path="/finance/collect" element={<FinanceCollection />} />
 
-                    {/* مسارات Manager */}
                     <Route path="/manager/home" element={<ManagerHome />} />
                     <Route path="/manager/verdict" element={<ManagerVerdict />} />
                     <Route path="/manager/reports" element={<ManagerReports />} />
 
-                    {/* مسارات Admin */}
                     <Route path="/admin/home" element={<AdminHome />} />
                     <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="/admin/logs" element={<AuditLogs />} />
 
-                    {/* مسارات Committee */}
                     <Route path="/committee/appeals" element={<CommitteeAppeals />} />
                     <Route path="/committee/exemptions" element={<CommitteeExemptions />} />
                   </Routes>
