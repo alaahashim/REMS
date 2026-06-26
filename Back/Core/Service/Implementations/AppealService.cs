@@ -201,7 +201,7 @@ namespace Core.Service.Implementations
                 TaxAssessmentId = dto.TaxAssessmentId,
                 AppealDate = dto.AppealDate,
                 AppealReason = dto.AppealReason.Trim(),
-                Status = AppealStatus.Pending
+                Status = AppealStatus.PendingCommittee
             };
 
             await appealRepo.AddAsync(appeal);
@@ -393,5 +393,72 @@ namespace Core.Service.Implementations
         }
 
         #endregion
+
+
+        #region Committee
+public async Task<IEnumerable<CommitteeAppealDto>>
+GetCommitteeAppealsAsync()
+{
+    var repo = _unitOfWork.GetRepository<Appeal, int>();
+
+    var appeals = await repo.GetAllAsync(
+        new PendingCommitteeAppealsSpec());
+
+    return _mapper.Map<IEnumerable<CommitteeAppealDto>>(appeals);
+}
+///////////////////////////////////
+
+public async Task CommitteeDecisionAsync(
+    int appealId,
+    CommitteeDecisionDto dto,
+    int committeeUserId)
+{
+    var repo =
+        _unitOfWork.GetRepository<Appeal,int>();
+
+    var assessmentRepo =
+        _unitOfWork.GetRepository<TaxAssessment,int>();
+
+    var appeal =
+        (await repo.GetAllAsync(
+            new AppealWithDetailsSpec(appealId)))
+        .FirstOrDefault();
+
+    if (appeal == null)
+        throw new NotFoundException("Appeal not found");
+
+    if (appeal.Status != AppealStatus.PendingCommittee)
+        throw new BusinessException("تمت مراجعة هذا الطعن بالفعل");
+
+    appeal.CommitteeVerdict = dto.Verdict;
+
+    appeal.CommitteeNote = dto.Note;
+
+    appeal.CommitteeDecisionDate = DateTime.UtcNow;
+
+    appeal.CommitteeUserId = committeeUserId;
+
+    if (dto.Verdict == "Accept")
+    {
+        if (!dto.NewTaxAmount.HasValue)
+            throw new ValidationException(
+            new List<string>
+            {
+                "New Tax Amount required"
+            });
+
+        appeal.TaxAssessment.AnnualTax =
+            dto.NewTaxAmount.Value;
+    }
+
+    appeal.Status = AppealStatus.PendingManager;
+
+    repo.Update(appeal);
+
+    assessmentRepo.Update(appeal.TaxAssessment);
+
+    await _unitOfWork.SaveChangesAsync();
+}
+#endregion
     }
 }

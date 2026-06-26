@@ -115,6 +115,21 @@ public async Task<IActionResult> GetForHome()
                 message = "Deleted successfully"
             });
         }
-         
+
+
+
+[HttpGet("{id}/attachment")]
+public async Task<IActionResult> DownloadAttachment(int id)
+{
+    var result = await _service.GetAttachmentAsync(id);
+
+         if (result == null)
+           return NotFound();
+
+          return PhysicalFile(
+          result.FullPath,
+          result.ContentType,
+          result.FileName);
+}  
     }
 }

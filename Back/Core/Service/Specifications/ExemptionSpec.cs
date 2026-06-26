@@ -11,3 +11,13 @@ public class ExemptionHomeSpec : BaseSpecifications<Exemption, int>
             AddInclude(e => e.Owner);
         }
     }
+
+    public class ExemptionWithAttachmentsSpec
+    : BaseSpecifications<Exemption,int>
+{
+    public ExemptionWithAttachmentsSpec(int id)
+        : base(x => x.Id == id)
+    {
+        AddInclude(x => x.Attachments);
+    }
+}

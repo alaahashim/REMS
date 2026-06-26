@@ -1,7 +1,11 @@
+import { openExemptionAttachment } from "../../services/exemptionService";
 import React, { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, Container, Spinner, Table, Modal, Form } from 'react-bootstrap';
-import { getExemptions } from '../../services/exemptionService';
-import { committeeExemptionDecision } from '../../services/committeeService';
+import {
+    getExemptions,
+    committeeExemptionDecision
+}
+from "../../services/committeeService";
 
 const exemptionLabels = {
   basic_unit: 'الوحدة السكنية الأساسية',
@@ -22,6 +26,7 @@ const CommitteeExemptions = () => {
     setLoading(true);
     try {
       const exemptionsData = await getExemptions();
+
       setExemptions(exemptionsData);
     } finally {
       setLoading(false);
@@ -67,7 +72,7 @@ const CommitteeExemptions = () => {
     }
   };
 
-  const pendingExemptions = exemptions.filter((exemption) => exemption.status === 'Pending');
+  const pendingExemptions = exemptions.filter((exemption) => exemption.status === 'PendingCommittee');
 
   return (
     <Container fluid className="mt-4">
@@ -77,7 +82,6 @@ const CommitteeExemptions = () => {
             <h3 className="section-title mb-1">لجنة الإعفاءات</h3>
             <p className="text-muted mb-0">عرض جميع طلبات الإعفاء ومراجعة التوصيات قبل إرسالها للمدير.</p>
           </div>
-          <Badge bg="success" className="fs-6">طلبات الإعفاء المعلقة: {pendingExemptions.length}</Badge>
         </Card.Body>
       </Card>
 
@@ -91,7 +95,6 @@ const CommitteeExemptions = () => {
                 <tr>
                   <th>رقم الطلب</th>
                   <th>الممول</th>
-                  <th>رقم العقار</th>
                   <th>نوع الإعفاء</th>
                   <th>المستند</th>
                   <th>الحالة</th>
@@ -105,16 +108,29 @@ const CommitteeExemptions = () => {
                   <tr key={exemption.id} className="table-action-row">
                     <td className="fw-bold text-primary">#{exemption.id}</td>
                     <td>{exemption.personName || exemption.personId || '-'}</td>
-                    <td>{exemption.propertyId || '-'}</td>
                     <td>{exemptionLabels[exemption.exemptionType] || exemption.exemptionType || '-'}</td>
-                    <td>{exemption.fileName || <span className="text-muted">لا يوجد</span>}</td>
                     <td>
-                      {exemption.status === 'Pending' ? <Badge bg="warning">معلقة للجنة</Badge> :
-                       exemption.status === 'Pending_Manager_Exemption' ? <Badge bg="info">معروضة على المدير</Badge> :
+    {exemption.fileName ? (
+        <Button
+    size="sm"
+    variant="outline-primary"
+    onClick={() => openExemptionAttachment(exemption.id)}
+>
+    فتح الملف
+</Button>
+    ) : (
+        <span className="text-muted">
+            لا يوجد
+        </span>
+    )}
+</td>
+                    <td>
+                      {exemption.status === 'PendingCommittee' ? <Badge bg="warning">معلقة للجنة</Badge> :
+                       exemption.status === 'PendingManager' ? <Badge bg="info">معروضة على المدير</Badge> :
                        <Badge bg="secondary">{exemption.status}</Badge>}
                     </td>
                     <td>
-                      {exemption.status === 'Pending' ? (
+                      {exemption.status === 'PendingCommittee' ? (
                         <Button size="sm" variant="success" onClick={() => openDecisionModal(exemption)}>
                           إصدار توصية
                         </Button>

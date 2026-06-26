@@ -173,20 +173,25 @@ const DataEntryHome = () => {
   };
 
   const getPendingRows = () => {
-    const pending = allRequests.filter(r =>
-      ['Pending', 'NeedsMoreInfo'].includes(r.status)
+  const pending = allRequests.filter(
+    r => r.status === "PendingCommittee"
+  );
+
+  if (selectedRequest) {
+    const q = selectedRequest.toLowerCase();
+
+    return pending.filter(r =>
+      (r.ownerName && r.ownerName.toLowerCase().includes(q)) ||
+      (r.nationalId && r.nationalId.toLowerCase().includes(q))
     );
+  }
 
-    if (selectedRequest) {
-      const q = selectedRequest.toLowerCase();
-      return pending.filter(r =>
-        (r.ownerName  && r.ownerName.toLowerCase().includes(q)) ||
-        (r.nationalId && r.nationalId.toLowerCase().includes(q))
-      );
-    }
+  return [...pending]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 5);
+};
 
-    return [...pending].sort((a, b) => b.id - a.id).slice(0, 5);
-  };
+    
 
   // ════════════════════════════════════════
   // بحث الملاك
@@ -220,8 +225,10 @@ const DataEntryHome = () => {
   // الأرشيف
   // ════════════════════════════════════════
   const getDecidedRows = () =>
-    allRequests.filter(r => ['Approved', 'Rejected'].includes(r.status));
-
+  allRequests.filter(r =>
+    r.status === "Approved" ||
+    r.status === "Rejected"
+  );
   // ════════════════════════════════════════
   // الوحدات من العقارات
   // ════════════════════════════════════════
@@ -358,14 +365,43 @@ const DataEntryHome = () => {
 
   // ── Badges ──
   const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Pending':        return <Badge bg="warning text-dark">قيد المراجعة</Badge>;
-      case 'Approved':       return <Badge bg="success">مقبول</Badge>;
-      case 'Rejected':       return <Badge bg="danger">مرفوض</Badge>;
-      case 'NeedsMoreInfo':  return <Badge bg="info">يحتاج استيفاء</Badge>;
-      default:               return <Badge bg="secondary">{status}</Badge>;
-    }
-  };
+  switch (status) {
+    case "PendingCommittee":
+      return (
+        <Badge bg="warning" text="dark">
+          في انتظار اللجنة
+        </Badge>
+      );
+
+    case "PendingManager":
+      return (
+        <Badge bg="info">
+          في انتظار المدير
+        </Badge>
+      );
+
+    case "Approved":
+      return (
+        <Badge bg="success">
+          مقبول
+        </Badge>
+      );
+
+    case "Rejected":
+      return (
+        <Badge bg="danger">
+          مرفوض
+        </Badge>
+      );
+
+    default:
+      return (
+        <Badge bg="secondary">
+          {status}
+        </Badge>
+      );
+  }
+};
 
   const getTypeBadge = (type) =>
     type === 'طعن' ? (
