@@ -46,7 +46,11 @@ const TopNavbar = ({ onToggleSidebar }) => {
     if (path.includes('/reports'))     return translations[lang].reports;
     return translations[lang].mainSystem;
   };
+const currentPageTitle = getPageTitle();
 
+const showBackButton =
+  location.pathname !== '/' &&
+  !location.pathname.endsWith('/home');
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="top-bar bg-white shadow-sm py-2 py-md-3 px-3 px-md-4 d-flex justify-content-between align-items-center">
