@@ -1,8 +1,3 @@
-bin/
-obj/
-.vs/
-*.user
-*.suo
-*.log
-*.dll
-*.pdb
+.env  
+__pycache__/  
+tax_memory.db 
