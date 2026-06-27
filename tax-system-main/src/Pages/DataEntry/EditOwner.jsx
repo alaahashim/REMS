@@ -4,12 +4,21 @@ import {
   Container, Card, Row, Col, Form,
   Button, Table, Badge, Spinner, Alert
 } from 'react-bootstrap';
+import { useLanguage } from '../../context/LanguageContext'; // <--- 1. استدعاء اللغة
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; // <--- 2. استدعاء الأداة
+
 import {
   getOwnerById,
   getOwnerUnitsForEdit,
   updateOwner,
   updateAssignment
 } from '../../services/assignmentService';
+
+// ── مكون مساعد لترجمة الداتا ديناميكياً ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 // ── usageType options ──
 const USAGE_OPTIONS = [
@@ -22,6 +31,7 @@ const USAGE_OPTIONS = [
 const EditOwner = () => {
   const { id }   = useParams();
   const navigate = useNavigate();
+  const { lang } = useLanguage(); // <--- 3. جلب اللغة الحالية
 
   // ── بيانات المالك ──
   const [owner,        setOwner]        = useState(null);
@@ -33,9 +43,9 @@ const EditOwner = () => {
 
   // ── الوحدات ──
   const [units,       setUnits]       = useState([]);
-  const [editingUnit, setEditingUnit] = useState(null); // { assignmentId, startDate, endDate, usageType }
+  const [editingUnit, setEditingUnit] = useState(null);
   const [savingUnit,  setSavingUnit]  = useState(false);
-  const [unitSuccess, setUnitSuccess] = useState(null); // assignmentId
+  const [unitSuccess, setUnitSuccess] = useState(null);
   const [unitError,   setUnitError]   = useState('');
 
   // ── loading ──
@@ -71,9 +81,6 @@ const EditOwner = () => {
     loadUnits();
   }, [id]);
 
-  // ════════════════════════
-  // حفظ بيانات المالك
-  // ════════════════════════
   const handleSaveOwner = async () => {
     if (!phone.trim() || !address.trim()) {
       setOwnerError('رقم الهاتف والعنوان مطلوبان');
@@ -93,9 +100,6 @@ const EditOwner = () => {
     }
   };
 
-  // ════════════════════════
-  // بدء تعديل وحدة
-  // ════════════════════════
   const handleStartEditUnit = (unit) => {
     setEditingUnit({
       assignmentId: unit.assignmentId,
@@ -109,9 +113,6 @@ const EditOwner = () => {
 
   const handleCancelEditUnit = () => setEditingUnit(null);
 
-  // ════════════════════════
-  // حفظ تعديل الوحدة
-  // ════════════════════════
   const handleSaveUnit = async () => {
     if (!editingUnit.startDate) {
       setUnitError('تاريخ بداية الملكية مطلوب');
@@ -131,13 +132,9 @@ const EditOwner = () => {
         usageType: editingUnit.usageType,
       });
 
-      // تحديث الوحدة محلياً
       setUnits(prev => prev.map(u =>
         u.assignmentId === editingUnit.assignmentId
-          ? { ...u,
-              startDate: editingUnit.startDate,
-              endDate:   editingUnit.endDate || null,
-              usageType: editingUnit.usageType }
+          ? { ...u, startDate: editingUnit.startDate, endDate: editingUnit.endDate || null, usageType: editingUnit.usageType }
           : u
       ));
 
@@ -157,9 +154,6 @@ const EditOwner = () => {
   const usageLabel = (val) =>
     USAGE_OPTIONS.find(o => o.value === val)?.label || val || '-';
 
-  // ════════════════════════
-  // Render
-  // ════════════════════════
   if (loadingOwner) {
     return (
       <Container className="mt-5 text-center">
@@ -188,14 +182,14 @@ const EditOwner = () => {
         <Card.Header className="bg-white border-bottom py-3">
           <div className="d-flex align-items-center gap-2">
             <div
-              className="bg-primary bg-opacity-10 rounded-circle d-flex
-                         align-items-center justify-content-center"
+              className="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
               style={{ width: 40, height: 40 }}
             >
               <i className="fa-solid fa-user text-primary"></i>
             </div>
             <div>
-              <h6 className="mb-0 fw-bold">{owner?.fullName}</h6>
+              {/* 4. ترجمة اسم المالك الجاي من الداتا بيز */}
+              <h6 className="mb-0 fw-bold"><DynText text={owner?.fullName} lang={lang} /></h6>
               <small className="text-muted">تعديل بيانات المالك</small>
             </div>
             <Badge
@@ -209,7 +203,6 @@ const EditOwner = () => {
         </Card.Header>
 
         <Card.Body>
-          {/* حقول القراءة فقط */}
           <Row className="g-3 mb-3">
             <Col md={6}>
               <Form.Label className="text-muted small mb-1">
@@ -225,6 +218,7 @@ const EditOwner = () => {
               <Form.Label className="text-muted small mb-1">
                 <i className="fa-solid fa-signature me-1"></i> الاسم الكامل
               </Form.Label>
+              {/* 5. ترجمة الاسم مرة تانية في الحقل */}
               <Form.Control
                 value={owner?.fullName || ''}
                 readOnly
@@ -233,7 +227,6 @@ const EditOwner = () => {
             </Col>
           </Row>
 
-          {/* حقول قابلة للتعديل */}
           <Row className="g-3 mb-3">
             <Col md={6}>
               <Form.Label className="fw-semibold small mb-1">
@@ -298,19 +291,11 @@ const EditOwner = () => {
       <Card className="shadow-sm border-0">
         <Card.Body className="p-0">
 
-          {unitError && (
-            <Alert variant="danger" className="m-3 py-2">{unitError}</Alert>
-          )}
-          {unitSuccess && (
-            <Alert variant="success" className="m-3 py-2">
-              تم حفظ بيانات الوحدة بنجاح ✓
-            </Alert>
-          )}
+          {unitError && (<Alert variant="danger" className="m-3 py-2">{unitError}</Alert>)}
+          {unitSuccess && (<Alert variant="success" className="m-3 py-2">تم حفظ بيانات الوحدة بنجاح ✓</Alert>)}
 
           {loadingUnits ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" />
-            </div>
+            <div className="text-center py-5"><Spinner animation="border" /></div>
           ) : units.length === 0 ? (
             <div className="text-center py-5 text-muted">
               <i className="fa-solid fa-inbox fa-2x mb-3 d-block"></i>
@@ -334,12 +319,10 @@ const EditOwner = () => {
                   <React.Fragment key={unit.assignmentId}>
 
                     {/* ── صف العرض ── */}
-                    <tr className={
-                      editingUnit?.assignmentId === unit.assignmentId
-                        ? 'd-none' : ''
-                    }>
+                    <tr className={editingUnit?.assignmentId === unit.assignmentId ? 'd-none' : ''}>
                       <td className="fw-bold text-primary">{unit.unitNumber || '-'}</td>
-                      <td className="text-muted small">{unit.address || '-'}</td>
+                      {/* 6. ترجمة عنوان الوحدة الجاي من الداتا بيز */}
+                      <td className="text-muted small"><DynText text={unit.address} lang={lang} /></td>
                       <td>{unit.area ?? '-'}</td>
                       <td>
                         <Badge bg="light" text="dark" className="border">
@@ -349,13 +332,7 @@ const EditOwner = () => {
                       <td className="small">{formatDate(unit.startDate)}</td>
                       <td className="small text-muted">{formatDate(unit.endDate)}</td>
                       <td className="text-end pe-4">
-                        <Button
-                          variant="light"
-                          size="sm"
-                          className="text-primary border"
-                          onClick={() => handleStartEditUnit(unit)}
-                          title="تعديل"
-                        >
+                        <Button variant="light" size="sm" className="text-primary border" onClick={() => handleStartEditUnit(unit)} title="تعديل">
                           <i className="fa-solid fa-pen-to-square"></i>
                         </Button>
                       </td>
@@ -365,17 +342,15 @@ const EditOwner = () => {
                     {editingUnit?.assignmentId === unit.assignmentId && (
                       <tr className="table-warning">
                         <td className="fw-bold text-primary">{unit.unitNumber}</td>
-                        <td className="text-muted small">{unit.address || '-'}</td>
+                        {/* 7. ترجمة العنوان في صف التعديل برضه */}
+                        <td className="text-muted small"><DynText text={unit.address} lang={lang} /></td>
                         <td>{unit.area ?? '-'}</td>
 
-                        {/* نوع الاستخدام */}
                         <td>
                           <Form.Select
                             size="sm"
                             value={editingUnit.usageType}
-                            onChange={e => setEditingUnit(p =>
-                              ({ ...p, usageType: e.target.value })
-                            )}
+                            onChange={e => setEditingUnit(p => ({ ...p, usageType: e.target.value }))}
                           >
                             {USAGE_OPTIONS.map(o => (
                               <option key={o.value} value={o.value}>{o.label}</option>
@@ -383,52 +358,20 @@ const EditOwner = () => {
                           </Form.Select>
                         </td>
 
-                        {/* تاريخ البداية */}
                         <td>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={editingUnit.startDate}
-                            onChange={e => setEditingUnit(p =>
-                              ({ ...p, startDate: e.target.value })
-                            )}
-                          />
+                          <Form.Control type="date" size="sm" value={editingUnit.startDate} onChange={e => setEditingUnit(p => ({ ...p, startDate: e.target.value }))} />
                         </td>
 
-                        {/* تاريخ النهاية */}
                         <td>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={editingUnit.endDate || ''}
-                            onChange={e => setEditingUnit(p =>
-                              ({ ...p, endDate: e.target.value })
-                            )}
-                          />
+                          <Form.Control type="date" size="sm" value={editingUnit.endDate || ''} onChange={e => setEditingUnit(p => ({ ...p, endDate: e.target.value }))} />
                         </td>
 
-                        {/* أزرار الحفظ / الإلغاء */}
                         <td className="text-end pe-4">
                           <div className="d-flex justify-content-end gap-1">
-                            <Button
-                              variant="success"
-                              size="sm"
-                              onClick={handleSaveUnit}
-                              disabled={savingUnit}
-                              title="حفظ"
-                            >
-                              {savingUnit
-                                ? <Spinner size="sm" />
-                                : <i className="fa-solid fa-check"></i>
-                              }
+                            <Button variant="success" size="sm" onClick={handleSaveUnit} disabled={savingUnit} title="حفظ">
+                              {savingUnit ? <Spinner size="sm" /> : <i className="fa-solid fa-check"></i>}
                             </Button>
-                            <Button
-                              variant="light"
-                              size="sm"
-                              className="border"
-                              onClick={handleCancelEditUnit}
-                              title="إلغاء"
-                            >
+                            <Button variant="light" size="sm" className="border" onClick={handleCancelEditUnit} title="إلغاء">
                               <i className="fa-solid fa-xmark"></i>
                             </Button>
                           </div>
