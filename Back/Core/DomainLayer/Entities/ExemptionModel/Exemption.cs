@@ -24,7 +24,7 @@ namespace Core.DomainLayer.Entities
 
         public DateTime? ExemptionStartDate { get; set; }
         public DateTime? ExemptionEndDate { get; set; }
-
+public int TaxYear { get; set; }
         public string? LegalReference { get; set; }
         public string? ExemptionReason { get; set; }
         public string? InspectionResult { get; set; }
@@ -39,6 +39,13 @@ public DateTime? CommitteeDecisionDate { get; set; }
 public int? CommitteeUserId { get; set; }
 
 ///////////////////
+public string? ManagerVerdict { get; set; }
+
+public string? ManagerNote { get; set; }
+
+public DateTime? ManagerDecisionDate { get; set; }
+
+public int? ManagerUserId { get; set; }
   public ICollection<ExemptionAttachment> Attachments { get; set; } = new List<ExemptionAttachment>();
     }
 

@@ -460,5 +460,126 @@ public async Task CommitteeDecisionAsync(
     await _unitOfWork.SaveChangesAsync();
 }
 #endregion
+   
+     #region Manager
+    
+public async Task<IEnumerable<ManagerAppealDto>>
+GetManagerAppealsAsync()
+{
+    var repo =
+        _unitOfWork.GetRepository<Appeal, int>();
+
+    var appeals =
+        await repo.GetAllAsync(
+            new PendingManagerAppealsSpec());
+
+    return _mapper.Map<IEnumerable<ManagerAppealDto>>(appeals);
+}
+public async Task ManagerDecisionAsync(
+    int appealId,
+    ManagerDecisionDto dto,
+    int managerUserId)
+{
+    var repo =
+        _unitOfWork.GetRepository<Appeal, int>();
+
+    var appeal =
+        await repo.GetByIdAsync(
+            new AppealWithTaxAssessmentSpec(appealId));
+
+    if (appeal == null)
+        throw new NotFoundException("الطعن غير موجود.");
+
+    //--------------------------------------------------
+    // لا يجوز اتخاذ القرار مرتين
+    //--------------------------------------------------
+
+    if (appeal.Status != AppealStatus.PendingManager)
+        throw new BusinessException(
+            "هذا الطعن ليس في انتظار قرار المدير.");
+
+    var assessment = appeal.TaxAssessment;
+
+    if (assessment == null)
+        throw new BusinessException(
+            "التقييم الضريبي غير موجود.");
+
+    //--------------------------------------------------
+    // بيانات المدير
+    //--------------------------------------------------
+
+    appeal.ManagerUserId = managerUserId;
+
+    appeal.ManagerDecisionDate = DateTime.UtcNow;
+
+    appeal.ManagerNote = dto.Note;
+
+    //--------------------------------------------------
+    // القرار النهائي
+    //--------------------------------------------------
+
+    switch (dto.Status)
+    {
+        //----------------------------------------------
+        // موافقة المدير
+        //----------------------------------------------
+
+        case AppealStatus.Approved:
+
+            if (!dto.ManagerApprovedTax.HasValue)
+                throw new BusinessException(
+                    "يجب إدخال قيمة الضريبة النهائية.");
+
+            if (dto.ManagerApprovedTax.Value < 0)
+                throw new BusinessException(
+                    "قيمة الضريبة غير صحيحة.");
+
+            assessment.ManagerApprovedTax =
+                dto.ManagerApprovedTax.Value;
+
+            assessment.AnnualTax =
+                dto.ManagerApprovedTax.Value;
+
+            assessment.TotalDue =
+                assessment.AnnualTax +
+                assessment.AppealFee;
+
+            appeal.ManagerVerdict = "Approved";
+
+            appeal.Status = AppealStatus.Approved;
+
+            break;
+
+        //----------------------------------------------
+        // رفض المدير
+        //----------------------------------------------
+
+        case AppealStatus.Rejected:
+
+            appeal.ManagerVerdict = "Rejected";
+
+            appeal.Status = AppealStatus.Rejected;
+
+            break;
+
+        //----------------------------------------------
+        // أى قيمة أخرى مرفوضة
+        //----------------------------------------------
+
+        default:
+
+            throw new BusinessException(
+                "قرار المدير غير صحيح.");
+    }
+
+    repo.Update(appeal);
+
+    _unitOfWork
+        .GetRepository<TaxAssessment, int>()
+        .Update(assessment);
+
+    await _unitOfWork.SaveChangesAsync();
+}
+#endregion
     }
 }

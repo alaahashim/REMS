@@ -11,10 +11,10 @@ namespace Core.DomainLayer.Entities
         public Owner? Owner { get; set; }
 
         public int TaxYear { get; set; }
-
+public PaymentStatus PaymentStatus { get; set; }
         // القيمة الإيجارية السنوية
         public decimal AnnualRent { get; set; }
-
+public decimal? ManagerApprovedTax { get; set; }
         // نسبة خصم الصيانة (0.30 أو 0.32)
         public decimal MaintenanceDiscountRate { get; set; }
 
@@ -29,7 +29,11 @@ namespace Core.DomainLayer.Entities
 
         // الضريبة السنوية قبل الرسوم
         public decimal AnnualTax { get; set; }
+        public decimal? CommitteeProposedTax { get; set; }
 
+    /// <summary>
+    /// الضريبة النهائية التي اعتمدها المدير
+    /// </summary>
         // هل يوجد إعفاء؟
         public bool IsExempted { get; set; }
 
@@ -57,8 +61,19 @@ namespace Core.DomainLayer.Entities
 
         public string? Notes { get; set; }
         public Appeal? Appeal { get; set; }
+        public ICollection<Installment> Installments { get; set; }
+    = new List<Installment>();
     }
 
 
+public enum PaymentStatus
+    {
+        Pending = 0,
 
+        PartiallyPaid = 1,
+
+        Paid = 2,
+
+        Overdue = 3
+    }
 }

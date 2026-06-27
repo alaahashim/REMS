@@ -19,8 +19,8 @@ const ManagerReports = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [units, setUnits] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [installments, setInstallments] = useState([]);
+  const [payments, setPayments] = useState([]);         // localStorage – لا يوجد API بعد
+  const [installments, setInstallments] = useState([]); // localStorage – لا يوجد API بعد
   const [employeesStats, setEmployeesStats] = useState([]);
 
   useEffect(() => {
@@ -28,6 +28,8 @@ const ManagerReports = () => {
       try {
         const enrichedUnits = await getEnrichedUnits();
         setUnits(enrichedUnits);
+
+        // بيانات مؤقتة من localStorage حتى يتوفر API خاص بها
         setPayments(readStorage('tax_payments'));
         setInstallments(readStorage('tax_installments'));
         setEmployeesStats(getEmployeesPerformance());
@@ -40,13 +42,13 @@ const ManagerReports = () => {
   }, []);
 
   const stats = useMemo(() => {
-    const totalCollected = payments.reduce((sum, payment) => sum + Number(payment.paidAmount || 0), 0);
-    const totalDue = installments.reduce((sum, installment) => sum + Number(installment.amount || 0), 0);
+    const totalCollected = payments.reduce((sum, p) => sum + Number(p.paidAmount || 0), 0);
+    const totalDue = installments.reduce((sum, i) => sum + Number(i.amount || 0), 0);
     const totalPending = installments
-      .filter((installment) => installment.status === 'Pending')
-      .reduce((sum, installment) => sum + Number(installment.amount || 0), 0);
-    const pendingApproval = units.filter((unit) => unit.status === 'Pending_Manager').length;
-    const paidInstallments = installments.filter((installment) => installment.status === 'Paid').length;
+      .filter((i) => i.status === 'Pending')
+      .reduce((sum, i) => sum + Number(i.amount || 0), 0);
+    const pendingApproval = units.filter((u) => u.status === 'Pending_Manager').length;
+    const paidInstallments = installments.filter((i) => i.status === 'Paid').length;
     const collectionPercentage = totalDue > 0 ? Math.round((totalCollected / totalDue) * 100) : 0;
 
     const typeTotals = units.reduce((acc, unit) => {
@@ -62,12 +64,14 @@ const ManagerReports = () => {
       pendingApproval,
       paidInstallments,
       collectionPercentage,
-      typeTotals
+      typeTotals,
     };
   }, [installments, payments, units]);
 
   const exportEmployeeReport = () => {
-    const rows = employeesStats.map((employee, index) => `
+    const rows = employeesStats
+      .map(
+        (employee, index) => `
       <tr>
         <td>${index + 1}</td>
         <td>${employee.role}</td>
@@ -76,7 +80,9 @@ const ManagerReports = () => {
         <td>${employee.score}%</td>
         <td>${employee.details}</td>
       </tr>
-    `).join('');
+    `
+      )
+      .join('');
 
     printDocument(
       'تقرير أداء الموظفين',
@@ -107,7 +113,11 @@ const ManagerReports = () => {
   };
 
   if (loading) {
-    return <div className="text-center mt-5"><Spinner animation="border" variant="primary" /></div>;
+    return (
+      <div className="text-center mt-5">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
   }
 
   return (
@@ -179,7 +189,7 @@ const ManagerReports = () => {
         </Col>
       </Row>
 
-      {/* Charts / Progress Section */}
+      {/* Progress Section */}
       <Row className="g-4 mb-4">
         <Col lg={5}>
           <Card className="border-0 shadow-sm rounded-3 h-100">
@@ -187,11 +197,14 @@ const ManagerReports = () => {
               <i className="fa-solid fa-chart-line me-2 text-success"></i>نسبة التحصيل الكلية
             </Card.Header>
             <Card.Body className="d-flex flex-column justify-content-center align-items-center py-5">
-              <div className="position-relative d-flex align-items-center justify-content-center" style={{ width: '150px', height: '150px' }}>
-                <ProgressBar 
-                  className="w-100" 
-                  style={{ height: '150px', transform: 'rotate(-90deg)' }} 
-                  now={stats.collectionPercentage} 
+              <div
+                className="position-relative d-flex align-items-center justify-content-center"
+                style={{ width: '150px', height: '150px' }}
+              >
+                <ProgressBar
+                  className="w-100"
+                  style={{ height: '150px', transform: 'rotate(-90deg)' }}
+                  now={stats.collectionPercentage}
                   variant="success"
                 />
                 <div className="position-absolute fs-2 fw-bold text-dark">
@@ -199,7 +212,9 @@ const ManagerReports = () => {
                 </div>
               </div>
               <div className="mt-3 text-muted text-center">
-                تم سداد <span className="fw-bold text-success">{stats.paidInstallments}</span> قسط من إجمالي الأقساط
+                تم سداد{' '}
+                <span className="fw-bold text-success">{stats.paidInstallments}</span>{' '}
+                قسط من إجمالي الأقساط
               </div>
             </Card.Body>
           </Card>
@@ -215,14 +230,21 @@ const ManagerReports = () => {
               ) : (
                 <div>
                   {Object.entries(stats.typeTotals).map(([type, value]) => {
-                    const percent = stats.totalDue > 0 ? Math.round((value / stats.totalDue) * 100) : 0;
+                    const percent =
+                      stats.totalDue > 0 ? Math.round((value / stats.totalDue) * 100) : 0;
                     return (
                       <div className="mb-4" key={type}>
                         <div className="d-flex justify-content-between mb-1">
                           <span className="fw-bold text-dark">{type}</span>
-                          <span className="text-muted">{money(value)} ({percent}%)</span>
+                          <span className="text-muted">
+                            {money(value)} ({percent}%)
+                          </span>
                         </div>
-                        <ProgressBar now={percent} variant="info" style={{ height: 22, borderRadius: '10px' }} />
+                        <ProgressBar
+                          now={percent}
+                          variant="info"
+                          style={{ height: 22, borderRadius: '10px' }}
+                        />
                       </div>
                     );
                   })}
@@ -236,7 +258,9 @@ const ManagerReports = () => {
       {/* Employee Table */}
       <Card className="border-0 shadow-sm rounded-3">
         <Card.Header className="bg-transparent d-flex justify-content-between align-items-center border-bottom py-3">
-          <span className="fw-bold text-dark"><i className="fa-solid fa-users-gear me-2 text-primary"></i>أداء الموظفين</span>
+          <span className="fw-bold text-dark">
+            <i className="fa-solid fa-users-gear me-2 text-primary"></i>أداء الموظفين
+          </span>
           <Button size="sm" variant="outline-dark" onClick={exportEmployeeReport}>
             <i className="fa-solid fa-file-pdf me-2"></i>تصدير PDF
           </Button>
@@ -254,31 +278,54 @@ const ManagerReports = () => {
               </tr>
             </thead>
             <tbody>
-              {employeesStats.map((employee, index) => (
-                <tr key={employee.id || index}>
-                  <td className="text-center text-muted">{index + 1}</td>
-                  <td>
-                    <Badge bg="light" text="dark" className="border">{employee.role}</Badge>
-                  </td>
-                  <td className="fw-bold">{employee.name}</td>
-                  <td className="text-center">{employee.tasksDone}</td>
-                  <td>
-                    <div className="d-flex align-items-center gap-2">
-                      <ProgressBar 
-                        now={employee.score} 
-                        variant={employee.score >= 85 ? 'success' : 'warning'} 
-                        style={{ height: 10, flex: 1 }} 
-                      />
-                      <span className="fw-bold text-muted small">{employee.score}%</span>
-                    </div>
-                  </td>
-                  <td>
-                    <Badge bg={employee.score >= 85 ? 'success' : employee.tasksDone > 0 ? 'warning' : 'secondary'} className="px-3 py-2">
-                      {employee.score >= 85 ? 'ممتاز' : employee.tasksDone > 0 ? 'يحتاج متابعة' : 'غير فعال'}
-                    </Badge>
+              {employeesStats.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center text-muted py-4">
+                    لا توجد بيانات أداء متاحة
                   </td>
                 </tr>
-              ))}
+              ) : (
+                employeesStats.map((employee, index) => (
+                  <tr key={employee.id || index}>
+                    <td className="text-center text-muted">{index + 1}</td>
+                    <td>
+                      <Badge bg="light" text="dark" className="border">
+                        {employee.role}
+                      </Badge>
+                    </td>
+                    <td className="fw-bold">{employee.name}</td>
+                    <td className="text-center">{employee.tasksDone}</td>
+                    <td>
+                      <div className="d-flex align-items-center gap-2">
+                        <ProgressBar
+                          now={employee.score}
+                          variant={employee.score >= 85 ? 'success' : 'warning'}
+                          style={{ height: 10, flex: 1 }}
+                        />
+                        <span className="fw-bold text-muted small">{employee.score}%</span>
+                      </div>
+                    </td>
+                    <td>
+                      <Badge
+                        bg={
+                          employee.score >= 85
+                            ? 'success'
+                            : employee.tasksDone > 0
+                            ? 'warning'
+                            : 'secondary'
+                        }
+                        className="px-3 py-2"
+                      >
+                        {employee.score >= 85
+                          ? 'ممتاز'
+                          : employee.tasksDone > 0
+                          ? 'يحتاج متابعة'
+                          : 'غير فعال'}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </Table>
         </Card.Body>

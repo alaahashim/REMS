@@ -630,7 +630,7 @@ const DataEntryHome = () => {
                       getPendingRows().map(req => (
                         <tr key={`${req.type}-${req.id}`}>
                           <td>{getTypeBadge(req.type)}</td>
-                          <td>{req.unitNumber || '-'}</td>
+                          <td>{req.unitNumber || 'YYY-8888'}</td>
                           <td className="fw-medium">{req.ownerName || '-'}</td>
                           <td className="small">
                             {req.requestDate
@@ -918,7 +918,6 @@ const DataEntryHome = () => {
                   <thead className="table-light">
                     <tr>
                       <th>رقم العقار</th>
-                      <th>رقم المبنى</th>
                       <th>كود الوحدة</th>
                       <th>نوع الوحدة</th>
                       <th>الدور</th>
@@ -941,7 +940,6 @@ const DataEntryHome = () => {
                       getDisplayedUnits().map(unit => (
                         <tr key={unit.id}>
                           <td className="fw-bold text-primary">{unit.propertyId}</td>
-                          <td>{unit.propertyBuildingNo || '-'}</td>
                           <td className="fw-semibold">{unit.unitNumber || '-'}</td>
                           <td>{unit.unitType || '-'}</td>
                           <td>{unit.floor ?? '-'}</td>

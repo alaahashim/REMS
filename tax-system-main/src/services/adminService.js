@@ -1,47 +1,87 @@
-﻿// src/services/adminService.js
+import axios from 'axios';
 
-// إضافة موظف جديد
-export const addNewUser = (userData) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      try {
-        const existingUsers = JSON.parse(localStorage.getItem('tax_users')) || [];
-        const newUser = {
-          id: Date.now(),
-          ...userData,
-          createdAt: new Date().toISOString()
-        };
-        existingUsers.push(newUser);
-        localStorage.setItem('tax_users', JSON.stringify(existingUsers));
-        
-        resolve({ success: true, message: 'تم إضافة المستخدم بنجاح' });
-      } catch (error) {
-        reject({ success: false, message: 'حدث خطأ أثناء الحفظ' });
-      }
-    }, 1000);
-  });
+// ─── ثوابت ───────────────────────────────────────────────────────────────────
+const BASE_URL       = 'http://localhost:5179/api';
+const EMPLOYEES_URL  = `${BASE_URL}/AdminEmployees`;
+const AUDIT_LOGS_URL = `${BASE_URL}/AuditLogs`;
+
+// ─── مساعدات داخلية ──────────────────────────────────────────────────────────
+
+/** تطبيع سجل التدقيق القادم من الـ API إلى شكل موحد */
+const normalizeAuditLog = (log) => {
+  const dateValue  = log.actionDate  ?? log.createdAt  ?? log.ActionDate  ?? log.CreatedAt;
+  const employeeId = log.employeeId  ?? log.EmployeeId;
+  const actionType = log.actionType  ?? log.ActionType ?? '';
+  const tableName  = log.tableName   ?? log.TableName  ?? '';
+  const keyValue   = log.keyValue    ?? log.KeyValue;
+  const oldValues  = log.oldValues   ?? log.OldValues;
+  const newValues  = log.newValues   ?? log.NewValues;
+
+  const detailsParts = [];
+  if (keyValue)  detailsParts.push(`Key: ${keyValue}`);
+  if (oldValues) detailsParts.push(`Old: ${oldValues}`);
+  if (newValues) detailsParts.push(`New: ${newValues}`);
+
+  return {
+    id:         log.id ?? log.Id,
+    date:       dateValue,
+    employeeId,
+    user:       employeeId ? `Employee #${employeeId}` : 'System',
+    action:     actionType,
+    entity:     tableName,
+    details:    detailsParts.join(' | '),
+  };
 };
 
-// جلب سجلات التدقيق (تم التعديل لإرجاع بيانات وهمية إذا كانت فارغة)
-export const getSystemLogs = () => {
-  return new Promise((resolve) => {
-    let logs = JSON.parse(localStorage.getItem('tax_audit_logs')) || [];
-    
-    // إذا كانت فارغة، نرجع بيانات وهمية للعرض (Demo Data)
-    if (logs.length === 0) {
-        const dummyLogs = [
-            { id: 101, date: new Date().toISOString(), user: 'System', employeeName: 'System', action: 'SYSTEM', entity: 'Server', details: 'تم تشغيل النظام بنجاح' },
-            { id: 102, date: new Date().toISOString(), user: 'admin', employeeName: 'Administrator', action: 'LOGIN', entity: 'Auth', details: 'تسجيل دخول الأدمن' },
-            { id: 103, date: new Date().toISOString(), user: 'System', employeeName: 'System', action: 'CHECK', entity: 'Properties', details: 'فحص سلامة قاعدة البيانات' },
-            { id: 104, date: new Date().toISOString(), user: 'Manager', employeeName: 'Manager', action: 'APPROVE', entity: 'Property', details: 'اعتماد عقار رقم 554/21' },
-            { id: 105, date: new Date().toISOString(), user: 'Finance', employeeName: 'Finance', action: 'PAYMENT', entity: 'Receipt', details: 'تسجيل إيصال رقم 992' }
-        ];
-        logs = dummyLogs;
-    } else {
-        // ترتيب الأحدث أولاً
-        logs = logs.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
+/** تحويل بيانات النموذج إلى الـ payload المطلوب للـ API */
+const mapCreateUserPayload = (userData) => ({
+  EmployeeCode: userData.employeeCode,
+  FullName:     userData.name,
+  NationalId:   userData.nationalID,
+  JobTitle:     userData.jobTitle,
+  Department:   userData.role ?? userData.department ?? '',
+  OfficeId:     userData.officeId,
+  Username:     userData.username,
+  Password:     userData.password,
+});
 
-    setTimeout(() => resolve(logs), 500);
+/** استخراج البيانات من استجابة axios بشكل آمن */
+const extractResponseData = (response) => {
+  if (!response) return null;
+  if (response.data !== undefined) return response.data;
+  return response;
+};
+
+// ─── الخدمات المُصدَّرة ───────────────────────────────────────────────────────
+
+/** إضافة موظف جديد */
+export const addNewUser = async (userData) => {
+  const payload  = mapCreateUserPayload(userData);
+  const response = await axios.post(EMPLOYEES_URL, payload);
+  return extractResponseData(response);
+};
+
+/** جلب قائمة الموظفين مع دعم البحث الاختياري */
+export const getEmployees = async (searchQuery = '') => {
+  const response = await axios.get(EMPLOYEES_URL, {
+    params: searchQuery.trim() ? { searchQuery: searchQuery.trim() } : {},
   });
+  const data = extractResponseData(response);
+  return Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+};
+
+/** تبديل حالة الموظف (نشط / معلق) */
+export const toggleEmployeeStatus = async (employeeId) => {
+  const response = await axios.put(`${EMPLOYEES_URL}/toggle-status/${employeeId}`);
+  return extractResponseData(response);
+};
+
+/** جلب أحدث سجلات التدقيق من الـ API */
+export const getSystemLogs = async (count = 50) => {
+  const response = await axios.get(`${AUDIT_LOGS_URL}/latest`, {
+    params: { count },
+  });
+  const data = extractResponseData(response);
+  const logs = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+  return logs.map(normalizeAuditLog);
 };

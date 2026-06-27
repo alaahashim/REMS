@@ -80,11 +80,17 @@ namespace Infrastructure.Persistence.Data.Configurations
                 .IsUnique();
 
                   builder.HasIndex(x => new { x.UnitId, x.TaxYear }).IsUnique();
-
+builder.HasMany(t => t.Installments)
+       .WithOne(i => i.TaxAssessment)
+       .HasForeignKey(i => i.TaxAssessmentId)
+       .OnDelete(DeleteBehavior.Cascade);
             // 1:1 مع Appeal
             builder.HasOne(x => x.Appeal)
                 .WithOne(a => a.TaxAssessment)
                 .HasForeignKey<Appeal>(a => a.TaxAssessmentId)
                 .OnDelete(DeleteBehavior.Cascade);
+         builder.Property(t => t.PaymentStatus)
+       .HasConversion<string>()
+       .IsRequired();
         }}
 }

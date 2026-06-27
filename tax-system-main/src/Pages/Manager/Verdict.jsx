@@ -1,267 +1,449 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Spinner, Badge, Modal, Form, Alert } from 'react-bootstrap';
-import { Tabs, Tab } from 'react-bootstrap';
-import { updatePropertyStatus } from '../../services/propertyService'; 
-import { getAppeals } from '../../services/appealService'; 
-import { approveCommitteeAppeal } from '../../services/managerService'; 
-import { getEnrichedUnits } from '../../services/propertyService'; 
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Badge,
+  Button,
+  Card,
+  Col,
+  Container,
+  Form,
+  Modal,
+  Nav,
+  Row,
+  Spinner,
+  Table,
+} from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import {
+  getManagerAppeals,
+  getManagerExemptions,
+  managerAppealDecision,
+  managerExemptionDecision,
+} from '../../services/managerService';
+import { openExemptionAttachment }
+from "../../services/exemptionService";
+// ─── helpers ────────────────────────────────────────────────────────────────
+const money = (value) =>
+  `${Math.round(Number(value) || 0).toLocaleString('ar-EG')} ج.م`;
 
+const statusBadge = (status) => {
+  const map = {
+    Pending_Manager_Appeal: { bg: 'warning', text: 'dark', label: 'ينتظر قرار' },
+    Approved: { bg: 'success', text: undefined, label: 'مقبول' },
+    Rejected: { bg: 'danger', text: undefined, label: 'مرفوض' },
+    PendingManager: { bg: 'warning', text: 'dark', label: 'ينتظر قرار' },
+  };
+  const cfg = map[status] || { bg: 'secondary', text: undefined, label: status };
+  return (
+    <Badge bg={cfg.bg} text={cfg.text}>
+      {cfg.label}
+    </Badge>
+  );
+};
+
+// ─── component ───────────────────────────────────────────────────────────────
 const ManagerVerdict = () => {
-  const [key, setKey] = useState('reviews'); 
-  const [tasks, setTasks] = useState([]);
-  const [committeeAppeals, setCommitteeAppeals] = useState([]);
-  // --- إضافة الـ State الخاص بالإعفاءات (الجزء الجديد) ---
-  const [exemptions, setExemptions] = useState([]); 
-  
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('appeals');
   const [loading, setLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [decisionNote, setDecisionNote] = useState('');
+  const [appeals, setAppeals] = useState([]);
+  const [exemptions, setExemptions] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const enrichedUnits = await getEnrichedUnits();
-        const pending = enrichedUnits.filter(u => u.status === 'Pending_Manager');
-        setTasks(pending);
-        
-        const appeals = await getAppeals();
-        const pendingAppeals = appeals.filter(a => a.status === 'Pending_Manager_Appeal');
-        const enrichedAppeals = pendingAppeals.map(appeal => {
-            const unit = enrichedUnits.find(u => String(u.id) === String(appeal.unitId));
-            return { 
-                ...appeal, 
-                originalTax: unit ? unit.tax : 0, 
-                ownerName: unit ? unit.ownerName : 'غير معروف',
-                propertyAddress: unit ? unit.propertyAddress : 'غير معروف'
-            };
-        });
-        setCommitteeAppeals(enrichedAppeals);
+  // modal state
+  const [modal, setModal] = useState({ show: false, type: null, item: null });
+  const [decision, setDecision] = useState('Approved');
+  const [note, setNote] = useState('');
+  const [approvedTax, setApprovedTax] = useState('');
+  const [exemptionPercent, setExemptionPercent] = useState('');
 
-        // --- جلب بيانات الإعفاءات (الجزء الجديد) ---
-        const { getExemptions } = await import('../../services/exemptionService');
-        const exemptsData = await getExemptions();
-        setExemptions(exemptsData.filter(e => e.status === 'Pending_Manager_Exemption')); // عرض توصيات اللجنة فقط
-        // ------------------------------------------
-
-      } catch (error) {
-        console.error("Error loading manager tasks:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+  // ── fetch ──────────────────────────────────────────────────────────────────
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [appealsData, exemptionsData] = await Promise.all([
+        getManagerAppeals(),
+        getManagerExemptions(),
+      ]);
+      setAppeals(appealsData);
+      setExemptions(exemptionsData);
+    } catch {
+      setError('تعذّر تحميل البيانات. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleOpenReview = (task) => {
-    setSelectedItem({ type: 'review', data: task });
-    setShowModal(true);
-    setDecisionNote('');
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // ── modal helpers ──────────────────────────────────────────────────────────
+  const openModal = (type, item) => {
+    setModal({ show: true, type, item });
+    setDecision('Approved');
+    setNote('');
+    setApprovedTax('');
+    setExemptionPercent('');
   };
 
-  const handleFinalDecision = async (isApproved) => {
-    const newStatus = isApproved ? 'Approved' : 'Rejected';
-    if (!window.confirm(isApproved ? "اعتماد نهائي؟" : "رفض؟")) return;
+  const closeModal = () => setModal({ show: false, type: null, item: null });
+const getExemptionTypeArabic = (type) => {
+  switch (type) {
+    case 'PrimaryResidence':
+      return 'سكن أساسي';
+
+    case 'Disability':
+      return 'إعاقة';
+
+    case 'Charity':
+      return 'جمعية خيرية';
+
+    default:
+      return type || '-';
+  }
+};
+  // ── submit ─────────────────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    setSubmitting(true);
     try {
-      await updatePropertyStatus(selectedItem.data.id, newStatus, selectedItem.data.tax);
-      // بعد نجاح تحديث حالة الوحدة
-     if (isApproved && selectedItem.data.tax > 0) {
-        const { generateInstallments } = await import('../../services/installmentService');
-        await generateInstallments(selectedItem.data.id, selectedItem.data.tax);
-    }
-      alert("تم القرار وتوليد جدول الأقساط");
-      setShowModal(false);
-      const units = await getEnrichedUnits();
-      setTasks(units.filter(u => u.status === 'Pending_Manager'));
-    } catch { alert("فشل"); }
-  };
-
-  const handleOpenAppeal = (appeal) => {
-      setSelectedItem({ type: 'appeal', data: appeal });
-      setShowModal(true);
-      setDecisionNote('');
-  };
-
-  const handleCommitteeApproval = async (isApproved) => {
-      if(!window.confirm(isApproved ? "اعتماد قرار اللجنة؟" : "رفض قرار اللجنة؟")) return;
-      try {
-          if(isApproved) {
-              await approveCommitteeAppeal(selectedItem.data.id);
-              alert("تم اعتماد قرار اللجان");
-          } else {
-              alert("تم الرفض");
-          }
-          setShowModal(false);
-          const appeals = await getAppeals();
-          const pendingAppeals = appeals.filter(a => a.status === 'Pending_Manager_Appeal');
-          setCommitteeAppeals(pendingAppeals);
-      } catch { alert("فشل"); }
-  };
-
-  // --- دالة التعامل مع قرارات الإعفاء (الجزء الجديد) ---
-  const handleExemptionDecision = async (exemptionId, isApproved) => {
-      const decision = isApproved ? 'قبول' : 'رفض';
-      if (!window.confirm(`هل أنت متأكد من ${decision} طلب الإعفاء؟`)) return;
-      
-      try {
-          const { updateExemptionStatus } = await import('../../services/exemptionService');
-          const note = isApproved ? "تم اعتماد الإعفاء بناءً على المستندات" : "مرفوض لعدم استيفاء الشروط";
-          
-          await updateExemptionStatus(exemptionId, isApproved ? 'Accepted' : 'Rejected', note);
-          
-          alert(`تم ${decision} الطلب`);
-          
-          // تحديث قائمة الإعفاءات
-          const { getExemptions } = await import('../../services/exemptionService');
-          const data = await getExemptions();
-          setExemptions(data.filter(e => e.status === 'Pending_Manager_Exemption'));
-          
-      } catch (error) {
-          console.error(error);
-          alert("فشل العملية");
+      if (modal.type === 'appeal') {
+        await managerAppealDecision(modal.item.id, {
+          status: decision,
+          note,
+          ...(decision === 'Approved' && { managerApprovedTax: Number(approvedTax) }),
+        });
+      } else {
+        await managerExemptionDecision(modal.item.id, {
+          status: decision,
+          note,
+          ...(decision === 'Approved' && { exemptionPercentage: Number(exemptionPercent) }),
+        });
       }
+      closeModal();
+      await fetchAll();
+    } catch {
+      setError('حدث خطأ أثناء إرسال القرار. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setSubmitting(false);
+    }
   };
-  // ------------------------------------------------
+
+  // ── render ─────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="text-center mt-5">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+  }
+
+  const pendingAppeals = appeals.filter((a) => a.status === 'PendingManager');
+  const pendingExemptions = exemptions.filter((e) => e.status === 'PendingManager');
 
   return (
     <Container fluid className="mt-4">
-      <Row className="mb-4">
-        <Col>
-          <h3 className="text-warning fw-bold">مكتب الاعتمادات والقرارات</h3>
-          <p className="text-muted">اعتماد تقديرات الوحدات، قرارات اللجان، وطلبات الإعفاء</p>
-        </Col>
-      </Row>
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h3 className="fw-bold text-dark mb-1">
+            <i className="fa-solid fa-stamp me-2 text-primary"></i>الاعتمادات
+          </h3>
+          <p className="text-muted mb-0">مراجعة الطعون والإعفاءات واتخاذ القرار النهائي</p>
+        </div>
+        <Button variant="outline-dark" onClick={() => navigate('/manager/home')}>
+          <i className="fa-solid fa-arrow-right me-2"></i>عودة للرئيسية
+        </Button>
+      </div>
 
-      <Card className="shadow-sm border-0">
-        <Card.Body>
-          <Tabs id="manager-tabs" activeKey={key} onSelect={(k) => setKey(k)} fill className="mb-4">
-            
-            {/* التبويب الأول: تقديرات المراجع */}
-            <Tab eventKey="reviews" title={<span className="fw-bold">تقديرات المراجع <Badge bg="primary">{tasks.length}</Badge></span>}>
-              {loading ? <div className="text-center p-5"><Spinner /></div> : tasks.length === 0 ? <div className="text-center p-5">لا توجد ملفات</div> : (
-                <Table hover>
-                  <thead><tr><th>#</th><th>رقم الوحدة</th><th>نوع/دور</th><th>المالك</th><th>العنوان</th><th>الضريبة</th><th>الإجراء</th></tr></thead>
-                  <tbody>
-                    {tasks.map((task, i) => (
-                      <tr key={task.id}>
-                        <td>{i+1}</td>
-                        <td className="fw-bold text-primary">Unit #{task.id}</td>
-                        <td>{task.unitType} (دور {task.floor})</td>
-                        <td>{task.ownerName}</td>
-                        <td><small>{task.propertyAddress}</small></td>
-                        <td className="fw-bold text-success">{task.tax ? task.tax.toLocaleString() : '0'} ج.م</td>
-                        <td><Button size="sm" variant="outline-primary" onClick={() => handleOpenReview(task)}>توقيع</Button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              )}
-            </Tab>
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center mb-4">
+          <i className="fa-solid fa-triangle-exclamation me-2"></i>
+          {error}
+        </div>
+      )}
 
-            {/* التبويب الثاني: قرارات اللجان */}
-            <Tab eventKey="appeals" title={<span className="fw-bold">قرارات اللجان <Badge bg="info">{committeeAppeals.length}</Badge></span>}>
-               {loading ? <div className="text-center p-5"><Spinner /></div> : committeeAppeals.length === 0 ? <div className="text-center p-5">لا توجد قرارات معلقة</div> : (
-                <Table hover>
-                  <thead><tr><th>رقم القضية</th><th>رقم الوحدة</th><th>قرار اللجنة</th><th>الضريبة الأصلية</th><th>المبلغ المقترح</th><th>الإجراء</th></tr></thead>
-                  <tbody>
-                    {committeeAppeals.map((appeal) => (
-                      <tr key={appeal.id}>
-                        <td className="fw-bold">#{appeal.id}</td>
-                        <td>{appeal.unitId}</td>
-                        <td>
-                            <Badge bg={appeal.verdict === 'Accept' ? 'success' : 'danger'}>
-                                {appeal.verdict === 'Accept' ? 'قبول' : 'رفض'}
-                            </Badge>
-                        </td>
-                        <td className="text-muted">{appeal.originalTax} ج.م</td>
-                        <td className={appeal.verdict === 'Accept' ? 'text-success fw-bold' : 'text-muted'}>
-                            {appeal.verdict === 'Accept' ? appeal.proposedTax + ' ج.م' : '-'}
-                        </td>
-                        <td><Button size="sm" variant="outline-info" onClick={() => handleOpenAppeal(appeal)}>اعتماد</Button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              )}
-            </Tab>
+      {/* Tabs */}
+      <Card className="border-0 shadow-sm rounded-3">
+        <Card.Header className="bg-transparent border-bottom pt-3 pb-0">
+          <Nav variant="tabs" activeKey={activeTab} onSelect={setActiveTab}>
+            <Nav.Item>
+              <Nav.Link eventKey="appeals" className="fw-bold">
+                <i className="fa-solid fa-scale-balanced me-2"></i>
+                الطعون
+                {pendingAppeals.length > 0 && (
+                  <Badge bg="danger" className="ms-2">{pendingAppeals.length}</Badge>
+                )}
+              </Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link eventKey="exemptions" className="fw-bold">
+                <i className="fa-solid fa-file-circle-check me-2"></i>
+                الإعفاءات
+                {pendingExemptions.length > 0 && (
+                  <Badge bg="danger" className="ms-2">{pendingExemptions.length}</Badge>
+                )}
+              </Nav.Link>
+            </Nav.Item>
+          </Nav>
+        </Card.Header>
 
-            {/* التبويب الثالث (الجديد): طلبات الإعفاء */}
-            <Tab eventKey="exemptions" title={<span className="fw-bold">طلبات الإعفاء <Badge bg="info">{exemptions.length}</Badge></span>}>
-               {loading ? <div className="text-center p-5"><Spinner /></div> : exemptions.length === 0 ? <div className="text-center p-5">لا توجد طلبات إعفاء معلقة</div> : (
-                <Table hover>
-                  <thead><tr><th>رقم الطلب</th><th>رقم العقار</th><th>نوع الإعفاء</th><th>تاريخ الطلب</th><th>المرفق</th><th>الإجراء</th></tr></thead>
-                  <tbody>
-                    {exemptions.map((ex) => (
-                      <tr key={ex.id}>
-                        <td className="fw-bold">#{ex.id}</td>
-                        <td>{ex.propertyId}</td>
-                        <td>{ex.exemptionType}</td>
-                        <td>{new Date(ex.createdAt).toLocaleDateString('ar-EG')}</td>
-                        <td>
-                            {ex.fileName ? (
-                                <a href={ex.fileData} download={ex.fileName} className="btn btn-sm btn-outline-info">
-                                    <i className="fa-solid fa-download"></i> تحميل
-                                </a>
-                            ) : <span className="text-muted">لا يوجد</span>}
-                        </td>
-                        <td>
-                            <div className="d-flex gap-2">
-                                <Button variant="outline-success" size="sm" onClick={() => handleExemptionDecision(ex.id, true)} title="قبول">
-                                    <i className="fa-solid fa-check"></i>
-                                </Button>
-                                <Button variant="outline-danger" size="sm" onClick={() => handleExemptionDecision(ex.id, false)} title="رفض">
-                                    <i className="fa-solid fa-xmark"></i>
-                                </Button>
-                            </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              )}
-            </Tab>
+        <Card.Body className="p-0">
+          {/* ── Appeals Tab ── */}
+          {activeTab === 'appeals' && (
+            <Table hover responsive className="mb-0 align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th className="text-center">#</th>
+                  <th>كو الوحده</th>
+                  <th>سبب الطعن</th>
+                  <th className="text-end">الضريبة الأصلية</th>
+                   <th className="text-end">ضريبة اللجنة</th>
+                  <th className="text-center">الحالة</th>
+                  <th className="text-center">إجراء</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appeals.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center text-muted py-5">
+                      <i className="fa-solid fa-inbox fa-3x mb-3 d-block"></i>
+                      لا توجد طعون
+                    </td>
+                  </tr>
+                ) : (
+                  appeals.map((appeal, index) => (
+                    <tr key={appeal.id}>
+                      <td className="text-center fw-bold text-primary">{index + 1}</td>
+                      <td className="fw-bold"> {appeal.unitNumber || appeal.taxAssessment?.unitId || '-'}</td>
+                      <td className="text-muted">{appeal.appealReason || '-'}</td>
+                      <td className="text-end fw-bold text-success">
+{money(appeal.originalTax)}                      </td>
+                        <td className="text-end fw-bold text-success">
+{money(appeal.proposedTax ?? 0)}                      </td>
+                      <td className="text-center">{statusBadge(appeal.status)}</td>
+                      <td className="text-center">
+                        {appeal.status === 'PendingManager' ? (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => openModal('appeal', appeal)}
+                          >
+                            <i className="fa-solid fa-gavel me-1"></i>قرار
+                          </Button>
+                        ) : (
+                          <span className="text-muted small">تم البت</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </Table>
+          )}
 
-          </Tabs>
+          {/* ── Exemptions Tab ── */}
+          {activeTab === 'exemptions' && (
+            <Table hover responsive className="mb-0 align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th className="text-center">#</th>
+                  <th>المالك</th>
+                  <th>سبب الإعفاء</th>
+                    <th>المرفق</th>
+                  <th className="text-center">الحالة</th>
+                  <th className="text-center">إجراء</th>
+                </tr>
+              </thead>
+              <tbody>
+{
+    exemptions.length === 0 ?
+    (
+        <tr>
+            <td colSpan={6} className="text-center text-muted py-5">
+                <i className="fa-solid fa-inbox fa-3x mb-3 d-block"></i>
+                لا توجد إعفاءات
+            </td>
+        </tr>
+    )
+    :
+    exemptions.map((exemption,index)=>
+    (
+        <tr key={exemption.id}>
+
+            <td className="text-center fw-bold text-primary">
+                {index + 1}
+            </td>
+
+            <td className="fw-bold">
+                {exemption.personName}
+            </td>
+
+            <td>
+                {getExemptionTypeArabic(exemption.exemptionType)}
+            </td>
+
+            <td>
+                {
+                    exemption.fileName
+                    ?
+                    (
+                        <Button
+                            size="sm"
+                            variant="outline-primary"
+                            onClick={() =>
+                                openExemptionAttachment(exemption.id)
+                            }
+                        >
+                            فتح الملف
+                        </Button>
+                    )
+                    :
+                    (
+                        <span className="text-muted">
+                            لا يوجد
+                        </span>
+                    )
+                }
+            </td>
+
+            <td className="text-center">
+                {statusBadge(exemption.status)}
+            </td>
+
+            <td className="text-center">
+                {
+                    exemption.status === "PendingManager"
+                    ?
+                    (
+                        <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() =>
+                                openModal("exemption", exemption)
+                            }
+                        >
+                            <i className="fa-solid fa-gavel me-1"></i>
+                            قرار
+                        </Button>
+                    )
+                    :
+                    (
+                        <span className="text-muted small">
+                            تم البت
+                        </span>
+                    )
+                }
+            </td>
+
+        </tr>
+    ))
+}
+</tbody>
+            </Table>
+          )}
         </Card.Body>
       </Card>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton className="bg-dark text-white">
-          <Modal.Title>
-            {selectedItem?.type === 'review' ? 'اعتماد تقدير' : 
-             selectedItem?.type === 'appeal' ? 'اعتماد قرار لجنة' : 'اعتماد إعفاء'}
+      {/* ── Decision Modal ── */}
+      <Modal show={modal.show} onHide={closeModal} centered dir="rtl">
+        <Modal.Header closeButton className="border-bottom">
+          <Modal.Title className="fw-bold">
+            <i className="fa-solid fa-gavel me-2 text-primary"></i>
+            {modal.type === 'appeal' ? 'قرار المدير – الطعن' : 'قرار المدير – الإعفاء'}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-            {selectedItem?.type === 'review' ? (
-                <div>
-                    <h4>وحدة: {selectedItem.data.unitType} - دور {selectedItem.data.floor}</h4>
-                    <p className="text-muted">المالك: {selectedItem.data.ownerName}</p>
-                    <h2 className="text-center text-success my-3">{selectedItem.data.tax ? selectedItem.data.tax.toLocaleString() : '0'} ج.م</h2>
-                    <Form.Control as="textarea" rows={2} placeholder="ملاحظات المدير..." value={decisionNote} onChange={e=>setDecisionNote(e.target.value)} />
-                    <div className="d-flex gap-2 mt-3">
-                        <Button variant="danger" className="w-50" onClick={()=>handleFinalDecision(false)}>رفض</Button>
-                        <Button variant="success" className="w-50" onClick={()=>handleFinalDecision(true)}>اعتماد</Button>
-                    </div>
-                </div>
-            ) : selectedItem?.type === 'appeal' ? (
-                <div>
-                    <Alert variant="info">
-                        <strong>القرار:</strong> {selectedItem?.data.verdict === 'Accept' ? 'قبول الطعن' : 'رفض الطعن'}<br/>
-                        <strong>ملاحظات اللجنة:</strong> {selectedItem?.data.committeeNote}
-                    </Alert>
-                    {selectedItem?.data.verdict === 'Accept' && (
-                         <div className="text-center my-3 p-3 bg-light rounded">
-                            <p>سيتم تغيير الضريبة من <strong className="text-danger">{selectedItem?.data.originalTax}</strong> إلى <strong className="text-success">{selectedItem?.data.proposedTax}</strong></p>
-                         </div>
-                    )}
-                    <div className="d-flex gap-2 mt-3">
-                        <Button variant="secondary" className="w-50" onClick={()=>handleCommitteeApproval(false)}>رفض التوصية</Button>
-                        <Button variant="primary" className="w-50" onClick={()=>handleCommitteeApproval(true)}>توقيع وتنفيذ</Button>
-                    </div>
-                </div>
-            ) : null}
+          <Form>
+            {/* القرار */}
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-bold">القرار</Form.Label>
+              <div className="d-flex gap-3">
+                <Form.Check
+                  type="radio"
+                  label="قبول"
+                  id="approve"
+                  value="Approved"
+                  checked={decision === 'Approved'}
+                  onChange={(e) => setDecision(e.target.value)}
+                />
+                <Form.Check
+                  type="radio"
+                  label="رفض"
+                  id="reject"
+                  value="Rejected"
+                  checked={decision === 'Rejected'}
+                  onChange={(e) => setDecision(e.target.value)}
+                />
+              </div>
+            </Form.Group>
+
+            {/* الضريبة النهائية – للطعن عند القبول */}
+            {modal.type === 'appeal' && decision === 'Approved' && (
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">
+                  الضريبة النهائية المعتمدة <span className="text-danger">*</span>
+                </Form.Label>
+                <Form.Control
+                  type="number"
+                  min="0"
+                  placeholder="أدخل قيمة الضريبة المعتمدة"
+                  value={approvedTax}
+                  onChange={(e) => setApprovedTax(e.target.value)}
+                />
+              </Form.Group>
+            )}
+
+            {/* نسبة الإعفاء – للإعفاء عند القبول */}
+            {modal.type === 'exemption' && decision === 'Approved' && (
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-bold">
+                  نسبة الإعفاء (%) <span className="text-danger">*</span>
+                </Form.Label>
+                <Form.Control
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="0 – 100"
+                  value={exemptionPercent}
+                  onChange={(e) => setExemptionPercent(e.target.value)}
+                />
+              </Form.Group>
+            )}
+
+            {/* ملاحظة */}
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-bold">ملاحظة المدير</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="أدخل ملاحظتك (اختياري)"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
         </Modal.Body>
+        <Modal.Footer className="border-top">
+          <Button variant="outline-secondary" onClick={closeModal} disabled={submitting}>
+            إلغاء
+          </Button>
+          <Button
+            variant={decision === 'Approved' ? 'success' : 'danger'}
+            onClick={handleSubmit}
+            disabled={
+              submitting ||
+              (modal.type === 'appeal' && decision === 'Approved' && !approvedTax) ||
+              (modal.type === 'exemption' && decision === 'Approved' && !exemptionPercent)
+            }
+          >
+            {submitting ? (
+              <Spinner animation="border" size="sm" className="me-2" />
+            ) : (
+              <i className={`fa-solid ${decision === 'Approved' ? 'fa-check' : 'fa-times'} me-2`}></i>
+            )}
+            تأكيد القرار
+          </Button>
+        </Modal.Footer>
       </Modal>
     </Container>
   );

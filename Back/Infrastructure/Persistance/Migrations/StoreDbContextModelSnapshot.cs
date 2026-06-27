@@ -22,6 +22,122 @@ namespace Persistance.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Core.DomainLayer.Entities.AdminModule.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("KeyValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TableName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.AdminModule.Employee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NationalId")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("nvarchar(14)")
+                        .HasColumnName("NationalId");
+
+                    b.Property<string>("OfficeId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NationalId")
+                        .IsUnique();
+
+                    b.ToTable("Employees");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Appeal", b =>
                 {
                     b.Property<int>("Id")
@@ -61,6 +177,18 @@ namespace Persistance.Migrations
 
                     b.Property<bool>("IsFeePaid")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ManagerDecisionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ManagerNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ManagerUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ManagerVerdict")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -491,6 +619,18 @@ namespace Persistance.Migrations
                     b.Property<string>("LegalReference")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ManagerDecisionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ManagerNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ManagerUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ManagerVerdict")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
@@ -498,6 +638,9 @@ namespace Persistance.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaxYear")
                         .HasColumnType("int");
 
                     b.Property<int>("UnitId")
@@ -655,6 +798,49 @@ namespace Persistance.Migrations
                             UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             UpdatedBy = 0
                         });
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.Installment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("InstallmentNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TaxAssessmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaxAssessmentId");
+
+                    b.ToTable("Installment");
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Neighborhood", b =>
@@ -1361,6 +1547,9 @@ namespace Persistance.Migrations
                     b.Property<DateTime>("CalculationDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("CommitteeProposedTax")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1382,6 +1571,9 @@ namespace Persistance.Migrations
                     b.Property<decimal>("MaintenanceDiscountRate")
                         .HasColumnType("decimal(8,4)");
 
+                    b.Property<decimal?>("ManagerApprovedTax")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("NetAnnualRentalValue")
                         .HasColumnType("decimal(18,2)");
 
@@ -1397,6 +1589,10 @@ namespace Persistance.Migrations
 
                     b.Property<int>("PaymentPlan")
                         .HasColumnType("int");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -1584,6 +1780,58 @@ namespace Persistance.Migrations
                     b.ToTable("Owners");
                 });
 
+            modelBuilder.Entity("Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InstallmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReceiptNo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("InstallmentId");
+
+                    b.ToTable("Payment");
+                });
+
             modelBuilder.Entity("RoleAssignment", b =>
                 {
                     b.Property<int>("Id")
@@ -1713,6 +1961,17 @@ namespace Persistance.Migrations
                     b.Navigation("Exemption");
                 });
 
+            modelBuilder.Entity("Core.DomainLayer.Entities.Installment", b =>
+                {
+                    b.HasOne("Core.DomainLayer.Entities.TaxAssessment", "TaxAssessment")
+                        .WithMany("Installments")
+                        .HasForeignKey("TaxAssessmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TaxAssessment");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Neighborhood", b =>
                 {
                     b.HasOne("Core.DomainLayer.Entities.Center", "Center")
@@ -1783,6 +2042,23 @@ namespace Persistance.Migrations
                     b.Navigation("Property");
                 });
 
+            modelBuilder.Entity("Payment", b =>
+                {
+                    b.HasOne("Core.DomainLayer.Entities.AdminModule.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId");
+
+                    b.HasOne("Core.DomainLayer.Entities.Installment", "Installment")
+                        .WithMany("Payments")
+                        .HasForeignKey("InstallmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Installment");
+                });
+
             modelBuilder.Entity("RoleAssignment", b =>
                 {
                     b.HasOne("Owner", "Owner")
@@ -1826,6 +2102,11 @@ namespace Persistance.Migrations
                     b.Navigation("Centers");
                 });
 
+            modelBuilder.Entity("Core.DomainLayer.Entities.Installment", b =>
+                {
+                    b.Navigation("Payments");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Property", b =>
                 {
                     b.Navigation("Assignments");
@@ -1836,6 +2117,8 @@ namespace Persistance.Migrations
             modelBuilder.Entity("Core.DomainLayer.Entities.TaxAssessment", b =>
                 {
                     b.Navigation("Appeal");
+
+                    b.Navigation("Installments");
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Unit", b =>
