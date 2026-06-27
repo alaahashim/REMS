@@ -12,8 +12,7 @@ namespace Core.Service.Implementations
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IServiceManager _serviceManager;
-
+private readonly IExemptionService _exemptionService;
         // =========================
         // Constants
         // =========================
@@ -24,15 +23,14 @@ namespace Core.Service.Implementations
         private const decimal AppealFeeAmount = 50m;
 
         public TaxAssessmentService(
-            IUnitOfWork unitOfWork,
-            IMapper mapper,
-            IServiceManager serviceManager)
-        {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
-            _serviceManager = serviceManager;
-        }
-
+    IUnitOfWork unitOfWork,
+    IMapper mapper,
+    IExemptionService exemptionService)
+{
+    _unitOfWork = unitOfWork;
+    _mapper = mapper;
+    _exemptionService = exemptionService;
+}
         #region Reviewer Tasks
 
         public async Task<PagedResultDto<ReviewerTaxTaskListItemDto>> GetReviewerTasksAsync(ReviewerTaxTasksQueryDto query)
@@ -237,7 +235,6 @@ namespace Core.Service.Implementations
         {
             var primaryOwner = GetPrimaryOwner(unit)?.Owner;
             var isResidential = IsResidential(unit.UsageType);
-
             var annualRent = dto.AnnualRentOverride is > 0
                 ? dto.AnnualRentOverride.Value
                 : EstimateAnnualRent(unit);
@@ -258,7 +255,7 @@ namespace Core.Service.Implementations
 
             if (primaryOwner is not null && isResidential && netAnnualRentalValue <= EgyptianTaxExemptionThreshold)
             {
-                exemption = await _serviceManager.ExemptionService.CheckTaxExemptionAsync(
+                exemption = await _exemptionService.CheckTaxExemptionAsync(
                     primaryOwner.Id,
                     unit.Id,
                     dto.TaxYear,

@@ -40,7 +40,7 @@ namespace Core.Service.MappingProfiles
             CreateMap<UnitDto, Unit>();
 
             #endregion
-
+            #region 
             CreateMap<RoleAssignment, AssignmentDto>()
                 .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner!.FullName))
                 .ForMember(d => d.NationalId, o => o.MapFrom(s => s.Owner!.NationalId));
@@ -48,7 +48,7 @@ namespace Core.Service.MappingProfiles
             CreateMap<CreateAssignmentDto, RoleAssignment>()
                 .ForMember(d => d.StartDate, o => o.MapFrom(s => s.OwnershipStartDate))
                 .ForMember(d => d.EndDate, o => o.MapFrom(s => s.OwnershipEndDate));
-
+#endregion
             #region Owner
 
             CreateMap<Owner, OwnerDto>();
@@ -92,7 +92,7 @@ namespace Core.Service.MappingProfiles
 
          
 
-       #region Reviewer Tasks
+            #region Reviewer Tasks
 
             CreateMap<Unit, ReviewerTaxTaskListItemDto>()
                 .ForMember(d => d.UnitId, o => o.MapFrom(s => s.Id))
@@ -154,7 +154,7 @@ namespace Core.Service.MappingProfiles
                 .ForMember(d => d.TotalDue, o => o.MapFrom(s => s.TotalDue));
 
             #endregion
-        #region Appeal
+            #region Appeal
         CreateMap<AppealAttachment, AppealAttachmentDto>();
 
 CreateMap<CreateAppealAttachmentDto, AppealAttachment>();
@@ -203,7 +203,7 @@ CreateMap<TaxAssessment, AppealAssessmentLookupDto>()
 
 
 
-      #region Committee
+             #region Committee
       CreateMap<Appeal, CommitteeAppealDto>()
 
 .ForMember(
@@ -248,6 +248,58 @@ o => o.MapFrom(s => s.TaxAssessment.AnnualTax));
 
 #endregion  
         
+
+             #region Manager
+      CreateMap<Appeal, ManagerAppealDto>()
+
+    .ForMember(
+        d => d.UnitNumber,
+        o => o.MapFrom(s => s.TaxAssessment.Unit.UnitNumber))
+
+    .ForMember(
+        d => d.PersonName,
+        o => o.MapFrom(s => s.TaxAssessment.Owner.FullName))
+
+    .ForMember(
+        d => d.AppealReason,
+        o => o.MapFrom(s => s.AppealReason))
+
+    .ForMember(
+        d => d.OriginalTax,
+        o => o.MapFrom(s => s.TaxAssessment.AnnualTax))
+
+    .ForMember(
+        d => d.ProposedTax,
+        o => o.MapFrom(s => s.TaxAssessment.ManagerApprovedTax))
+
+    .ForMember(
+        d => d.CommitteeVerdict,
+        o => o.MapFrom(s => s.CommitteeVerdict))
+
+    .ForMember(
+        d => d.CommitteeNote,
+        o => o.MapFrom(s => s.CommitteeNote))
+
+    .ForMember(
+        d => d.Status,
+        o => o.MapFrom(s => s.Status.ToString()));
+
+
+        CreateMap<Exemption, ManagerExemptionDto>()
+    .ForMember(d => d.PersonName,
+        o => o.MapFrom(s => s.Owner.FullName))
+
+    .ForMember(d => d.UnitNumber,
+        o => o.MapFrom(s => s.Unit.UnitNumber))
+   .ForMember(
+        d => d.FileName,
+        o => o.MapFrom(s =>
+            s.Attachments.Any()
+                ? Path.GetFileName(s.Attachments.First().FilePath)
+                : null))
+    .ForMember(d => d.Status,
+        o => o.MapFrom(s => s.Status.ToString()));
+        #endregion
         }
     
     }}

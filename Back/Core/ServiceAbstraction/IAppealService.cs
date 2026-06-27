@@ -18,6 +18,8 @@ namespace Core.ServiceAbstraction
         Task CommitteeDecisionAsync(int appealId,CommitteeDecisionDto dto,int committeeUserId);
      Task<IEnumerable<CommitteeAppealDto>>GetCommitteeAppealsAsync();
    
-   
+   Task<IEnumerable<ManagerAppealDto>> GetManagerAppealsAsync();
+
+Task ManagerDecisionAsync(int appealId, ManagerDecisionDto dto, int managerUserId);
     }
 }

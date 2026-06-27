@@ -630,7 +630,7 @@ const DataEntryHome = () => {
                       getPendingRows().map(req => (
                         <tr key={`${req.type}-${req.id}`}>
                           <td>{getTypeBadge(req.type)}</td>
-                          <td>{req.unitNumber || '-'}</td>
+                          <td>{req.unitNumber || 'YYY-8888'}</td>
                           <td className="fw-medium">{req.ownerName || '-'}</td>
                           <td className="small">
                             {req.requestDate

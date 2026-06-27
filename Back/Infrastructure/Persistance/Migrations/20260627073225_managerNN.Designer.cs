@@ -12,8 +12,8 @@ using Persistence.Data;
 namespace Persistance.Migrations
 {
     [DbContext(typeof(StoreDbContext))]
-    [Migration("20260625064217_FixDataSeed")]
-    partial class FixDataSeed
+    [Migration("20260627073225_managerNN")]
+    partial class managerNN
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,245 @@ namespace Persistance.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.AdminModule.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("KeyValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TableName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.AdminModule.Employee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NationalId")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("nvarchar(14)")
+                        .HasColumnName("NationalId");
+
+                    b.Property<string>("OfficeId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NationalId")
+                        .IsUnique();
+
+                    b.ToTable("Employees");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.Appeal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AppealDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AppealReason")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTime?>("CommitteeDecisionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CommitteeNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("CommitteeUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CommitteeVerdict")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("FeeAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsFeePaid")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ManagerDecisionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ManagerNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ManagerUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ManagerVerdict")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("TaxAssessmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaxAssessmentId")
+                        .IsUnique();
+
+                    b.ToTable("Appeals");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.AppealAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AppealId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AppealId1")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppealId");
+
+                    b.HasIndex("AppealId1");
+
+                    b.ToTable("AppealAttachments");
+                });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Center", b =>
                 {
@@ -340,6 +579,18 @@ namespace Persistance.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("CommitteeDecisionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CommitteeNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("CommitteeUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CommitteeVerdict")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -371,6 +622,18 @@ namespace Persistance.Migrations
                     b.Property<string>("LegalReference")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ManagerDecisionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ManagerNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ManagerUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ManagerVerdict")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
@@ -378,6 +641,9 @@ namespace Persistance.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaxYear")
                         .HasColumnType("int");
 
                     b.Property<int>("UnitId")
@@ -1241,6 +1507,9 @@ namespace Persistance.Migrations
                     b.Property<DateTime>("CalculationDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("CommitteeProposedTax")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1261,6 +1530,9 @@ namespace Persistance.Migrations
 
                     b.Property<decimal>("MaintenanceDiscountRate")
                         .HasColumnType("decimal(8,4)");
+
+                    b.Property<decimal?>("ManagerApprovedTax")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("NetAnnualRentalValue")
                         .HasColumnType("decimal(18,2)");
@@ -1526,6 +1798,32 @@ namespace Persistance.Migrations
                     b.ToTable("RoleAssignments");
                 });
 
+            modelBuilder.Entity("Core.DomainLayer.Entities.Appeal", b =>
+                {
+                    b.HasOne("Core.DomainLayer.Entities.TaxAssessment", "TaxAssessment")
+                        .WithOne("Appeal")
+                        .HasForeignKey("Core.DomainLayer.Entities.Appeal", "TaxAssessmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TaxAssessment");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.AppealAttachment", b =>
+                {
+                    b.HasOne("Core.DomainLayer.Entities.Appeal", "Appeal")
+                        .WithMany()
+                        .HasForeignKey("AppealId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.DomainLayer.Entities.Appeal", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("AppealId1");
+
+                    b.Navigation("Appeal");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Center", b =>
                 {
                     b.HasOne("Core.DomainLayer.Entities.Governorate", "Governorate")
@@ -1660,6 +1958,11 @@ namespace Persistance.Migrations
                     b.Navigation("Unit");
                 });
 
+            modelBuilder.Entity("Core.DomainLayer.Entities.Appeal", b =>
+                {
+                    b.Navigation("Attachments");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Center", b =>
                 {
                     b.Navigation("Streets");
@@ -1680,6 +1983,11 @@ namespace Persistance.Migrations
                     b.Navigation("Assignments");
 
                     b.Navigation("Units");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.TaxAssessment", b =>
+                {
+                    b.Navigation("Appeal");
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Unit", b =>
