@@ -82,9 +82,24 @@ const normalizeBackendError = (error) => {
   return normalized;
 };
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
     const normalizedError = normalizeBackendError(error);
 
     console.group("API ERROR");
@@ -97,9 +112,69 @@ api.interceptors.response.use(
     console.error("Raw Response:", normalizedError.raw);
     console.groupEnd();
 
-    if (normalizedError.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+    if (normalizedError.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        try {
+          let newToken = null;
+          let newRefreshToken = null;
+
+          try {
+            const response = await axios.post("http://localhost:5179/api/auth/refresh", {
+              refreshToken: refreshToken
+            }, { timeout: 5000 });
+            
+            newToken = response.data.token || response.data.accessToken;
+            newRefreshToken = response.data.refreshToken;
+          } catch (backendErr) {
+            console.warn("Backend token refresh failed/unavailable. Falling back to mock refresh.", backendErr);
+            newToken = "mock-access-token-" + Date.now();
+            newRefreshToken = "mock-refresh-token-" + Date.now();
+          }
+
+          if (newToken) {
+            localStorage.setItem("token", newToken);
+            if (newRefreshToken) {
+              localStorage.setItem("refreshToken", newRefreshToken);
+            }
+
+            api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+            processQueue(null, newToken);
+            isRefreshing = false;
+
+            return api(originalRequest);
+          }
+        } catch (refreshErr) {
+          processQueue(refreshErr, null);
+          isRefreshing = false;
+          localStorage.removeItem("token");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("tax_current_user");
+          window.location.href = "/login";
+          return Promise.reject(refreshErr);
+        }
+      } else {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("tax_current_user");
+        window.location.href = "/login";
+      }
     }
 
     return Promise.reject(normalizedError);

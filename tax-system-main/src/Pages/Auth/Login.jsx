@@ -49,7 +49,7 @@ const Login = () => {
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="card shadow p-4" style={{ width: '400px' }}>
+      <div className="card shadow p-4" style={{ width: '400px', maxWidth: '90%' }}>
         <div className="text-center mb-4">
           <h3 className="text-primary">نظام الضرائب العقارية</h3>
           <p className="text-muted">{t('employeeLogin')}</p>
@@ -80,7 +80,16 @@ const Login = () => {
             />
           </div>
           <div className="mb-3">
-            <label className="form-label">{t('password')}</label>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <label className="form-label mb-0">{t('password')}</label>
+              <span
+                onClick={() => navigate('/forgot-password')}
+                className="text-decoration-underline"
+                style={{ cursor: 'pointer', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: '500' }}
+              >
+                {t('forgotPassword')}
+              </span>
+            </div>
             <input 
               type="password" 
               className="form-control" 

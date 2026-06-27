@@ -76,7 +76,7 @@ const TopNavbar = ({ onToggleSidebar }) => { // ✅ استقبل البروبس 
         )}
         
         {/* ✅ تصغير الخط وعمل Truncate على الموبايل */}
-        <h4 className="page-title m-0 fw-bold text-primary text-truncate" style={{ fontSize: window.innerWidth < 768 ? '1rem' : '1.5rem' }}>
+        <h4 className="page-title m-0 fw-bold text-primary text-truncate">
           {currentPageTitle}
         </h4>
       </div>
@@ -96,32 +96,33 @@ const TopNavbar = ({ onToggleSidebar }) => { // ✅ استقبل البروبس 
           </div>
         )}
 
-        {/* ✅ إخفاء كلمة العربية/English على الموبايل وبقاء الأيقونة */}
         <button
-          className="btn d-flex align-items-center justify-content-center text-primary p-1 p-md-2"
-          style={{ backgroundColor: '#f0f8ff', borderRadius: '999px', minWidth: window.innerWidth < 768 ? '38px' : 'auto', height: '38px' }}
+          className="btn d-flex align-items-center justify-content-center text-primary p-1 p-md-2 lang-toggle-btn"
           onClick={toggleLanguage}
           title={translations[lang].language}
+          style={{ gap: '4px' }}
         >
-          <i className="fa-solid fa-globe"></i>
-          <span className="d-none d-md-inline ms-1" style={{fontWeight: 600}}>{lang === 'ar' ? 'English' : 'العربية'}</span>
+          <i className="fa-solid fa-language fs-5"></i>
+          <span className="fw-bold" style={{ fontSize: '0.85rem' }}>
+            {lang === 'ar' ? 'English' : 'العربية'}
+          </span>
         </button>
 
-        <button className="btn p-1 p-md-2 text-primary d-none d-sm-block" style={{ backgroundColor: '#f0f8ff', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => navigate('/chatbot')} title={translations[lang].assistant}>
+        <button className="btn p-1 p-md-2 text-primary d-flex align-items-center justify-content-center" style={{ backgroundColor: '#f0f8ff', borderRadius: '50%', width: '38px', height: '38px' }} onClick={() => navigate('/chatbot')} title={translations[lang].assistant}>
           <i className="fa-solid fa-robot fs-5"></i>
         </button>
 
-        <button className="btn p-1 p-md-2 text-secondary position-relative" style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={translations[lang].notifications} onClick={() => navigate('/notifications')}>
+        <button className="btn p-1 p-md-2 text-secondary position-relative d-flex align-items-center justify-content-center" style={{ width: '38px', height: '38px' }} title={translations[lang].notifications} onClick={() => navigate('/notifications')}>
           <i className="fa-solid fa-bell fs-5"></i>
           {notificationCount > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{fontSize: '0.6rem'}}>{notificationCount}</span>}
         </button>
 
-        <button className="btn p-1 p-md-2 text-secondary d-none d-sm-block" style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={translations[lang].settings} onClick={() => navigate('/settings')}>
+        <button className="btn p-1 p-md-2 text-secondary d-flex align-items-center justify-content-center" style={{ width: '38px', height: '38px' }} title={translations[lang].settings} onClick={() => navigate('/settings')}>
           <i className="fa-solid fa-gear fs-5"></i>
         </button>
 
         {/* ✅ تصغير الصورة الشخصية شوية على الموبايل */}
-        <button className="btn p-0 rounded-circle overflow-hidden border border-2 border-primary" style={{ width: window.innerWidth < 768 ? '35px' : '45px', height: window.innerWidth < 768 ? '35px' : '45px' }} title={translations[lang].profile} onClick={() => navigate('/profile')}>
+        <button className="btn p-0 rounded-circle overflow-hidden border border-2 border-primary profile-avatar-btn" title={translations[lang].profile} onClick={() => navigate('/profile')}>
           <img src={profileImage} alt="User" className="w-100 h-100 object-fit-cover" />
         </button>
       </div>

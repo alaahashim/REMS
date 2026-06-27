@@ -10,7 +10,9 @@ import {
   InputGroup,
   Spinner,
   Badge,
-  Modal
+  Modal,
+  Container,
+  Card
 } from 'react-bootstrap';
 import {
   createAssignments,
@@ -481,35 +483,36 @@ const LinkOwner = () => {
   // Render
   // ────────────────────────────────────────────────────────────────────────────
   return (
-    <div className="lo-page" dir="rtl">
-      {/* ══ رأس الصفحة ══ */}
-      <div className="lo-page-header">
-        <h4 className="lo-page-title">
-          <i className="fa-solid fa-users-gear lo-icon-title" />
-          ربط المالك بالعقار
-        </h4>
-      </div>
+    <Container fluid className="mt-4">
+      <Row className="justify-content-center">
+        <Col md={12} lg={11}>
+          <Card className="shadow-sm border-0 border-top border-5 border-primary">
+            <Card.Header className="bg-primary text-white py-4">
+              <h5 className="mb-0">
+                <i className="fa-solid fa-users-gear me-2"></i>
+                ربط المالك بالعقار
+              </h5>
+            </Card.Header>
 
-      {message.text && (
-  <Alert
-    variant={message.type}
-    className="lo-alert"
-    onClose={() => setMessage({ text: '', type: '' })}
-    dismissible
-    style={{ whiteSpace: 'pre-line' }}   // ← هذا يعرض \n كسطر جديد
-  >
-    {message.text}
-  </Alert>
+            <Card.Body>
+              {message.text && (
+                <Alert
+                  variant={message.type}
+                  className="mb-4"
+                  onClose={() => setMessage({ text: '', type: '' })}
+                  dismissible
+                  style={{ whiteSpace: 'pre-line' }}
+                >
+                  {message.text}
+                </Alert>
+              )}
 
-      )}
-
-      <Form onSubmit={handleSubmit} noValidate>
-        {/* ════ قسم 1: بيانات المالك ════ */}
-        <div className="lo-section">
-          <div className="lo-section-title">
-            <i className="fa-solid fa-user" />
-            بيانات المالك
-          </div>
+              <Form onSubmit={handleSubmit} noValidate>
+                {/* ════ قسم 1: بيانات المالك ════ */}
+                <h5 className="text-primary fw-bold border-bottom pb-2 mb-4">
+                  <i className="fa-solid fa-user me-2" />
+                  بيانات المالك
+                </h5>
 
           <Row className="g-3">
             {/* الرقم القومي */}
@@ -673,17 +676,17 @@ const LinkOwner = () => {
               </Form.Group>
             </Col>
           </Row>
-        </div>
+       
 
         {/* ════ قسم 2: الوحدات والحصص ════ */}
-        <div className="lo-section">
-          <div className="lo-section-title">
-            <i className="fa-solid fa-layer-group" />
+        <div className="lo-section mt-4">
+          <h5 className="text-primary fw-bold border-bottom pb-2 mb-4">
+            <i className="fa-solid fa-layer-group me-2" />
             الوحدات والحصص
             <Badge bg="secondary" className="ms-2">
               {units.length} وحدة
             </Badge>
-          </div>
+          </h5>
 
           {/* رأس الجدول */}
           <div className="lo-units-header">
@@ -831,7 +834,7 @@ const LinkOwner = () => {
         </div>
 
         {/* ════ أزرار الإجراءات ════ */}
-        <div className="lo-actions">
+        <div className="lo-actions mt-4">
           <Button
             variant="secondary"
             className="lo-btn-cancel"
@@ -861,6 +864,10 @@ const LinkOwner = () => {
           </Button>
         </div>
       </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       {/* ══ المودالات ══ */}
       <SelectCitizenModal
@@ -874,7 +881,7 @@ const LinkOwner = () => {
         handleClose={() => setShowPropertyModal(false)}
         onSelect={handleSelectProperty}
       />
-    </div>
+    </Container>
   );
 };
 
