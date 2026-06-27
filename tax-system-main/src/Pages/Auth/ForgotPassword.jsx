@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { Form, Button, Alert, Card, Container, Row, Col, Spinner } from 'react-bootstrap';
-
-const DEFAULT_ADMIN_EMAIL = 'admin@tax-system.com';
+import axios from 'axios'; // أو استورد الـ apiClient الخاص بمشروعك
 
 const ForgotPassword = () => {
   const { t, lang } = useLanguage();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1); // 1: Enter email, 2: Verification code & Reset Password
+  const [step, setStep] = useState(1); 
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -17,119 +16,56 @@ const ForgotPassword = () => {
   
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
-  const [targetUserType, setTargetUserType] = useState(''); // 'admin' or 'employee'
-  const [targetUserIndex, setTargetUserIndex] = useState(-1);
 
-  // Step 1: Submit Email
-  const handleEmailSubmit = (e) => {
+  // Step 1: طلب إرسال الكود من الـ Backend
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ text: '', type: '' });
 
-    setTimeout(() => {
-      const emailLower = email.trim().toLowerCase();
+    try {
+      // استبدل الرابط بالـ API الخاص بك
+      const response = await axios.post('/api/auth/forgot-password', { email: email.trim() });
       
-      // Look up admin profile
-      let admin = null;
-      try {
-        const storedAdmin = localStorage.getItem('tax_admin_profile');
-        admin = storedAdmin ? JSON.parse(storedAdmin) : { email: DEFAULT_ADMIN_EMAIL };
-      } catch (e) {
-        admin = { email: DEFAULT_ADMIN_EMAIL };
-      }
-
-      if (admin.email && admin.email.toLowerCase() === emailLower) {
-        setTargetUserType('admin');
-        setLoading(false);
-        setStep(2);
-        setMessage({ text: t('verificationSent') + ' (123456)', type: 'success' });
-        return;
-      }
-
-      // Look up employee list
-      let employees = [];
-      try {
-        employees = JSON.parse(localStorage.getItem('tax_users')) || [];
-      } catch (e) {
-        employees = [];
-      }
-
-      const empIndex = employees.findIndex(u => u.email && u.email.toLowerCase() === emailLower);
-      if (empIndex !== -1) {
-        setTargetUserType('employee');
-        setTargetUserIndex(empIndex);
-        setLoading(false);
-        setStep(2);
-        setMessage({ text: t('verificationSent') + ' (123456)', type: 'success' });
-        return;
-      }
-
+      setMessage({ text: response.data.message || 'تم إرسال الكود إلى بريدك الإلكتروني', type: 'success' });
+      setStep(2);
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'حدث خطأ، تأكد من أن الإيميل مسجل في النظام';
+      setMessage({ text: errorMsg, type: 'danger' });
+    } finally {
       setLoading(false);
-      setMessage({ text: t('emailNotRegistered'), type: 'danger' });
-    }, 1000);
+    }
   };
 
-  // Step 2: Verification Code and Reset Password
-  const handleResetSubmit = (e) => {
+  // Step 2: إرسال الكود وكلمة المرور الجديدة للـ Backend للتحقق والحفظ
+  const handleResetSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ text: '', type: '' });
 
-    setTimeout(() => {
-      // 1. Verify Code (Mock: 123456)
-      if (verificationCode !== '123456') {
-        setLoading(false);
-        setMessage({ text: t('invalidCode'), type: 'danger' });
-        return;
-      }
-
-      // 2. Validate passwords
-      if (newPassword !== confirmPassword) {
-        setLoading(false);
-        setMessage({ text: t('passwordsDoNotMatch'), type: 'danger' });
-        return;
-      }
-
-      // 3. Save password
-      if (targetUserType === 'admin') {
-        let admin = null;
-        try {
-          const storedAdmin = localStorage.getItem('tax_admin_profile');
-          admin = storedAdmin ? JSON.parse(storedAdmin) : {
-            id: 'admin-1',
-            username: 'admin',
-            password: 'admin',
-            role: 'Admin',
-            name: 'Administrator',
-            email: DEFAULT_ADMIN_EMAIL
-          };
-        } catch (e) {
-          admin = { id: 'admin-1', username: 'admin', password: 'admin', role: 'Admin', name: 'Administrator', email: DEFAULT_ADMIN_EMAIL };
-        }
-        
-        admin.password = newPassword;
-        localStorage.setItem('tax_admin_profile', JSON.stringify(admin));
-      } else if (targetUserType === 'employee' && targetUserIndex !== -1) {
-        try {
-          const employees = JSON.parse(localStorage.getItem('tax_users')) || [];
-          if (employees[targetUserIndex]) {
-            employees[targetUserIndex].password = newPassword;
-            localStorage.setItem('tax_users', JSON.stringify(employees));
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
+    if (newPassword !== confirmPassword) {
       setLoading(false);
-      setMessage({ text: t('passwordChanged'), type: 'success' });
-      
-      // Redirect to login
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      setMessage({ text: 'كلمات المرور غير متطابقة', type: 'danger' });
+      return;
+    }
 
-    }, 1200);
+    try {
+      // استبدل الرابط بالـ API الخاص بك
+      const response = await axios.post('/api/auth/reset-password', {
+        email: email.trim(),
+        otp: verificationCode,
+        newPassword: newPassword
+      });
+
+      setMessage({ text: 'تم تغيير كلمة المرور بنجاح، جاري التحويل...', type: 'success' });
+      
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'كود التحقق غير صحيح أو انتهت صلاحيته';
+      setMessage({ text: errorMsg, type: 'danger' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isRtl = lang === 'ar';
@@ -140,79 +76,73 @@ const ForgotPassword = () => {
         <Col xs={12} sm={8} md={6} lg={4}>
           <Card className="shadow border-0">
             <Card.Header className="bg-primary text-white py-3 text-center">
-              <h5 className="mb-0">{t('resetPassword')}</h5>
+              <h5 className="mb-0">{t('resetPassword') || 'إعادة تعيين كلمة المرور'}</h5>
             </Card.Header>
             <Card.Body className="p-4">
-              {message.text && (
-                <Alert variant={message.type} className="mb-4">
-                  {message.text}
-                </Alert>
-              )}
+              {message.text && <Alert variant={message.type} className="mb-4">{message.text}</Alert>}
 
               {step === 1 ? (
                 <Form onSubmit={handleEmailSubmit}>
+                  <div className="text-center mb-4">
+                    <i className="fa-solid fa-envelope-circle-check fa-3x text-primary mb-3"></i>
+                    <p className="text-muted">أدخل بريدك الإلكتروني وسنرسل لك كود تحقق</p>
+                  </div>
                   <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold text-primary">{t('email')}</Form.Label>
+                    <Form.Label className="fw-bold text-primary">{t('email') || 'البريد الإلكتروني'}</Form.Label>
                     <Form.Control
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder={t('enterEmail')}
+                      placeholder="example@domain.com"
                       required
                     />
                   </Form.Group>
-
-                  <Button type="submit" variant="primary" className="w-100 mb-3" disabled={loading}>
-                    {loading ? <Spinner size="sm" animation="border" /> : t('sendVerification')}
+                  <Button type="submit" variant="primary" className="w-100" disabled={loading}>
+                    {loading ? <Spinner size="sm" animation="border" /> : (t('sendVerification') || 'إرسال كود التحقق')}
                   </Button>
                 </Form>
               ) : (
                 <Form onSubmit={handleResetSubmit}>
+                  <div className="text-center mb-4">
+                    <i className="fa-solid fa-shield-halved fa-3x text-success mb-3"></i>
+                    <p className="text-muted small">تم إرسال الكود إلى: <strong>{email}</strong></p>
+                  </div>
+
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold text-primary">{t('verificationCode')}</Form.Label>
+                    <Form.Label className="fw-bold text-primary">{t('verificationCode') || 'كود التحقق'}</Form.Label>
                     <Form.Control
                       type="text"
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
-                      placeholder="123456"
+                      placeholder="أدخل الـ 6 أرقام"
                       maxLength={6}
+                      className="text-center fs-3 fw-bold"
+                      style={{ letterSpacing: '10px' }}
                       required
                     />
                   </Form.Group>
 
+                  <hr className="my-4"/>
+
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold text-primary">{t('newPassword')}</Form.Label>
-                    <Form.Control
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                    />
+                    <Form.Label className="fw-bold text-primary">{t('newPassword') || 'كلمة المرور الجديدة'}</Form.Label>
+                    <Form.Control type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
                   </Form.Group>
 
                   <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold text-primary">{t('confirmNewPassword')}</Form.Label>
-                    <Form.Control
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                    />
+                    <Form.Label className="fw-bold text-primary">{t('confirmNewPassword') || 'تأكيد كلمة المرور'}</Form.Label>
+                    <Form.Control type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                   </Form.Group>
 
-                  <Button type="submit" variant="primary" className="w-100 mb-3" disabled={loading}>
-                    {loading ? <Spinner size="sm" animation="border" /> : t('changePassword')}
+                  <Button type="submit" variant="success" className="w-100" disabled={loading}>
+                    {loading ? <Spinner size="sm" animation="border" /> : (t('changePassword') || 'تغيير كلمة المرور')}
                   </Button>
                 </Form>
               )}
 
               <div className="text-center mt-3">
-                <span
-                  onClick={() => navigate('/login')}
-                  className="text-decoration-underline text-muted"
-                  style={{ cursor: 'pointer', fontSize: '0.85rem' }}
-                >
-                  {t('backToLogin')}
+                <span onClick={() => navigate('/login')} className="text-decoration-underline text-muted" style={{ cursor: 'pointer', fontSize: '0.85rem' }}>
+                  {t('backToLogin') || 'العودة لتسجيل الدخول'}
                 </span>
               </div>
             </Card.Body>
