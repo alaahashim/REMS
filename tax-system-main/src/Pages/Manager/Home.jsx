@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Col, Container, Row, Spinner, Table } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { getEnrichedUnits } from '../../services/propertyService';
-import { getAppeals } from '../../services/appealService';
+import { getManagerAppeals, getManagerExemptions } from '../../services/managerService';
 
 const readStorage = (key) => {
   try {
@@ -18,24 +18,27 @@ const ManagerHome = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [units, setUnits] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [installments, setInstallments] = useState([]);
+  const [payments, setPayments] = useState([]);         // localStorage – لا يوجد API بعد
+  const [installments, setInstallments] = useState([]); // localStorage – لا يوجد API بعد
   const [appeals, setAppeals] = useState([]);
   const [exemptions, setExemptions] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [enrichedUnits, appealsData] = await Promise.all([
+        const [enrichedUnits, appealsData, exemptionsData] = await Promise.all([
           getEnrichedUnits(),
-          getAppeals()
+          getManagerAppeals(),
+          getManagerExemptions(),
         ]);
 
         setUnits(enrichedUnits);
         setAppeals(appealsData);
+        setExemptions(exemptionsData);
+
+        // بيانات مؤقتة من localStorage حتى يتوفر API خاص بها
         setPayments(readStorage('tax_payments'));
         setInstallments(readStorage('tax_installments'));
-        setExemptions(readStorage('exemptions'));
       } finally {
         setLoading(false);
       }
@@ -47,10 +50,10 @@ const ManagerHome = () => {
   const dashboard = useMemo(() => {
     const pendingApproval = units.filter((unit) => unit.status === 'Pending_Manager');
     const paidUnits = units.filter((unit) => unit.status === 'Paid');
-    const totalRevenue = payments.reduce((sum, payment) => sum + Number(payment.paidAmount || 0), 0);
-    const pendingInstallments = installments.filter((installment) => installment.status === 'Pending');
-    const pendingAppeals = appeals.filter((appeal) => appeal.status === 'Pending_Manager_Appeal');
-    const pendingExemptions = exemptions.filter((exemption) => exemption.status === 'Pending');
+    const totalRevenue = payments.reduce((sum, p) => sum + Number(p.paidAmount || 0), 0);
+    const pendingInstallments = installments.filter((i) => i.status === 'Pending');
+    const pendingAppeals = appeals.filter((a) => a.status === 'Pending_Manager_Appeal');
+    const pendingExemptions = exemptions.filter((e) => e.status === 'PendingManager');
 
     return {
       pendingApproval,
@@ -61,12 +64,16 @@ const ManagerHome = () => {
       pendingExemptions,
       recentPayments: [...payments]
         .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
-        .slice(0, 5)
+        .slice(0, 5),
     };
   }, [appeals, exemptions, installments, payments, units]);
 
   if (loading) {
-    return <div className="text-center mt-5"><Spinner animation="border" variant="primary" /></div>;
+    return (
+      <div className="text-center mt-5">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
   }
 
   return (
@@ -87,7 +94,7 @@ const ManagerHome = () => {
         </Col>
       </Row>
 
-      {/* KPI Cards - تصميم أفقي مع أيقونات دائرية */}
+      {/* KPI Cards */}
       <Row className="g-4 mb-4">
         <Col md={3}>
           <Card className="border-0 shadow-sm rounded-3 h-100 border-start border-4 border-warning">
@@ -102,6 +109,7 @@ const ManagerHome = () => {
             </Card.Body>
           </Card>
         </Col>
+
         <Col md={3}>
           <Card className="border-0 shadow-sm rounded-3 h-100 border-start border-4 border-success">
             <Card.Body className="d-flex align-items-center p-3">
@@ -115,6 +123,7 @@ const ManagerHome = () => {
             </Card.Body>
           </Card>
         </Col>
+
         <Col md={3}>
           <Card className="border-0 shadow-sm rounded-3 h-100 border-start border-4 border-info">
             <Card.Body className="d-flex align-items-center p-3">
@@ -128,6 +137,7 @@ const ManagerHome = () => {
             </Card.Body>
           </Card>
         </Col>
+
         <Col md={3}>
           <Card className="border-0 shadow-sm rounded-3 h-100 border-start border-4 border-danger">
             <Card.Body className="d-flex align-items-center p-3">
@@ -136,7 +146,9 @@ const ManagerHome = () => {
               </div>
               <div>
                 <div className="text-muted small fw-bold">طعون وإعفاءات</div>
-                <h3 className="fw-bold mb-0 text-dark">{dashboard.pendingAppeals.length + dashboard.pendingExemptions.length}</h3>
+                <h3 className="fw-bold mb-0 text-dark">
+                  {dashboard.pendingAppeals.length + dashboard.pendingExemptions.length}
+                </h3>
               </div>
             </Card.Body>
           </Card>
@@ -145,11 +157,16 @@ const ManagerHome = () => {
 
       {/* Tables Section */}
       <Row className="g-4">
+        {/* ملفات تحتاج قرار */}
         <Col lg={7}>
           <Card className="border-0 shadow-sm rounded-3 h-100">
             <Card.Header className="bg-transparent d-flex justify-content-between align-items-center border-bottom py-3">
-              <span className="fw-bold text-dark"><i className="fa-solid fa-clock-rotate-left me-2 text-warning"></i>ملفات تحتاج قرار</span>
-              <Button size="sm" variant="outline-primary" onClick={() => navigate('/manager/verdict')}>عرض الكل</Button>
+              <span className="fw-bold text-dark">
+                <i className="fa-solid fa-clock-rotate-left me-2 text-warning"></i>ملفات تحتاج قرار
+              </span>
+              <Button size="sm" variant="outline-primary" onClick={() => navigate('/manager/verdict')}>
+                عرض الكل
+              </Button>
             </Card.Header>
             <Card.Body className="p-0">
               {dashboard.pendingApproval.length === 0 ? (
@@ -170,12 +187,20 @@ const ManagerHome = () => {
                   </thead>
                   <tbody>
                     {dashboard.pendingApproval.slice(0, 5).map((unit) => (
-                      <tr key={unit.id} style={{ cursor: 'pointer' }} onClick={() => navigate('/manager/verdict')}>
+                      <tr
+                        key={unit.id}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => navigate('/manager/verdict')}
+                      >
                         <td className="text-center fw-bold text-primary">#{unit.id}</td>
                         <td className="fw-bold">{unit.ownerName || '-'}</td>
-                        <td className="text-muted text-truncate" style={{maxWidth: '200px'}}>{unit.propertyAddress || '-'}</td>
+                        <td className="text-muted text-truncate" style={{ maxWidth: '200px' }}>
+                          {unit.propertyAddress || '-'}
+                        </td>
                         <td className="text-end fw-bold text-success">{money(unit.tax)}</td>
-                        <td className="text-center"><Badge bg="warning" text="dark">ينتظر توقيع</Badge></td>
+                        <td className="text-center">
+                          <Badge bg="warning" text="dark">ينتظر توقيع</Badge>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -185,6 +210,7 @@ const ManagerHome = () => {
           </Card>
         </Col>
 
+        {/* آخر عمليات التحصيل – localStorage */}
         <Col lg={5}>
           <Card className="border-0 shadow-sm rounded-3 h-100">
             <Card.Header className="bg-transparent fw-bold text-dark border-bottom py-3">
@@ -217,7 +243,9 @@ const ManagerHome = () => {
                           </div>
                         </td>
                         <td className="text-end fw-bold text-success">{money(payment.paidAmount)}</td>
-                        <td className="text-muted">{new Date(payment.paymentDate).toLocaleDateString('ar-EG')}</td>
+                        <td className="text-muted">
+                          {new Date(payment.paymentDate).toLocaleDateString('ar-EG')}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
