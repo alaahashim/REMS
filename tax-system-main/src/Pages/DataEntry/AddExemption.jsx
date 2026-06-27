@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Container, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { createExemption } from '../../services/exemptionService';
 import { getOwnerByNationalId } from '../../services/assignmentService';
+import { useLanguage } from '../../context/LanguageContext'; // <--- جلب اللغة
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; // <--- الأداة
+
+// ── مكون مساعد لترجمة الداتا ديناميكياً ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const INITIAL_FORM = {
   nationalId: '',
@@ -14,14 +22,13 @@ const INITIAL_FORM = {
   exemptionDate: new Date().toISOString().split('T')[0],
   exemptionStartDate: '',
   exemptionEndDate: '',
-
   exemptionReason: '',
   inspectionResult: '',
   notes: '',
   file: null
 };
 
-// التحقق من الحقول الأساسية قبل الإرسال (نفس الحقول المعروضة أصلاً، فقط بنتأكد إنها متعبية)
+// نصوص مطابقة لـ phraseTranslations
 const REQUIRED_FIELDS = [
   { field: 'ownerId', message: 'الرجاء البحث عن المالك بالرقم القومي أولًا' },
   { field: 'unitId', message: 'الرجاء اختيار الوحدة' },
@@ -31,12 +38,12 @@ const REQUIRED_FIELDS = [
 
 const AddExemption = () => {
   const navigate = useNavigate();
+  const { lang } = useLanguage(); // <--- جلب اللغة الحالية
 
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
-  // بيانات المالك والوحدات
   const [owner, setOwner] = useState(null);
   const [units, setUnits] = useState([]);
 
@@ -49,44 +56,43 @@ const AddExemption = () => {
   // البحث بالرقم القومي
   // ======================
   const handleSearchOwner = async () => {
-  if (!formData.nationalId.trim()) {
-    setMessage({ text: 'الرجاء إدخال الرقم القومي', type: 'warning' });
-    return;
-  }
+    // نص مطابق لـ phraseTranslations
+    if (!formData.nationalId.trim()) {
+      setMessage({ text: 'الرجاء إدخال الرقم القومي', type: 'warning' });
+      return;
+    }
 
-  setSearchLoading(true);
-  setMessage({ text: '', type: '' });
+    setSearchLoading(true);
+    setMessage({ text: '', type: '' });
 
-  try {
-    const data = await getOwnerByNationalId(formData.nationalId.trim());
+    try {
+      const data = await getOwnerByNationalId(formData.nationalId.trim());
+      setOwner(data);
+      setUnits(data.units || []);
+      setFormData((prev) => ({
+        ...prev,
+        ownerId: data.id,
+        unitId: '',
+        unitNumber: ''
+      }));
+      // نص مطابق لـ phraseTranslations
+      setMessage({ text: 'تم العثور على المالك بنجاح', type: 'success' });
+    } catch (err) {
+      setOwner(null);
+      setUnits([]);
+      setFormData((prev) => ({ ...prev, ownerId: '', unitId: '', unitNumber: '' }));
+      // نص مطابق لـ phraseTranslations
+      setMessage({ text: err.message || 'لم يتم العثور على المالك', type: 'danger' });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
-    setOwner(data);
-    setUnits(data.units || []);
-
-    setFormData((prev) => ({
-      ...prev,
-      ownerId: data.id,
-      unitId: '',
-      unitNumber: ''
-    }));
-
-    setMessage({ text: 'تم العثور على المالك بنجاح', type: 'success' });
-  } catch (err) {
-    setOwner(null);
-    setUnits([]);
-    setFormData((prev) => ({ ...prev, ownerId: '', unitId: '', unitNumber: '' }));
-    setMessage({ text: err.message || 'لم يتم العثور على المالك', type: 'danger' });
-  } finally {
-    setSearchLoading(false);
-  }
-};
   // ======================
   // اختيار وحدة
   // ======================
   const handleUnitSelect = (unitIdValue) => {
-    // مقارنة كسلسلة نصية لأن value القادمة من <select> دائمًا string
     const selected = units.find((u) => String(u.id) === unitIdValue);
-
     setFormData((prev) => ({
       ...prev,
       unitId: selected ? selected.id : '',
@@ -119,12 +125,10 @@ const AddExemption = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ text: '', type: '' });
-
     if (!validate()) return;
 
     setLoading(true);
     try {
-      // أسماء المفاتيح تطابق خصائص CreateExemptionDto في الباك إند
       await createExemption({
         OwnerId: formData.ownerId,
         UnitId: formData.unitId,
@@ -139,10 +143,11 @@ const AddExemption = () => {
         Notes: formData.notes,
         file: formData.file
       });
-
+      // نص مطابق لـ phraseTranslations
       setMessage({ text: 'تم حفظ طلب الإعفاء بنجاح', type: 'success' });
       setTimeout(() => navigate('/data-entry/home'), 1500);
     } catch (err) {
+      // نص مطابق لـ phraseTranslations
       setMessage({ text: err.message || 'حدث خطأ أثناء الحفظ', type: 'danger' });
     } finally {
       setLoading(false);
@@ -156,11 +161,11 @@ const AddExemption = () => {
           <Card className="shadow-sm border-0 border-top border-5 border-primary">
 
             <Card.Header className="bg-primary text-white py-3">
+              {/* نص ثابت — مطابق في phraseTranslations */}
               <h5 className="mb-0">طلب إعفاء جديد</h5>
             </Card.Header>
 
             <Card.Body>
-
               {message.text && (
                 <Alert variant={message.type}>{message.text}</Alert>
               )}
@@ -171,13 +176,14 @@ const AddExemption = () => {
                 {/* الرقم القومي */}
                 {/* ===================== */}
                 <Form.Group className="mb-3">
+                  {/* نص ثابت — مطابق في phraseTranslations */}
                   <Form.Label>الرقم القومي</Form.Label>
                   <div className="d-flex gap-2">
                     <Form.Control
                       value={formData.nationalId}
                       onChange={(e) => updateField('nationalId', e.target.value)}
                     />
-
+                    {/* نص ثابت — مطابق في phraseTranslations */}
                     <Button
                       variant="primary"
                       onClick={handleSearchOwner}
@@ -188,10 +194,12 @@ const AddExemption = () => {
                   </div>
                 </Form.Group>
 
-                {/* اسم المالك */}
+                {/* ★ اسم المالك — داتا ديناميكية من الداتابيز */}
                 {owner && (
                   <Alert variant="info">
-                    اسم المالك: {owner.fullName}
+                    {/* النص الثابت "اسم المالك:" سيُترجم بالـ Observer */}
+                    {/* الاسم نفسه يُترجم بـ DynText */}
+                    اسم المالك: <DynText text={owner.fullName} lang={lang} />
                   </Alert>
                 )}
 
@@ -199,6 +207,7 @@ const AddExemption = () => {
                 {/* الوحدات */}
                 {/* ===================== */}
                 <Form.Group className="mb-3">
+                  {/* نص ثابت — مطابق في phraseTranslations */}
                   <Form.Label>كود الوحدة</Form.Label>
 
                   <Form.Select
@@ -206,33 +215,41 @@ const AddExemption = () => {
                     onChange={(e) => handleUnitSelect(e.target.value)}
                     disabled={!units.length}
                   >
-                    <option value="">اختر الوحدة</option>
+                    {/* نص ثابت — مطابق في phraseTranslations */}
+                    <option value="">اختر الوحدة...</option>
                     {units.map((u) => (
-                     <option key={u.id} value={u.id}>
-  كود: {u.unitNumber}
-  | الدور: {u.floor}
-  | المساحة: {u.area} م²
-  | الاستخدام: {u.usageType}
-</option>
+                      <option key={u.id} value={u.id}>
+                        {/* النصوص الثابتة هنا سيُترجمها الـ Observer */}
+                        {/* قيم الداتا الرقمية لا تحتاج ترجمة */}
+                        {/* u.usageType لو "سكني"/"تجاري" موجودين في phraseTranslations ويتم ترجمتهم تلقائياً */}
+                        كود: {u.unitNumber}
+                        | الدور: {u.floor}
+                        | المساحة: {u.area} م²
+                        | الاستخدام: {u.usageType}
+                      </option>
                     ))}
                   </Form.Select>
                 </Form.Group>
 
-                {/* عرض كود الوحدة */}
+                {/* عرض كود الوحدة المختار */}
                 {formData.unitNumber && (
                   <Alert variant="secondary">
+                    {/* نص ثابت — سيُضاف لـ phraseTranslations */}
                     كود الوحدة المختار: {formData.unitNumber}
                   </Alert>
                 )}
 
                 {/* نوع الإعفاء */}
                 <Form.Group className="mb-3">
+                  {/* نص ثابت — مطابق في phraseTranslations */}
                   <Form.Label>نوع الإعفاء</Form.Label>
                   <Form.Select
                     value={formData.exemptionType}
                     onChange={(e) => updateField('exemptionType', e.target.value)}
                   >
+                    {/* نص ثابت — سيُضاف لـ phraseTranslations */}
                     <option value="">اختر</option>
+                    {/* نصوص ثابتة — سيُضاف لـ phraseTranslations */}
                     <option value="PrimaryResidence">سكن أساسي</option>
                     <option value="disability">إعاقة</option>
                     <option value="charity">جمعيات</option>
@@ -241,6 +258,7 @@ const AddExemption = () => {
 
                 {/* المرجع القانوني */}
                 <Form.Group className="mb-3">
+                  {/* نص ثابت — سيُضاف لـ phraseTranslations */}
                   <Form.Label>المرجع القانوني</Form.Label>
                   <Form.Control
                     value={formData.legalReference}
@@ -248,8 +266,9 @@ const AddExemption = () => {
                   />
                 </Form.Group>
 
-                {/* السبب */}
+                {/* سبب الإعفاء */}
                 <Form.Group className="mb-3">
+                  {/* نص ثابت — سيُضاف لـ phraseTranslations */}
                   <Form.Label>سبب الإعفاء</Form.Label>
                   <Form.Control
                     as="textarea"
@@ -263,6 +282,7 @@ const AddExemption = () => {
                 <Row>
                   <Col>
                     <Form.Group>
+                      {/* نص ثابت — سيُضاف لـ phraseTranslations */}
                       <Form.Label>تاريخ الإعفاء</Form.Label>
                       <Form.Control
                         type="date"
@@ -271,9 +291,9 @@ const AddExemption = () => {
                       />
                     </Form.Group>
                   </Col>
-
                   <Col>
                     <Form.Group>
+                      {/* نص ثابت — سيُضاف لـ phraseTranslations */}
                       <Form.Label>البداية</Form.Label>
                       <Form.Control
                         type="date"
@@ -282,9 +302,9 @@ const AddExemption = () => {
                       />
                     </Form.Group>
                   </Col>
-
                   <Col>
                     <Form.Group>
+                      {/* نص ثابت — سيُضاف لـ phraseTranslations */}
                       <Form.Label>النهاية</Form.Label>
                       <Form.Control
                         type="date"
@@ -297,6 +317,7 @@ const AddExemption = () => {
 
                 {/* ملاحظات */}
                 <Form.Group className="mt-3">
+                  {/* نص ثابت — سيُضاف لـ phraseTranslations */}
                   <Form.Label>ملاحظات</Form.Label>
                   <Form.Control
                     as="textarea"
@@ -308,23 +329,24 @@ const AddExemption = () => {
 
                 {/* مرفق */}
                 <Form.Group className="mt-3">
+                  {/* نص ثابت — مطابق في phraseTranslations */}
                   <Form.Label>المرفق</Form.Label>
                   <Form.Control type="file" onChange={handleFileChange} />
                 </Form.Group>
 
-                {/* زر */}
+                {/* أزرار */}
                 <div className="mt-4 d-flex justify-content-between">
+                  {/* نص ثابت — مطابق في phraseTranslations */}
                   <Button variant="secondary" onClick={() => navigate(-1)}>
                     إلغاء
                   </Button>
-
+                  {/* نص ثابت — مطابق في phraseTranslations */}
                   <Button type="submit" variant="success" disabled={loading}>
                     {loading ? <Spinner size="sm" /> : 'حفظ'}
                   </Button>
                 </div>
 
               </Form>
-
             </Card.Body>
           </Card>
         </Col>
