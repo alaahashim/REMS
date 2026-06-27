@@ -20,8 +20,13 @@ namespace Core.DomainLayer.Entities
 /// <summary>
 /// committe
 /// </summary>//
+public string? ManagerVerdict { get; set; }
 
+public string? ManagerNote { get; set; }
 
+public DateTime? ManagerDecisionDate { get; set; }
+
+public int? ManagerUserId { get; set; }
 public string? CommitteeVerdict { get; set; }
 
 public string? CommitteeNote { get; set; }

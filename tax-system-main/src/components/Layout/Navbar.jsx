@@ -1,71 +1,65 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 
+// ─── ثوابت ───────────────────────────────────────────────────────────────────
 const defaultNotifications = [
   { id: 1, text: 'تمت إضافة مستخدم جديد إلى النظام', time: 'منذ 5 دقائق', type: 'success' },
-  { id: 2, text: 'يوجد طلبات معلقة تحتاج مراجعة', time: 'منذ ساعة', type: 'warning' },
-  { id: 3, text: 'تم تحديث سياسة الإشعارات', time: 'منذ يوم', type: 'info' }
+  { id: 2, text: 'يوجد طلبات معلقة تحتاج مراجعة',    time: 'منذ ساعة',    type: 'warning' },
+  { id: 3, text: 'تم تحديث سياسة الإشعارات',           time: 'منذ يوم',     type: 'info'    },
 ];
 
-const TopNavbar = ({ onToggleSidebar }) => { // ✅ استقبل البروبس ده
-  const { user } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [notifications] = useState(() => {
-    const savedNotifications = JSON.parse(localStorage.getItem('tax_notifications') || 'null');
-    if (Array.isArray(savedNotifications) && savedNotifications.length > 0) return savedNotifications;
-    localStorage.setItem('tax_notifications', JSON.stringify(defaultNotifications));
-    return defaultNotifications;
-  });
+// ─── المكوّن الرئيسي ──────────────────────────────────────────────────────────
+const TopNavbar = ({ onToggleSidebar }) => {
+  const { user }                       = useAuth();
+  const location                       = useLocation();
+  const navigate                       = useNavigate();
   const { lang, toggleLanguage, translations } = useLanguage();
 
-  const role = user?.role || 'Admin';
-  const displayName = user?.name || user?.username || 'User';
+  const role         = user?.role || 'Admin';
+  const displayName  = user?.name || user?.username || 'User';
   const profileImage = user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
 
+  // عدد الإشعارات حسب الدور (منطق mariam-updates)
+  const notificationCount =
+    role === 'Finance' ? 2 :
+    role === 'Manager' ? 5 :
+    defaultNotifications.length;
+
+  // ─── عنوان الصفحة ────────────────────────────────────────────────────────
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path === '/profile') return translations[lang].profile;
-    if (path === '/notifications') return translations[lang].notifications;
-    if (path === '/settings') return translations[lang].settings;
+    if (path === '/profile')           return translations[lang].profile;
+    if (path === '/notifications')     return translations[lang].notifications;
+    if (path === '/settings')          return translations[lang].settings;
     if (path.includes('/home') || path === '/') return translations[lang].dashboard;
-    if (path.includes('/add')) return translations[lang].addProperty;
-    if (path.includes('/link')) return translations[lang].linkOwner;
-    if (path.includes('/appeal')) return translations[lang].addAppeal;
-    if (path.includes('/exemption')) return translations[lang].addExemption;
-    if (path.includes('/calc')) return translations[lang].calcTax;
-    if (path.includes('/collect')) return translations[lang].collect;
-    if (path.includes('/users')) return translations[lang].users;
-    if (path.includes('/logs')) return translations[lang].logs;
-    if (path.includes('/verdict')) return translations[lang].verdict;
-    if (path.includes('/reports')) return translations[lang].reports;
+    if (path.includes('/add'))         return translations[lang].addProperty;
+    if (path.includes('/link'))        return translations[lang].linkOwner;
+    if (path.includes('/appeal'))      return translations[lang].addAppeal;
+    if (path.includes('/exemption'))   return translations[lang].addExemption;
+    if (path.includes('/calc'))        return translations[lang].calcTax;
+    if (path.includes('/collect'))     return translations[lang].collect;
+    if (path.includes('/users'))       return translations[lang].users;
+    if (path.includes('/logs'))        return translations[lang].logs;
+    if (path.includes('/verdict'))     return translations[lang].verdict;
+    if (path.includes('/reports'))     return translations[lang].reports;
     return translations[lang].mainSystem;
   };
 
-  const currentPageTitle = getPageTitle();
-  const showSearch = role !== 'Data Entry' && role !== 'Finance'; 
-  const showBackButton = false; 
-  const notificationCount = notifications.length;
-
-  const handleSearchSubmit = (e) => {
-    if (e.key === 'Enter' && searchQuery.trim() !== '') {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="top-bar bg-white shadow-sm py-2 py-md-3 px-3 px-md-4 d-flex justify-content-between align-items-center">
+
+      {/* ── جانب العنوان ── */}
       <div className="d-flex align-items-center gap-2">
-        {/* ✅ زر القائمة (يظهر فقط على الموبايل) */}
+        {/* زر القائمة — يظهر على الموبايل فقط */}
         <button
           className="btn btn-sm text-primary d-md-none border-0 p-1"
           onClick={onToggleSidebar}
           style={{ fontSize: '1.5rem' }}
         >
-          <i className="fa-solid fa-bars"></i>
+          <i className="fa-solid fa-bars" />
         </button>
 
         {showBackButton && (
@@ -81,20 +75,8 @@ const TopNavbar = ({ onToggleSidebar }) => { // ✅ استقبل البروبس 
         </h4>
       </div>
 
+      {/* ── جانب الأدوات ── */}
       <div className="d-flex align-items-center gap-1 gap-md-3">
-        {showSearch && (
-          <div className="search-container d-none d-md-block">
-            <input
-              type="text"
-              className="form-control rounded-pill border-0 bg-light"
-              placeholder={role === 'Finance' ? translations[lang].searchByNationalId : role === 'Manager' ? translations[lang].searchByProperty : translations[lang].searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleSearchSubmit}
-              style={{ minWidth: '200px', padding: '8px 15px' }}
-            />
-          </div>
-        )}
 
         <button
           className="btn d-flex align-items-center justify-content-center text-primary p-1 p-md-2 lang-toggle-btn"

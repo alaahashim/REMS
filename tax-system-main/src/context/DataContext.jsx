@@ -1,71 +1,118 @@
-// --- src/context/DataContext.jsx ---
-import React, { createContext, useState, useContext } from 'react'; // 1. أضفنا useContext هنا
+import React, { createContext, useCallback, useContext, useState } from 'react';
+import { getEmployees as fetchEmployeesFromApi, getSystemLogs } from '../services/adminService';
 
-// محاكاة بيانات أولية (Data Mock)
 const INITIAL_DATA = {
   properties: [],
   assignments: [],
   appeals: [],
-  exemptions: []
+  exemptions: [],
+  employees: [],
+  auditLogs: [],
 };
 
-// إنشاء الـ Context
 export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
-  // State لتخزين كل البيانات في مكان واحد
   const [data, setData] = useState(INITIAL_DATA);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [auditLogsLoading, setAuditLogsLoading] = useState(false);
 
-  // دالة جلب البيانات (Global Fetch)
-  const fetchData = async () => {
+  const refreshEmployees = useCallback(async (searchQuery = '') => {
+    setEmployeesLoading(true);
+    try {
+      const employees = await fetchEmployeesFromApi(searchQuery);
+      const normalizedEmployees = Array.isArray(employees) ? employees : [];
+      setData((prevData) => ({ ...prevData, employees: normalizedEmployees }));
+      return normalizedEmployees;
+    } catch (error) {
+      console.error('Error loading employees:', error);
+      setData((prevData) => ({ ...prevData, employees: [] }));
+      throw error;
+    } finally {
+      setEmployeesLoading(false);
+    }
+  }, []);
+
+  const refreshAuditLogs = useCallback(async () => {
+    setAuditLogsLoading(true);
+    try {
+      const auditLogs = await getSystemLogs();
+      const normalizedLogs = Array.isArray(auditLogs) ? auditLogs : [];
+      setData((prevData) => ({ ...prevData, auditLogs: normalizedLogs }));
+      return normalizedLogs;
+    } catch (error) {
+      console.error('Error loading audit logs:', error);
+      setData((prevData) => ({ ...prevData, auditLogs: [] }));
+      throw error;
+    } finally {
+      setAuditLogsLoading(false);
+    }
+  }, []);
+
+  const refreshAdminData = useCallback(async () => {
+    const [employees, auditLogs] = await Promise.all([
+      refreshEmployees(),
+      refreshAuditLogs(),
+    ]);
+
+    return { employees, auditLogs };
+  }, [refreshEmployees, refreshAuditLogs]);
+
+  const fetchData = useCallback(async () => {
     try {
       const properties = JSON.parse(localStorage.getItem('tax_properties')) || [];
       const assignments = JSON.parse(localStorage.getItem('tax_assignments')) || [];
-      const appeals = JSON.parse(localStorage.getItem('tax_appeals')) || []; 
+      const appeals = JSON.parse(localStorage.getItem('tax_appeals')) || [];
       const exemptions = JSON.parse(localStorage.getItem('tax_exemptions')) || [];
 
-      setData({ properties, assignments, appeals, exemptions });
+      setData((prevData) => ({
+        ...prevData,
+        properties,
+        assignments,
+        appeals,
+        exemptions,
+      }));
     } catch (error) {
-      console.error("Error loading dashboard:", error);
+      console.error('Error loading dashboard:', error);
     }
-  };
+  }, []);
 
-  // دوال مساعدة للحصول على البيانات
   const getProperties = () => data.properties;
   const getAssignments = () => data.assignments;
   const getAppeals = () => data.appeals;
   const getExemptions = () => data.exemptions;
 
-  // دالة حفظ البيانات في LocalStorage
   const saveData = (newData) => {
-    setData(newData);
+    setData((prevData) => ({ ...prevData, ...newData }));
     localStorage.setItem('tax_data', JSON.stringify(newData));
   };
 
   return (
     <DataContext.Provider value={{
       ...data,
+      employeesLoading,
+      auditLogsLoading,
       fetchData,
+      refreshEmployees,
+      refreshAuditLogs,
+      refreshAdminData,
       saveData,
       getProperties,
       getAssignments,
       getAppeals,
-      getExemptions
+      getExemptions,
     }}>
       {children}
     </DataContext.Provider>
   );
 };
 
-// ========================================
-// 2. هذه هي الدالة المفقودة (أضفها هنا)
-// ========================================
 export const useDataContext = () => {
   const context = useContext(DataContext);
-  
+
   if (context === undefined) {
-    throw new Error("useDataContext must be used within a DataProvider");
+    throw new Error('useDataContext must be used within a DataProvider');
   }
-  
+
   return context;
 };

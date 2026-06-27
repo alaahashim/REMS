@@ -14,7 +14,7 @@ namespace Core.DomainLayer.Entities
 
         // القيمة الإيجارية السنوية
         public decimal AnnualRent { get; set; }
-
+public decimal? ManagerApprovedTax { get; set; }
         // نسبة خصم الصيانة (0.30 أو 0.32)
         public decimal MaintenanceDiscountRate { get; set; }
 
@@ -29,7 +29,11 @@ namespace Core.DomainLayer.Entities
 
         // الضريبة السنوية قبل الرسوم
         public decimal AnnualTax { get; set; }
+ public decimal? CommitteeProposedTax { get; set; }
 
+    /// <summary>
+    /// الضريبة النهائية التي اعتمدها المدير
+    /// </summary>
         // هل يوجد إعفاء؟
         public bool IsExempted { get; set; }
 
