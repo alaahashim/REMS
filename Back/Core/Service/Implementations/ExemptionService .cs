@@ -5,7 +5,6 @@ using Core.DomainLayer.Exceptions;
 using Core.ServiceAbstraction;
 using Core.Service.Specifications;
 using Shared.DTOS;
-using static Core.Service.Specifications.PendingCommitteeAppealsSpec;
 
 public class ExemptionService : IExemptionService
 {
@@ -320,5 +319,129 @@ private static string GetContentType(string path)
         ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         _ => "application/octet-stream"
     };
+
 }
+#region manager
+public async Task<IEnumerable<ManagerExemptionDto>>
+GetManagerExemptionsAsync()
+{
+    var repo =
+        _unitOfWork.GetRepository<Exemption, int>();
+
+    var exemptions =
+        await repo.GetAllAsync(
+            new PendingManagerExemptionsSpec());
+
+    return _mapper.Map<IEnumerable<ManagerExemptionDto>>(exemptions);
+}
+
+
+
+public async Task ManagerDecisionAsync(
+    int exemptionId,
+    ManagerExemptionDecisionDto dto,
+    int managerUserId)
+{
+    var exemptionRepo =
+        _unitOfWork.GetRepository<Exemption, int>();
+
+    var exemption =
+        await exemptionRepo.FirstOrDefaultAsync(
+            new ExemptionWithAttachmentsSpec(exemptionId));
+
+    if (exemption == null)
+        throw new NotFoundException("طلب الإعفاء غير موجود.");
+
+    if (exemption.Status != ExemptionStatus.PendingManager)
+        throw new BusinessException("هذا الطلب ليس في انتظار قرار المدير.");
+
+    //---------------------------------------
+    // بيانات المدير
+    //---------------------------------------
+
+    exemption.ManagerUserId = managerUserId;
+    exemption.ManagerDecisionDate = DateTime.UtcNow;
+    exemption.ManagerNote = dto.Note;
+
+    //---------------------------------------
+    // قبول
+    //---------------------------------------
+
+    if (dto.Status == ExemptionStatus.Approved)
+    {
+        if (!dto.ExemptionPercentage.HasValue)
+            throw new BusinessException("يجب إدخال نسبة الإعفاء.");
+
+        if (dto.ExemptionPercentage < 0 ||
+            dto.ExemptionPercentage > 100)
+            throw new BusinessException("نسبة الإعفاء يجب أن تكون بين 0 و100.");
+
+        //---------------------------------------
+        // البحث عن التقييم الضريبي
+        //---------------------------------------
+
+        var assessmentRepo =
+            _unitOfWork.GetRepository<TaxAssessment, int>();
+
+        var assessment =
+            await assessmentRepo.FirstOrDefaultAsync(
+                new TaxAssessmentByUnitAndYearSpec(
+                    exemption.UnitId,
+                    DateTime.Now.Year));
+
+        if (assessment == null)
+            throw new BusinessException("لم يتم العثور على التقييم الضريبي.");
+
+        //---------------------------------------
+        // تطبيق الإعفاء
+        //---------------------------------------
+
+        assessment.IsExempted = true;
+
+        assessment.ExemptionAmount =
+            assessment.AnnualTax *
+            (dto.ExemptionPercentage.Value / 100m);
+
+        assessment.TotalDue =
+            assessment.AnnualTax -
+            assessment.ExemptionAmount +
+            assessment.AppealFee;
+
+        if (assessment.TotalDue < 0)
+            assessment.TotalDue = 0;
+
+        exemption.DecisionResult = "Approved";
+
+        exemption.ManagerVerdict = "Approved";
+
+        exemption.Status = ExemptionStatus.Approved;
+
+        assessmentRepo.Update(assessment);
+    }
+
+    //---------------------------------------
+    // رفض
+    //---------------------------------------
+
+    else if (dto.Status == ExemptionStatus.Rejected)
+    {
+        exemption.DecisionResult = "Rejected";
+
+        exemption.ManagerVerdict = "Rejected";
+
+        exemption.Status = ExemptionStatus.Rejected;
+    }
+
+    else
+    {
+        throw new BusinessException("حالة القرار غير صحيحة.");
+    }
+
+    exemptionRepo.Update(exemption);
+
+    await _unitOfWork.SaveChangesAsync();
+}
+#endregion
+
+
 }

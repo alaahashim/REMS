@@ -18,4 +18,9 @@ namespace Core.ServiceAbstraction
 Task<IEnumerable<CommitteeExemptionDto>> GetCommitteeExemptionsAsync();
 
 Task<AttachmentDownloadDto?> GetAttachmentAsync(int exemptionId);
+
+Task<IEnumerable<ManagerExemptionDto>>
+GetManagerExemptionsAsync();
+
+Task ManagerDecisionAsync( int exemptionId, ManagerExemptionDecisionDto dto, int managerUserId);
 }}
