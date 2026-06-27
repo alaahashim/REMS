@@ -21,15 +21,17 @@ private readonly IExemptionService _exemptionService;
         private const decimal FallbackResidentialDiscount = 0.30m;
         private const decimal FallbackNonResidentialDiscount = 0.32m;
         private const decimal AppealFeeAmount = 50m;
-
-        public TaxAssessmentService(
+private readonly IInstallmentService _installmentService;
+       public TaxAssessmentService(
     IUnitOfWork unitOfWork,
     IMapper mapper,
-    IExemptionService exemptionService)
+    IExemptionService exemptionService,
+    IInstallmentService installmentService)
 {
     _unitOfWork = unitOfWork;
     _mapper = mapper;
     _exemptionService = exemptionService;
+    _installmentService = installmentService;
 }
         #region Reviewer Tasks
 

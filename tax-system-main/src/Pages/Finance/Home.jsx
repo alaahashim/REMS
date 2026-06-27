@@ -1,92 +1,204 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/Finance/FinanceHome.jsx
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Table, Button, Spinner, Badge } from 'react-bootstrap';
-import { getEnrichedUnits } from '../../services/propertyService';
-import { getFinancialStats } from '../../services/financeService';
+import {
+  Container, Row, Col, Card, Table,
+  Button, Spinner, Badge, Alert,
+} from 'react-bootstrap';
+import { getFinanceDashboard, getPaymentHistory } from '../../services/financeService';
 
+// ── ثوابت ──────────────────────────────────────────────────
+const METHOD_LABELS = {
+  Cash:     'نقدي',
+  Fawry:    'فوري',
+  Bank:     'تحويل بنكي',
+  InstaPay: 'إنستا باي',
+};
+
+const INSTALLMENT_STATUS = {
+  Pending:  { bg: 'warning', text: 'معلق'  },
+  Paid:     { bg: 'success', text: 'مدفوع' },
+  Overdue:  { bg: 'danger',  text: 'متأخر' },
+};
+
+// ── بطاقة إحصائية ──────────────────────────────────────────
+const StatCard = ({ title, value, icon, colorClass, loading }) => (
+  <Card className={`border-0 shadow-sm border-start border-4 ${colorClass}`}>
+    <Card.Body className="d-flex justify-content-between align-items-center">
+      <div>
+        <h6 className="text-muted text-uppercase mb-1" style={{ fontSize: '0.75rem' }}>
+          {title}
+        </h6>
+        <h3 className="fw-bold mb-0">
+          {loading ? <Spinner size="sm" animation="border" /> : value}
+        </h3>
+      </div>
+      <div className="opacity-25 fs-1">{icon}</div>
+    </Card.Body>
+  </Card>
+);
+
+// ── المكوّن الرئيسي ─────────────────────────────────────────
 const FinanceHome = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalCollected: 0, totalDue: 0 });
-  const [paidUnits, setPaidUnits] = useState([]);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [unitsData, financeStats] = await Promise.all([
-          getEnrichedUnits(),
-          getFinancialStats()
-        ]);
-        
-        // تصفية: الوحدات التي تم دفعها فقط
-        const paid = unitsData.filter(u => u.status === 'Paid');
-        setPaidUnits(paid);
-        
-        setStats(financeStats);
-      } catch (error) {
-        console.error("Error loading finance:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
+  const [dashLoading, setDashLoading] = useState(true);
+  const [histLoading, setHistLoading] = useState(true);
+  const [error,       setError]       = useState('');
+
+  // FinanceDashboardDto
+  const [dashboard, setDashboard] = useState({
+    totalAssessments:   0,
+    paidAssessments:    0,
+    pendingAssessments: 0,
+    overdueInstallments:0,
+    totalCollected:     0,
+    remainingAmount:    0,
+  });
+
+  // PaymentHistoryDto[]
+  const [history, setHistory] = useState([]);
+
+  // ── جلب البيانات ─────────────────────────────────────────
+  const loadAll = useCallback(async () => {
+    setError('');
+    setDashLoading(true);
+    setHistLoading(true);
+
+    try {
+      const [dash, hist] = await Promise.allSettled([
+        getFinanceDashboard(),
+        getPaymentHistory(),
+      ]);
+
+      if (dash.status === 'fulfilled')  setDashboard(dash.value);
+      else setError('فشل تحميل الإحصائيات.');
+
+      if (hist.status === 'fulfilled')  setHistory(hist.value);
+      else setError((prev) => prev + ' فشل تحميل سجل المدفوعات.');
+
+    } finally {
+      setDashLoading(false);
+      setHistLoading(false);
+    }
   }, []);
 
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  // ── عرض ──────────────────────────────────────────────────
   return (
     <Container fluid className="mt-4">
-      <Row className="mb-4">
+
+      {/* العنوان + تحديث */}
+      <Row className="mb-4 align-items-center">
         <Col>
-          <h3 className="text-success fw-bold">التحصيل المالي (Finance Collection)</h3>
+          <h3 className="text-success fw-bold mb-0">
+            التحصيل المالي (Finance Collection)
+          </h3>
           <p className="text-muted mb-0">لوحة متابعة المدفوعات والمستحقات</p>
         </Col>
-      </Row>
-
-      {/* البطاقات الإحصائية */}
-      <Row className="mb-4">
-        <Col md={6}>
-          <Card className="border-0 shadow-sm border-start border-4 border-success">
-            <Card.Body className="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 className="text-muted text-uppercase mb-1">إجمالي المحصل (Total Collected)</h6>
-                <h3 className="fw-bold mb-0 text-success">{loading ? '...' : Math.round(stats.totalCollected).toLocaleString()} ج.م</h3>
-              </div>
-              <div className="text-success opacity-25 fs-1"><i className="fa-solid fa-coins"></i></div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={6}>
-          <Card className="border-0 shadow-sm border-start border-4 border-warning">
-            <Card.Body className="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 className="text-muted text-uppercase mb-1">إجمالي المستحقات (Pending)</h6>
-                <h3 className="fw-bold mb-0 text-warning">{loading ? '...' : Math.round(stats.totalDue).toLocaleString()} ج.م</h3>
-              </div>
-              <div className="text-warning opacity-25 fs-1"><i className="fa-solid fa-file-invoice-dollar"></i></div>
-            </Card.Body>
-          </Card>
+        <Col xs="auto">
+          <Button variant="outline-secondary" size="sm" onClick={loadAll}>
+            <i className="fa-solid fa-rotate-right me-1" /> تحديث
+          </Button>
         </Col>
       </Row>
 
-      {/* زر تسجيل سداد جديد */}
-      <Row className="mb-4">
-          <Col className="text-end">
-              <Button variant="success" size="lg" onClick={() => navigate('/finance/collect')}>
-                  <i className="fa-solid fa-plus-circle me-2"></i> تسجيل سداد جديد
-              </Button>
-          </Col>
+      {error && (
+        <Alert variant="danger" onClose={() => setError('')} dismissible>
+          {error}
+        </Alert>
+      )}
+
+      {/* ── بطاقات الإحصائيات ─────────────────────────────── */}
+      <Row className="mb-4 g-3">
+        <Col md={4}>
+          <StatCard
+            title="إجمالي المحصل"
+            value={`${Math.round(dashboard.totalCollected).toLocaleString('ar-EG')} ج.م`}
+            icon={<i className="fa-solid fa-coins text-success" />}
+            colorClass="border-success"
+            loading={dashLoading}
+          />
+        </Col>
+        <Col md={4}>
+          <StatCard
+            title="المبلغ المتبقي"
+            value={`${Math.round(dashboard.remainingAmount).toLocaleString('ar-EG')} ج.م`}
+            icon={<i className="fa-solid fa-file-invoice-dollar text-warning" />}
+            colorClass="border-warning"
+            loading={dashLoading}
+          />
+        </Col>
+        <Col md={4}>
+          <StatCard
+            title="أقساط متأخرة"
+            value={dashboard.overdueInstallments}
+            icon={<i className="fa-solid fa-triangle-exclamation text-danger" />}
+            colorClass="border-danger"
+            loading={dashLoading}
+          />
+        </Col>
       </Row>
 
-      {/* جدول السجل المالي */}
+      {/* بطاقات العدد */}
+      <Row className="mb-4 g-3">
+        <Col md={4}>
+          <Card className="border-0 shadow-sm text-center py-3">
+            <h2 className="fw-bold text-dark mb-0">
+              {dashLoading ? '...' : dashboard.totalAssessments}
+            </h2>
+            <small className="text-muted">إجمالي التقييمات</small>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card className="border-0 shadow-sm text-center py-3">
+            <h2 className="fw-bold text-success mb-0">
+              {dashLoading ? '...' : dashboard.paidAssessments}
+            </h2>
+            <small className="text-muted">تقييمات مدفوعة بالكامل</small>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card className="border-0 shadow-sm text-center py-3">
+            <h2 className="fw-bold text-warning mb-0">
+              {dashLoading ? '...' : dashboard.pendingAssessments}
+            </h2>
+            <small className="text-muted">تقييمات معلقة / جزئية</small>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* زر التسجيل */}
+      <Row className="mb-4">
+        <Col className="text-end">
+          <Button
+            variant="success"
+            size="lg"
+            onClick={() => navigate('/finance/collect')}
+          >
+            <i className="fa-solid fa-plus-circle me-2" />
+            تسجيل سداد جديد
+          </Button>
+        </Col>
+      </Row>
+
+      {/* ── جدول سجل المدفوعات ───────────────────────────── */}
       <Row>
         <Col>
           <Card className="shadow-sm border-0">
-            <Card.Header className="bg-white fw-bold">سجل المدفوعات (Payment History)</Card.Header>
-            <Card.Body>
-              {loading ? (
-                <div className="text-center p-5"><Spinner animation="border" /></div>
-              ) : paidUnits.length === 0 ? (
-                <div className="text-center py-5 text-muted">لا توجد مدفوعات مسجلة بعد.</div>
+            <Card.Header className="bg-white fw-bold">
+              سجل المدفوعات (Payment History)
+            </Card.Header>
+            <Card.Body className="p-0">
+              {histLoading ? (
+                <div className="text-center p-5">
+                  <Spinner animation="border" variant="success" />
+                </div>
+              ) : history.length === 0 ? (
+                <div className="text-center py-5 text-muted">
+                  لا توجد مدفوعات مسجلة بعد.
+                </div>
               ) : (
                 <Table hover responsive className="mb-0">
                   <thead className="table-light">
@@ -94,30 +206,43 @@ const FinanceHome = () => {
                       <th>#</th>
                       <th>رقم الوحدة</th>
                       <th>المالك</th>
-                      <th>مبلغ الضريبة</th>
+                      <th className="text-end">المبلغ</th>
                       <th>طريقة الدفع</th>
                       <th>رقم الإيصال</th>
                       <th>تاريخ السداد</th>
-                      <th>الحالة</th>
+                      <th className="text-center">الحالة</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {paidUnits.map((prop, index) => (
-                      <tr key={prop.id}>
-                        <td>{index + 1}</td>
-                        <td className="fw-bold text-primary">Unit #{prop.id}</td>
-                        <td>{prop.ownerName}</td>
-                        <td className="fw-bold">{Math.round(prop.tax || prop.paidAmount || 0).toLocaleString()} ج.م</td>
-                        <td>
-                            <Badge bg="secondary">{prop.paymentMethod || '-'}</Badge>
-                        </td>
-                        <td>{prop.receiptNo}</td>
-                        <td>{new Date(prop.paymentDate).toLocaleDateString('ar-EG')}</td>
-                        <td>
-                           <Badge bg="success">مدفوع</Badge>
-                        </td>
-                      </tr>
-                    ))}
+                    {history.map((row, idx) => {
+                      const statusMeta =
+                        INSTALLMENT_STATUS[row.status] ??
+                        { bg: 'secondary', text: row.status };
+                      return (
+                        <tr key={row.paymentId}>
+                          <td className="text-muted">{idx + 1}</td>
+                          <td className="fw-bold text-primary">
+                            Unit #{row.unitId}
+                          </td>
+                          <td>{row.ownerName}</td>
+                          <td className="text-end fw-bold">
+                            {Math.round(row.paidAmount).toLocaleString('ar-EG')} ج.م
+                          </td>
+                          <td>
+                            <Badge bg="secondary">
+                              {METHOD_LABELS[row.method] ?? row.method}
+                            </Badge>
+                          </td>
+                          <td className="font-monospace">{row.receiptNo || '—'}</td>
+                          <td>
+                            {new Date(row.paymentDate).toLocaleDateString('ar-EG')}
+                          </td>
+                          <td className="text-center">
+                            <Badge bg={statusMeta.bg}>{statusMeta.text}</Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               )}

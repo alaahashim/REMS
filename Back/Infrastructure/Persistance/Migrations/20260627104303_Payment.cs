@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Persistance.Migrations
 {
     /// <inheritdoc />
-    public partial class managerNN : Migration
+    public partial class Payment : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -364,6 +364,7 @@ namespace Persistance.Migrations
                     UnitId = table.Column<int>(type: "int", nullable: false),
                     OwnerId = table.Column<int>(type: "int", nullable: true),
                     TaxYear = table.Column<int>(type: "int", nullable: false),
+                    PaymentStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AnnualRent = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ManagerApprovedTax = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     MaintenanceDiscountRate = table.Column<decimal>(type: "decimal(8,4)", nullable: false),
@@ -466,6 +467,33 @@ namespace Persistance.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Installment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TaxAssessmentId = table.Column<int>(type: "int", nullable: false),
+                    InstallmentNumber = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<int>(type: "int", nullable: false),
+                    UpdatedBy = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Installment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Installment_TaxAssessments_TaxAssessmentId",
+                        column: x => x.TaxAssessmentId,
+                        principalTable: "TaxAssessments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AppealAttachments",
                 columns: table => new
                 {
@@ -495,6 +523,32 @@ namespace Persistance.Migrations
                         column: x => x.AppealId1,
                         principalTable: "Appeals",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Payment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InstallmentId = table.Column<int>(type: "int", nullable: false),
+                    PaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<int>(type: "int", nullable: false),
+                    UpdatedBy = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Payment_Installment_InstallmentId",
+                        column: x => x.InstallmentId,
+                        principalTable: "Installment",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
@@ -654,9 +708,19 @@ namespace Persistance.Migrations
                 column: "UnitId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Installment_TaxAssessmentId",
+                table: "Installment",
+                column: "TaxAssessmentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Neighborhoods_CenterId",
                 table: "Neighborhoods",
                 column: "CenterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payment_InstallmentId",
+                table: "Payment",
+                column: "InstallmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Properties_GovernorateId",
@@ -726,6 +790,9 @@ namespace Persistance.Migrations
                 name: "ExemptionAttachments");
 
             migrationBuilder.DropTable(
+                name: "Payment");
+
+            migrationBuilder.DropTable(
                 name: "RoleAssignments");
 
             migrationBuilder.DropTable(
@@ -739,6 +806,9 @@ namespace Persistance.Migrations
 
             migrationBuilder.DropTable(
                 name: "Exemptions");
+
+            migrationBuilder.DropTable(
+                name: "Installment");
 
             migrationBuilder.DropTable(
                 name: "TaxAssessments");

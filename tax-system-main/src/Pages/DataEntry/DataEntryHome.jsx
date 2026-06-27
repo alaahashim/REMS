@@ -864,7 +864,6 @@ const DataEntryHome = () => {
                   <thead className="table-light">
                     <tr>
                       <th>رقم العقار</th>
-                      <th>رقم المبنى</th>
                       <th>كود الوحدة</th>
                       <th>نوع الوحدة</th>
                       <th>الدور</th>
@@ -887,7 +886,6 @@ const DataEntryHome = () => {
                       getDisplayedUnits().map(unit => (
                         <tr key={unit.id}>
                           <td className="fw-bold text-primary">{unit.propertyId}</td>
-                          <td>{unit.propertyBuildingNo || '-'}</td>
                           <td className="fw-semibold">{unit.unitNumber || '-'}</td>
                           <td>{unit.unitType || '-'}</td>
                           <td>{unit.floor ?? '-'}</td>

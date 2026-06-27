@@ -12,8 +12,8 @@ using Persistence.Data;
 namespace Persistance.Migrations
 {
     [DbContext(typeof(StoreDbContext))]
-    [Migration("20260627073225_managerNN")]
-    partial class managerNN
+    [Migration("20260627104303_Payment")]
+    partial class Payment
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -803,6 +803,49 @@ namespace Persistance.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Core.DomainLayer.Entities.Installment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("InstallmentNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TaxAssessmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaxAssessmentId");
+
+                    b.ToTable("Installment");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Neighborhood", b =>
                 {
                     b.Property<int>("Id")
@@ -1127,6 +1170,46 @@ namespace Persistance.Migrations
                             UpdatedBy = 0,
                             Zone = "C"
                         });
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InstallmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstallmentId");
+
+                    b.ToTable("Payment");
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Property", b =>
@@ -1550,6 +1633,10 @@ namespace Persistance.Migrations
                     b.Property<int>("PaymentPlan")
                         .HasColumnType("int");
 
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -1865,6 +1952,17 @@ namespace Persistance.Migrations
                     b.Navigation("Exemption");
                 });
 
+            modelBuilder.Entity("Core.DomainLayer.Entities.Installment", b =>
+                {
+                    b.HasOne("Core.DomainLayer.Entities.TaxAssessment", "TaxAssessment")
+                        .WithMany("Installments")
+                        .HasForeignKey("TaxAssessmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TaxAssessment");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Neighborhood", b =>
                 {
                     b.HasOne("Core.DomainLayer.Entities.Center", "Center")
@@ -1874,6 +1972,17 @@ namespace Persistance.Migrations
                         .IsRequired();
 
                     b.Navigation("Center");
+                });
+
+            modelBuilder.Entity("Core.DomainLayer.Entities.Payment", b =>
+                {
+                    b.HasOne("Core.DomainLayer.Entities.Installment", "Installment")
+                        .WithMany("Payments")
+                        .HasForeignKey("InstallmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Installment");
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Property", b =>
@@ -1978,6 +2087,11 @@ namespace Persistance.Migrations
                     b.Navigation("Centers");
                 });
 
+            modelBuilder.Entity("Core.DomainLayer.Entities.Installment", b =>
+                {
+                    b.Navigation("Payments");
+                });
+
             modelBuilder.Entity("Core.DomainLayer.Entities.Property", b =>
                 {
                     b.Navigation("Assignments");
@@ -1988,6 +2102,8 @@ namespace Persistance.Migrations
             modelBuilder.Entity("Core.DomainLayer.Entities.TaxAssessment", b =>
                 {
                     b.Navigation("Appeal");
+
+                    b.Navigation("Installments");
                 });
 
             modelBuilder.Entity("Core.DomainLayer.Entities.Unit", b =>
