@@ -48,6 +48,8 @@ export const AuthProvider = ({ children }) => {
       };
       setUser(loggedUser);
       localStorage.setItem('tax_current_user', JSON.stringify(loggedUser));
+      localStorage.setItem('token', 'mock-access-token-' + Date.now());
+      localStorage.setItem('refreshToken', 'mock-refresh-token-' + Date.now());
       return { success: true, user: loggedUser };
     }
 
@@ -57,6 +59,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('tax_current_user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
   };
 
   const updateCurrentUser = (updates) => {

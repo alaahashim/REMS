@@ -52,7 +52,14 @@ const translations = {
     taxSystem: 'نظام الضرائب',
     taxManagementSystem: 'نظام إدارة الضرائب',
     employeeLogin: 'تسجيل دخول الموظفين',
-    enter: 'دخول'
+    enter: 'دخول',
+    forgotPassword: 'نسيت كلمة المرور؟',
+    resetPassword: 'إعادة تعيين كلمة المرور',
+    verificationCode: 'رمز التحقق',
+    newPassword: 'كلمة المرور الجديدة',
+    confirmNewPassword: 'تأكيد كلمة المرور الجديدة',
+    sendVerification: 'إرسال رمز التحقق',
+    backToLogin: 'العودة لصفحة تسجيل الدخول'
   },
   en: {
     searchPlaceholder: 'General search...',
@@ -105,7 +112,14 @@ const translations = {
     taxSystem: 'Tax System',
     taxManagementSystem: 'Tax Management System',
     employeeLogin: 'Employee Login',
-    enter: 'Login'
+    enter: 'Login',
+    forgotPassword: 'Forgot Password?',
+    resetPassword: 'Reset Password',
+    verificationCode: 'Verification Code',
+    newPassword: 'New Password',
+    confirmNewPassword: 'Confirm New Password',
+    sendVerification: 'Send Verification Code',
+    backToLogin: 'Back to Login Page'
   }
 };
 
@@ -382,7 +396,135 @@ const phraseTranslations = {
   'م²': 'm²',
   'دور': 'Floor',
   'ملف': 'File',
-  'قسط مدفوع': 'Paid Installment'
+  'قسط مدفوع': 'Paid Installment',
+  // --- New Translation Keys ---
+  'ربط المالك بالعقار': 'Link Owner to Property',
+  'بيانات المالك': 'Owner Details',
+  'أدخل الرقم القومي أو ابحث...': 'Enter National ID or search...',
+  'مرتبط بـ': 'Currently linked to',
+  'وحدة حالياً، سيتم إعادة استخدام بياناته': 'unit(s), their data will be reused',
+  'يمكنك اختيار مالك موجود أو تسجيل مالك جديد': 'You can select an existing owner or register a new one',
+  'أدخل اسم المالك': 'Enter owner name',
+  'أدخل عنوان المالك': 'Enter owner address',
+  'انقر على بحث لاختيار العقار...': 'Click search to select property...',
+  'تم تحميل': 'Loaded',
+  'وحدة — اختر منها أدناه': 'unit(s) — select from below',
+  'هذا العقار لا يحتوي على وحدات مسجّلة': 'This property has no registered units',
+  'الوحدات والحصص': 'Units and Shares',
+  'الوجهة': 'Destination',
+  'نوع العلاقة': 'Relationship Type',
+  'الحصة %': 'Share %',
+  'تاريخ البداية': 'Start Date',
+  'تاريخ النهاية': 'End Date',
+  'اختر الوحدة...': 'Select unit...',
+  'إضافة وحدة أخرى': 'Add Another Unit',
+  'توزيع متساوٍ': 'Even Distribution',
+  'مجموع الحصص:': 'Total Shares:',
+  'تأكيد الربط': 'Confirm Link',
+  'اختيار العقار': 'Select Property',
+  'بحث...': 'Search...',
+  'تعذّر تحميل العقارات': 'Failed to load properties',
+  'تعذّر تحميل الوحدات': 'Failed to load units',
+  'لا توجد عقارات مطابقة': 'No matching properties',
+  'عقار #': 'Property #',
+  'تم ربط المالك بالوحدة/الوحدات بنجاح ✔': 'Owner successfully linked to unit(s) ✔',
+  'يجب إدخال الرقم القومي، الاسم، الهاتف، العنوان، واختيار العقار أولاً': 'National ID, Name, Phone, Address, and Property selection are required',
+  'يجب اختيار عقار أولاً': 'Property must be selected first',
+  'يجب اختيار الوحدة لكل سطر قبل الربط': 'Please select a unit for each row before linking',
+  'لا يمكن تكرار نفس الوحدة في أكثر من سطر': 'Cannot select the same unit in multiple rows',
+  'نسبة الحصة لكل وحدة يجب أن تكون بين 0 و 100': 'Share percentage for each unit must be between 0 and 100',
+  'يجب إدخال تاريخ البداية لكل وحدة': 'Start date is required for each unit',
+  'تاريخ النهاية يجب أن يكون بعد أو يساوي تاريخ البداية': 'End date must be after or equal to start date',
+  'نسيت كلمة المرور؟': 'Forgot Password?',
+  'نسيت كلمة المرور': 'Forgot Password',
+  'إعادة تعيين كلمة المرور': 'Reset Password',
+  'أدخل البريد الإلكتروني': 'Enter email address',
+  'إرسال رمز التحقق': 'Send Verification Code',
+  'تم إرسال رمز التحقق إلى بريدك الإلكتروني': 'Verification code sent to your email',
+  'رمز التحقق': 'Verification Code',
+  'رمز التحقق غير صحيح': 'Invalid verification code',
+  'كلمة المرور الجديدة': 'New Password',
+  'تأكيد كلمة المرور الجديدة': 'Confirm New Password',
+  'تغيير كلمة المرور': 'Change Password',
+  'تم تغيير كلمة المرور بنجاح! جاري التوجيه لصفحة الدخول...': 'Password changed successfully! Redirecting to login...',
+  'البريد الإلكتروني غير مسجل في النظام': 'Email is not registered in the system',
+  'كلمتا المرور غير متطابقتين': 'Passwords do not match',
+  'العودة لصفحة تسجيل الدخول': 'Back to Login Page',
+  'الرجاء إدخال الرقم القومي': 'Please enter National ID',
+  'الرجاء البحث عن الممول بالرقم القومي أولًا': 'Please search for taxpayer by National ID first',
+  'الرجاء البحث عن المالك بالرقم القومي أولًا': 'Please search for owner by National ID first',
+  'الرجاء اختيار الوحدة': 'Please select a unit',
+  'الرجاء إدخال المبلغ المتنازع عليه': 'Please enter the disputed amount',
+  'الرجاء إدخال سبب الطعن': 'Please enter the reason for appeal',
+  'تم حفظ طلب الطعن بنجاح': 'Appeal request saved successfully',
+  'تم تسجيل العقار وربط بياناته بنجاح! رقم العقار:': 'Property successfully registered and linked! Property ID:',
+  'تم العثور على المالك بنجاح': 'Owner found successfully',
+  'لم يتم العثور على المالك': 'Owner not found',
+  'طلب إعفاء جديد': 'New Exemption Request',
+  'الرجاء إدخال تاريخ الإعفاء': 'Please enter exemption date',
+  'الرجاء اختيار نوع الإعفاء': 'Please select exemption type',
+  'تم حفظ طلب الإعفاء بنجاح': 'Exemption request saved successfully',
+  'تسجيل عقار جديد': 'Register New Property',
+  'بيانات المبنى والمالك': 'Building and Owner Details',
+  'المحافظة': 'Governorate',
+  'المركز': 'Center',
+  'اسم الشارع': 'Street Name',
+  'الحي / المنطقة الضريبية': 'Neighborhood / Tax Zone',
+  'سنة البناء': 'Build Year',
+  'وصف العقار': 'Property Description',
+  'ملكية فردية للعقار بالكامل (فيلا / منزل)': 'Single ownership of the entire property (Villa / House)',
+  'سيتم تسجيل العقار كوحدة ضريبية واحدة (لا داعي لتقسيم شقق)': 'The property will be registered as a single tax unit (no need to divide apartments)',
+  'سيتم تسجيل العقار كمبنى يحتوي على عدة وحدات (شقق/محلات)': 'The property will be registered as a building containing multiple units (apartments/shops)',
+  'الوحدات داخل المبنى': 'Units inside building',
+  'كود / رقم الوحدة': 'Unit Code / Number',
+  'نوع الوحدة': 'Unit Type',
+  'الدور': 'Floor',
+  'الاستخدام': 'Usage',
+  'متاح': 'Available',
+  'إضافة وحدة': 'Add Unit',
+  'حفظ العقار': 'Save Property',
+  'عقد ملكية / صورة البطاقة': 'Ownership Contract / ID Copy',
+  'يمكنك رفع ملف بصيغة PDF أو صورة. الحد الأقصى 5 ميجا.': 'You can upload a PDF or image. Maximum size 5 MB.',
+  'الرجاء اختيار قسط للدفع': 'Please select an installment to pay',
+  'لا توجد أقساط مستحقة حالياً': 'No installments are currently due',
+  'نموذج الدفع': 'Payment Form',
+  'رقم الإيصال': 'Receipt Number',
+  'طريقة الدفع': 'Payment Method',
+  'نقدي': 'Cash',
+  'تحويل بنكي': 'Bank Transfer',
+  'مبلغ الدفع': 'Payment Amount',
+  'تاريخ السداد': 'Payment Date',
+  'تأكيد دفع القسط': 'Confirm Installment Payment',
+  'إيصال سداد الضريبة': 'Tax Payment Receipt',
+  'طباعة الإيصال': 'Print Receipt',
+  'العودة للرئيسية': 'Back to Home',
+  'أهلاً بك في نظام المساعدة الذكي. كيف أساعدك اليوم؟': 'Welcome to the Smart Assistant system. How can I help you today?',
+  'شكراً لسؤالك': 'Thank you for your question',
+  'مساعد النظام (': 'System Assistant (',
+  'متصل الآن للرد على استفساراتك': 'Online now to answer your questions',
+  'اكتب استفسارك هنا...': 'Type your question here...',
+  'إرسال': 'Send',
+  'هل أنت متأكد من حذف طلب الإعفاء هذا؟': 'Are you sure you want to delete this exemption request?',
+  'فشل الحذف': 'Delete failed',
+  'هل أنت متأكد من حذف طلب الطعن هذا؟': 'Are you sure you want to delete this appeal request?',
+  'تم حذف الطعن بنجاح': 'Appeal deleted successfully',
+  'تفضيلات الواجهة': 'Interface Preferences',
+  'اختاري شكل وتجربة الاستخدام المناسبة.': 'Choose the layout and experience that suits you.',
+  'تفعيل تنبيهات المتصفح عند توفرها.': 'Enable browser notifications when available.',
+  'تقليل المسافات لعرض بيانات أكثر.': 'Reduce spacing to show more data.',
+  'تبديل ألوان النظام للوضع الليلي.': 'Toggle system colors to dark mode.',
+  'النسخ الاحتياطي والتصدير': 'Backup and Export',
+  'احتفظي بنسخة كاملة أو صدّري الجداول الأساسية.': 'Keep a full backup or export key tables.',
+  'يحتوي على بيانات النظام المحفوظة محليًا.': 'Contains system data saved locally.',
+  'إنشاء نسخة': 'Create Backup',
+  'تم إرسال توصية اللجنة للمدير': 'Committee recommendation sent to manager',
+  'فشلت العملية': 'Operation failed',
+  'معلقة للجنة': 'Pending Committee',
+  'معروضة على المدير': 'Presented to Manager',
+  'إصدار توصية': 'Issue Recommendation',
+  'تم الإرسال': 'Sent',
+  'توصية لجنة الطعن': 'Appeal Committee Recommendation',
+  'اسم المستخدم أو البريد الالكتروني': 'Username or Email'
 };
 
 const sortedPhraseEntries = Object.entries(phraseTranslations)
@@ -411,16 +553,21 @@ const translateDomText = (root, lang) => {
 
   const translateTextNode = (node) => {
     if (shouldSkip(node)) return;
-    const original = node.originalArabicText || node.nodeValue;
+
+    if (node.nodeValue !== node.lastTranslatedValue) {
+      node.originalArabicText = node.nodeValue;
+    }
+
+    const original = node.originalArabicText;
+    if (!original) return;
     const trimmed = original.trim();
     if (!trimmed) return;
 
-    if (!node.originalArabicText) node.originalArabicText = original;
-
     if (lang === 'ar') {
-      if (node.nodeValue !== node.originalArabicText) {
-        node.nodeValue = node.originalArabicText;
+      if (node.nodeValue !== original) {
+        node.nodeValue = original;
       }
+      node.lastTranslatedValue = original;
       return;
     }
 
@@ -428,27 +575,39 @@ const translateDomText = (root, lang) => {
     if (node.nodeValue !== nextValue) {
       node.nodeValue = nextValue;
     }
+    node.lastTranslatedValue = nextValue;
   };
 
   const translateAttribute = (element, attribute) => {
-    const originalAttribute = `data-original-${attribute}`;
-    const original = element.getAttribute(originalAttribute) || element.getAttribute(attribute);
+    const lastTranslatedAttr = `data-last-translated-${attribute}`;
+    const original = element.getAttribute(attribute);
     if (!original) return;
 
-    if (!element.hasAttribute(originalAttribute)) {
-      element.setAttribute(originalAttribute, original);
+    if (original !== element.getAttribute(lastTranslatedAttr)) {
+      element.setAttribute(`data-original-${attribute}`, original);
     }
 
-    const nextValue = lang === 'ar' ? element.getAttribute(originalAttribute) : translateArabicText(original);
+    const originalVal = element.getAttribute(`data-original-${attribute}`);
+    if (!originalVal) return;
+
+    if (lang === 'ar') {
+      if (element.getAttribute(attribute) !== originalVal) {
+        element.setAttribute(attribute, originalVal);
+      }
+      element.setAttribute(lastTranslatedAttr, originalVal);
+      return;
+    }
+
+    const nextValue = translateArabicText(originalVal);
     if (element.getAttribute(attribute) !== nextValue) {
       element.setAttribute(attribute, nextValue);
     }
+    element.setAttribute(lastTranslatedAttr, nextValue);
   };
 
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node = walker.nextNode();
   while (node) {
-    if (lang === 'ar') restoreOriginalText(node);
     translateTextNode(node);
     node = walker.nextNode();
   }
@@ -472,6 +631,16 @@ export const LanguageProvider = ({ children }) => {
     localStorage.setItem('tax_lang', lang);
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
+
+    // Dynamically update Bootstrap theme stylesheet
+    let bootstrapLink = document.getElementById('bootstrap-theme');
+    if (!bootstrapLink) {
+      bootstrapLink = document.createElement('link');
+      bootstrapLink.id = 'bootstrap-theme';
+      bootstrapLink.rel = 'stylesheet';
+      document.head.insertBefore(bootstrapLink, document.head.firstChild);
+    }
+    bootstrapLink.href = lang === 'ar' ? '/bootstrap.rtl.min.css' : '/bootstrap.min.css';
   }, [lang]);
 
   useEffect(() => {

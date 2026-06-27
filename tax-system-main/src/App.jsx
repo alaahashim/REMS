@@ -10,6 +10,7 @@ import TopNavbar from './components/Layout/Navbar';
 
 // Pages
 import Login from './pages/Auth/Login';
+import ForgotPassword from './pages/Auth/ForgotPassword';
 import { Unauthorized } from './pages/Unauthorized';
 import Dashboard from './pages/Shared/Dashboard'; 
 import ProfilePage from './pages/Shared/Profile';
@@ -92,6 +93,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         <Route path="/*" element={

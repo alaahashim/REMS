@@ -1,0 +1,2291 @@
+[
+  {
+    "phrase": "التطبيق الرئيسي",
+    "locations": [
+      "App.jsx:98"
+    ]
+  },
+  {
+    "phrase": ". تمرير حالات الـ",
+    "locations": [
+      "App.jsx:103"
+    ]
+  },
+  {
+    "phrase": ". تمرير دالة فتح القائمة للـ",
+    "locations": [
+      "App.jsx:108"
+    ]
+  },
+  {
+    "phrase": "استقبل البروبس ده",
+    "locations": [
+      "components\\Layout\\Navbar.jsx:12"
+    ]
+  },
+  {
+    "phrase": "زر القائمة (يظهر فقط على الموبايل)",
+    "locations": [
+      "components\\Layout\\Navbar.jsx:62"
+    ]
+  },
+  {
+    "phrase": "تصغير الخط وعمل",
+    "locations": [
+      "components\\Layout\\Navbar.jsx:78"
+    ]
+  },
+  {
+    "phrase": "على الموبايل",
+    "locations": [
+      "components\\Layout\\Navbar.jsx:78"
+    ]
+  },
+  {
+    "phrase": "تصغير الصورة الشخصية شوية على الموبايل",
+    "locations": [
+      "components\\Layout\\Navbar.jsx:124"
+    ]
+  },
+  {
+    "phrase": "أيقونة أو شعار وهمي للجمهورية",
+    "locations": [
+      "components\\Layout\\OfficialHeader.jsx:7"
+    ]
+  },
+  {
+    "phrase": "الخلفية المعتمة (تظهر فقط على الموبايل لما السايدبار يفتح)",
+    "locations": [
+      "components\\Layout\\Sidebar.jsx:26"
+    ]
+  },
+  {
+    "phrase": "السايدبار نفسه",
+    "locations": [
+      "components\\Layout\\Sidebar.jsx:33"
+    ]
+  },
+  {
+    "phrase": "إغلاق",
+    "locations": [
+      "components\\UI\\SelectCitizenModal.jsx:177"
+    ]
+  },
+  {
+    "phrase": "مبنى",
+    "locations": [
+      "components\\UI\\SelectUnitModal.jsx:9"
+    ]
+  },
+  {
+    "phrase": "محمود حسن",
+    "locations": [
+      "components\\UI\\SelectUnitModal.jsx:9"
+    ]
+  },
+  {
+    "phrase": "فيلا",
+    "locations": [
+      "components\\UI\\SelectUnitModal.jsx:10"
+    ]
+  },
+  {
+    "phrase": "خالد يوسف",
+    "locations": [
+      "components\\UI\\SelectUnitModal.jsx:10"
+    ]
+  },
+  {
+    "phrase": "برج النور - محل",
+    "locations": [
+      "components\\UI\\SelectUnitModal.jsx:11"
+    ]
+  },
+  {
+    "phrase": "شركة النور",
+    "locations": [
+      "components\\UI\\SelectUnitModal.jsx:11"
+    ]
+  },
+  {
+    "phrase": "تسجيل سداد",
+    "locations": [
+      "components\\UI\\SettingsModal.jsx:21",
+      "context\\LanguageContext.jsx:15"
+    ]
+  },
+  {
+    "phrase": "شريط البحث",
+    "locations": [
+      "components\\UI\\SettingsModal.jsx:37"
+    ]
+  },
+  {
+    "phrase": "بحث برقم القومي...",
+    "locations": [
+      "components\\UI\\SettingsModal.jsx:42",
+      "context\\LanguageContext.jsx:6"
+    ]
+  },
+  {
+    "phrase": ". أضفنا",
+    "locations": [
+      "context\\DataContext.jsx:2"
+    ]
+  },
+  {
+    "phrase": "هنا",
+    "locations": [
+      "context\\DataContext.jsx:2"
+    ]
+  },
+  {
+    "phrase": "بحث عام...",
+    "locations": [
+      "context\\LanguageContext.jsx:5"
+    ]
+  },
+  {
+    "phrase": "بحث بالعقار أو الوحدة...",
+    "locations": [
+      "context\\LanguageContext.jsx:7"
+    ]
+  },
+  {
+    "phrase": "مرحباً بك",
+    "locations": [
+      "context\\LanguageContext.jsx:8"
+    ]
+  },
+  {
+    "phrase": "تسجيل طعن",
+    "locations": [
+      "context\\LanguageContext.jsx:12"
+    ]
+  },
+  {
+    "phrase": "رسوم التقديم:",
+    "locations": [
+      "context\\LanguageContext.jsx:24"
+    ]
+  },
+  {
+    "phrase": "المساعد الذكي",
+    "locations": [
+      "context\\LanguageContext.jsx:28"
+    ]
+  },
+  {
+    "phrase": "تنبيهات المتصفح",
+    "locations": [
+      "context\\LanguageContext.jsx:38"
+    ]
+  },
+  {
+    "phrase": "--- تغليف التطبيق هنا",
+    "locations": [
+      "main.jsx:13"
+    ]
+  },
+  {
+    "phrase": "لوحة تحكم الأدمن",
+    "locations": [
+      "Pages\\Admin\\Home.jsx:52"
+    ]
+  },
+  {
+    "phrase": "عدد الأدوار",
+    "locations": [
+      "Pages\\Admin\\Home.jsx:86"
+    ]
+  },
+  {
+    "phrase": "آخر سجلات",
+    "locations": [
+      "Pages\\Admin\\Home.jsx:94"
+    ]
+  },
+  {
+    "phrase": "أحدث النشاطات",
+    "locations": [
+      "Pages\\Admin\\Home.jsx:104"
+    ]
+  },
+  {
+    "phrase": "توزيع الأدوار",
+    "locations": [
+      "Pages\\Admin\\Home.jsx:136"
+    ]
+  },
+  {
+    "phrase": "تفعيل",
+    "locations": [
+      "Pages\\Admin\\UserManagement.jsx:133"
+    ]
+  },
+  {
+    "phrase": "// للطوارئ",
+    "locations": [
+      "Pages\\Auth\\Login.jsx:42"
+    ]
+  },
+  {
+    "phrase": "معلومات المساعدة",
+    "locations": [
+      "Pages\\Auth\\Login.jsx:58"
+    ]
+  },
+  {
+    "phrase": "للتجربة:",
+    "locations": [
+      "Pages\\Auth\\Login.jsx:60"
+    ]
+  },
+  {
+    "phrase": "تم إرسال توصية اللجنة للمدير",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:62",
+      "Pages\\Committee\\Exemptions.jsx:62"
+    ]
+  },
+  {
+    "phrase": "فشلت العملية",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:66",
+      "Pages\\Committee\\Exemptions.jsx:66",
+      "services\\financeService.js:54"
+    ]
+  },
+  {
+    "phrase": "المواطن",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:94"
+    ]
+  },
+  {
+    "phrase": "معلقة للجنة",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:110",
+      "Pages\\Committee\\Exemptions.jsx:112"
+    ]
+  },
+  {
+    "phrase": "معروضة على المدير",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:111",
+      "Pages\\Committee\\Exemptions.jsx:113"
+    ]
+  },
+  {
+    "phrase": "إصدار توصية",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:117",
+      "Pages\\Committee\\Exemptions.jsx:119"
+    ]
+  },
+  {
+    "phrase": "تم الإرسال",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:120",
+      "Pages\\Committee\\Exemptions.jsx:122"
+    ]
+  },
+  {
+    "phrase": "توصية لجنة الطعن",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:133"
+    ]
+  },
+  {
+    "phrase": "الوحدة:",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:139",
+      "Pages\\DataEntry\\DataEntryHome.jsx:858"
+    ]
+  },
+  {
+    "phrase": "توصية اللجنة",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:143",
+      "Pages\\Committee\\Exemptions.jsx:145"
+    ]
+  },
+  {
+    "phrase": "اختر...",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:145",
+      "Pages\\Committee\\Exemptions.jsx:147"
+    ]
+  },
+  {
+    "phrase": "إرسال للمدير",
+    "locations": [
+      "Pages\\Committee\\Appeals.jsx:167",
+      "Pages\\Committee\\Exemptions.jsx:162"
+    ]
+  },
+  {
+    "phrase": "الممول",
+    "locations": [
+      "Pages\\Committee\\Exemptions.jsx:93"
+    ]
+  },
+  {
+    "phrase": "توصية لجنة الإعفاء",
+    "locations": [
+      "Pages\\Committee\\Exemptions.jsx:135"
+    ]
+  },
+  {
+    "phrase": "العقار:",
+    "locations": [
+      "Pages\\Committee\\Exemptions.jsx:141"
+    ]
+  },
+  {
+    "phrase": "أحمد محمد علي",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:9",
+      "Pages\\DataEntry\\EditAppeal.jsx:8"
+    ]
+  },
+  {
+    "phrase": "شركة النور للمقاولات",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:10"
+    ]
+  },
+  {
+    "phrase": "محمد حسن إبراهيم",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:11"
+    ]
+  },
+  {
+    "phrase": "// مسح البيانات لو فضل فارغ",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:58"
+    ]
+  },
+  {
+    "phrase": "تم تسجيل الطعن على الربط الضريبي بنجاح! يرجى العلم بأنه يوجد رسم تقديم قدره",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:90"
+    ]
+  },
+  {
+    "phrase": "اختر الربط الضريبي المراد الطعن عليه",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:124"
+    ]
+  },
+  {
+    "phrase": "-- ابحث واختر رقم الربط الضريبي --",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:131"
+    ]
+  },
+  {
+    "phrase": "ربط رقم (",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:134"
+    ]
+  },
+  {
+    "phrase": ") - للعام (",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:134"
+    ]
+  },
+  {
+    "phrase": ". البيانات التلقائية (تظهر فقط لو اختار ربط)",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:140"
+    ]
+  },
+  {
+    "phrase": "تاريخ تقديم الطعن",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:173",
+      "Pages\\DataEntry\\EditAppeal.jsx:137"
+    ]
+  },
+  {
+    "phrase": "اكتب هنا أسباب الاعتراض على القيمة الضريبية المحسوبة...",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:201"
+    ]
+  },
+  {
+    "phrase": "جاري التسجيل...",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:211"
+    ]
+  },
+  {
+    "phrase": "تسجيل الطعن",
+    "locations": [
+      "Pages\\DataEntry\\AddAppeal.jsx:211"
+    ]
+  },
+  {
+    "phrase": "الرجاء إدخال تاريخ الإعفاء",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:29"
+    ]
+  },
+  {
+    "phrase": "كود الوحدة",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:202",
+      "Pages\\DataEntry\\DataEntryHome.jsx:878",
+      "Pages\\DataEntry\\EditExemption.jsx:126",
+      "Pages\\DataEntry\\EditOwner.jsx:323",
+      "Pages\\DataEntry\\OwnerDetails.jsx:201"
+    ]
+  },
+  {
+    "phrase": "كود:",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:212",
+      "Pages\\Reviewer\\Home.jsx:283"
+    ]
+  },
+  {
+    "phrase": "الاستخدام:",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:215"
+    ]
+  },
+  {
+    "phrase": "عرض كود الوحدة",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:221"
+    ]
+  },
+  {
+    "phrase": "كود الوحدة المختار:",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:224"
+    ]
+  },
+  {
+    "phrase": "سكن أساسي",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:236"
+    ]
+  },
+  {
+    "phrase": "المرجع القانوني",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:242",
+      "Pages\\DataEntry\\AddExemption.jsx:244"
+    ]
+  },
+  {
+    "phrase": "السبب",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:251"
+    ]
+  },
+  {
+    "phrase": "سبب الإعفاء",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:253"
+    ]
+  },
+  {
+    "phrase": "التواريخ",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:262"
+    ]
+  },
+  {
+    "phrase": "تاريخ الإعفاء",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:266"
+    ]
+  },
+  {
+    "phrase": "البداية",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:277"
+    ]
+  },
+  {
+    "phrase": "النهاية",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:288"
+    ]
+  },
+  {
+    "phrase": "زر",
+    "locations": [
+      "Pages\\DataEntry\\AddExemption.jsx:315"
+    ]
+  },
+  {
+    "phrase": "المحافظة",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:252",
+      "Pages\\DataEntry\\EditProperty.jsx:218"
+    ]
+  },
+  {
+    "phrase": "اختر المحافظة...",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:260",
+      "Pages\\DataEntry\\EditProperty.jsx:220"
+    ]
+  },
+  {
+    "phrase": "المركز",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:273",
+      "Pages\\DataEntry\\EditProperty.jsx:227"
+    ]
+  },
+  {
+    "phrase": "اختر المركز...",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:282",
+      "Pages\\DataEntry\\EditProperty.jsx:229"
+    ]
+  },
+  {
+    "phrase": "اسم الشارع",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:295"
+    ]
+  },
+  {
+    "phrase": "اختر الشارع...",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:304",
+      "Pages\\DataEntry\\EditProperty.jsx:247"
+    ]
+  },
+  {
+    "phrase": "الحي / المنطقة الضريبية",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:317",
+      "Pages\\DataEntry\\EditProperty.jsx:236"
+    ]
+  },
+  {
+    "phrase": "اختر الحي...",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:326",
+      "Pages\\DataEntry\\EditProperty.jsx:238"
+    ]
+  },
+  {
+    "phrase": "(منطقة",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:329",
+      "Pages\\DataEntry\\EditProperty.jsx:239"
+    ]
+  },
+  {
+    "phrase": "سنة البناء",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:339"
+    ]
+  },
+  {
+    "phrase": "اختر سنة البناء",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:346"
+    ]
+  },
+  {
+    "phrase": "وصف العقار",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:364"
+    ]
+  },
+  {
+    "phrase": "اكتب وصف العقار...",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:372"
+    ]
+  },
+  {
+    "phrase": "ملاحظة:",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:381"
+    ]
+  },
+  {
+    "phrase": "ملكية فردية للعقار بالكامل (فيلا / منزل)",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:396"
+    ]
+  },
+  {
+    "phrase": "سيتم تسجيل العقار كوحدة ضريبية واحدة (لا داعي لتقسيم شقق)",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:406"
+    ]
+  },
+  {
+    "phrase": "سيتم تسجيل العقار كمبنى يحتوي على عدة وحدات (شقق/محلات)",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:407"
+    ]
+  },
+  {
+    "phrase": "الاستخدام",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:426",
+      "Pages\\DataEntry\\AddProperty.jsx:577",
+      "Pages\\DataEntry\\DataEntryHome.jsx:882",
+      "Pages\\Reviewer\\Home.jsx:254",
+      "Pages\\Reviewer\\ReviewerTaskExpandedDetails.jsx:55",
+      "Pages\\Reviewer\\TaxCalculation.jsx:271"
+    ]
+  },
+  {
+    "phrase": "محل تجاري",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:459"
+    ]
+  },
+  {
+    "phrase": "تجاري",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:496",
+      "Pages\\DataEntry\\AddProperty.jsx:583",
+      "Pages\\DataEntry\\DataEntryHome.jsx:406",
+      "Pages\\DataEntry\\EditOwner.jsx:17"
+    ]
+  },
+  {
+    "phrase": "متوفر",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:508",
+      "Pages\\DataEntry\\DataEntryHome.jsx:393"
+    ]
+  },
+  {
+    "phrase": "مشغول",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:509",
+      "Pages\\DataEntry\\DataEntryHome.jsx:395"
+    ]
+  },
+  {
+    "phrase": "إضافة وحدة أخرى",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:537",
+      "Pages\\DataEntry\\LinkOwner.jsx:812"
+    ]
+  },
+  {
+    "phrase": "بيانات الوحدة الوحيدة (",
+    "locations": [
+      "Pages\\DataEntry\\AddProperty.jsx:542"
+    ]
+  },
+  {
+    "phrase": "هل أنت متأكد من حذف هذا الطلب؟",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:285"
+    ]
+  },
+  {
+    "phrase": "تم حذف الطلب بنجاح",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:301",
+      "Pages\\Shared\\Dashboard.jsx:100"
+    ]
+  },
+  {
+    "phrase": "فشل حذف الطلب",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:304"
+    ]
+  },
+  {
+    "phrase": "هل أنت متأكد من حذف بيانات هذا العقار؟",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:310"
+    ]
+  },
+  {
+    "phrase": "تم حذف العقار بنجاح",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:316"
+    ]
+  },
+  {
+    "phrase": "فشل حذف العقار",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:319"
+    ]
+  },
+  {
+    "phrase": "هل أنت متأكد من حذف هذه الوحدة؟",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:325"
+    ]
+  },
+  {
+    "phrase": "تم حذف الوحدة بنجاح",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:344"
+    ]
+  },
+  {
+    "phrase": "فشل حذف الوحدة",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:347"
+    ]
+  },
+  {
+    "phrase": "يحتاج استيفاء",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:373"
+    ]
+  },
+  {
+    "phrase": "كروت الاختصارات",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:430"
+    ]
+  },
+  {
+    "phrase": "تسجيل عقار",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:441"
+    ]
+  },
+  {
+    "phrase": "اعتراض على القيمة أو تقدير الضرائب",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:473"
+    ]
+  },
+  {
+    "phrase": "وحدات سكنية أساسية / ذوي إعاقة",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:489"
+    ]
+  },
+  {
+    "phrase": "الجدول الرئيسي",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:497"
+    ]
+  },
+  {
+    "phrase": "الطلبات المعلقة (تحتاج متابعة)",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:505"
+    ]
+  },
+  {
+    "phrase": "تاب الطلبات المعلقة",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:532"
+    ]
+  },
+  {
+    "phrase": "يُعرض آخر",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:538"
+    ]
+  },
+  {
+    "phrase": "محرك البحث مع",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:541"
+    ]
+  },
+  {
+    "phrase": "السند القانوني",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:601",
+      "Pages\\DataEntry\\DataEntryHome.jsx:674"
+    ]
+  },
+  {
+    "phrase": "لا توجد طلبات معلقة حالياً",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:655"
+    ]
+  },
+  {
+    "phrase": "تاب الأرشيف",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:664"
+    ]
+  },
+  {
+    "phrase": "لا توجد قرارات صادرة حالياً",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:704"
+    ]
+  },
+  {
+    "phrase": "رسالة توجيهية عند عدم البحث",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:790"
+    ]
+  },
+  {
+    "phrase": "العقار #",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:861"
+    ]
+  },
+  {
+    "phrase": "رقم المبنى",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:877",
+      "Pages\\DataEntry\\EditProperty.jsx:256"
+    ]
+  },
+  {
+    "phrase": "التشطيب",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:883"
+    ]
+  },
+  {
+    "phrase": "لا توجد وحدة مطابقة لكود البحث",
+    "locations": [
+      "Pages\\DataEntry\\DataEntryHome.jsx:939"
+    ]
+  },
+  {
+    "phrase": "// محاكاة أن هذا الطعن مرتبط بالربط",
+    "locations": [
+      "Pages\\DataEntry\\EditAppeal.jsx:14"
+    ]
+  },
+  {
+    "phrase": "القيمة السوقية للعقار لا تعكس الحقيقة الفعلية للسعر في المنطقة المحيطة.",
+    "locations": [
+      "Pages\\DataEntry\\EditAppeal.jsx:19"
+    ]
+  },
+  {
+    "phrase": "كارت البيانات التلقائية (مقروء فقط)",
+    "locations": [
+      "Pages\\DataEntry\\EditAppeal.jsx:110"
+    ]
+  },
+  {
+    "phrase": "حقول التعديل الفعلية",
+    "locations": [
+      "Pages\\DataEntry\\EditAppeal.jsx:133"
+    ]
+  },
+  {
+    "phrase": "الموجودة في صفحة الإضافة حتى لا تنفصل القيمة المعروضة (",
+    "locations": [
+      "Pages\\DataEntry\\EditExemption.jsx:134"
+    ]
+  },
+  {
+    "phrase": ") عن",
+    "locations": [
+      "Pages\\DataEntry\\EditExemption.jsx:134"
+    ]
+  },
+  {
+    "phrase": "معرّف الوحدة الفعلي (",
+    "locations": [
+      "Pages\\DataEntry\\EditExemption.jsx:135"
+    ]
+  },
+  {
+    "phrase": ") المُرسَل للسيرفر",
+    "locations": [
+      "Pages\\DataEntry\\EditExemption.jsx:135"
+    ]
+  },
+  {
+    "phrase": "صناعي",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:18"
+    ]
+  },
+  {
+    "phrase": "إداري",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:19"
+    ]
+  },
+  {
+    "phrase": "تاريخ بداية الملكية مطلوب",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:117"
+    ]
+  },
+  {
+    "phrase": "تاريخ النهاية يجب أن يكون بعد تاريخ البداية",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:121"
+    ]
+  },
+  {
+    "phrase": "حقول القراءة فقط",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:212"
+    ]
+  },
+  {
+    "phrase": "حقول قابلة للتعديل",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:236"
+    ]
+  },
+  {
+    "phrase": "المحافظة، المدينة، الشارع...",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:261"
+    ]
+  },
+  {
+    "phrase": "عازل",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:285",
+      "Pages\\DataEntry\\OwnerDetails.jsx:180"
+    ]
+  },
+  {
+    "phrase": "عنوان الوحدة",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:324",
+      "Pages\\DataEntry\\OwnerDetails.jsx:202"
+    ]
+  },
+  {
+    "phrase": "نوع الاستخدام",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:326",
+      "Pages\\DataEntry\\EditOwner.jsx:371",
+      "Pages\\Reviewer\\TaxCalculation.jsx:381"
+    ]
+  },
+  {
+    "phrase": "تاريخ البداية",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:327",
+      "Pages\\DataEntry\\EditOwner.jsx:386",
+      "Pages\\DataEntry\\LinkOwner.jsx:695",
+      "Pages\\DataEntry\\LinkOwner.jsx:764"
+    ]
+  },
+  {
+    "phrase": "تاريخ النهاية",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:328",
+      "Pages\\DataEntry\\EditOwner.jsx:398",
+      "Pages\\DataEntry\\LinkOwner.jsx:696",
+      "Pages\\DataEntry\\LinkOwner.jsx:774"
+    ]
+  },
+  {
+    "phrase": "صف العرض",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:336"
+    ]
+  },
+  {
+    "phrase": "صف التعديل (",
+    "locations": [
+      "Pages\\DataEntry\\EditOwner.jsx:364"
+    ]
+  },
+  {
+    "phrase": "العقار غير موجود",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:47"
+    ]
+  },
+  {
+    "phrase": "تنبيه: مجموع نسب الملكية الحالي هو",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:161"
+    ]
+  },
+  {
+    "phrase": ". يجب أن يكون",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:161"
+    ]
+  },
+  {
+    "phrase": "مجموع الملكية:",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:202"
+    ]
+  },
+  {
+    "phrase": ". بيانات الموقع",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:214"
+    ]
+  },
+  {
+    "phrase": "الشارع",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:245"
+    ]
+  },
+  {
+    "phrase": "ملاحظات / وصف",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:262"
+    ]
+  },
+  {
+    "phrase": "نسبة الملكية",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:274",
+      "Pages\\Reviewer\\ReviewerTaskExpandedDetails.jsx:83",
+      "Pages\\Reviewer\\TaxCalculation.jsx:292"
+    ]
+  },
+  {
+    "phrase": "سبب التملك",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:275"
+    ]
+  },
+  {
+    "phrase": "كان الزرار ده من غير",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:290"
+    ]
+  },
+  {
+    "phrase": "خالص - دلوقتي بيفتح نفس مودال",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:290"
+    ]
+  },
+  {
+    "phrase": "تملك كامل",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:317"
+    ]
+  },
+  {
+    "phrase": "ميراث",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:319"
+    ]
+  },
+  {
+    "phrase": "هبة",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:320"
+    ]
+  },
+  {
+    "phrase": "الملكية مكتملة (",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:343"
+    ]
+  },
+  {
+    "phrase": "! النسبة الحالية:",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:344"
+    ]
+  },
+  {
+    "phrase": "بالظبط",
+    "locations": [
+      "Pages\\DataEntry\\EditProperty.jsx:362"
+    ]
+  },
+  {
+    "phrase": "بحث...",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:135"
+    ]
+  },
+  {
+    "phrase": "لا توجد عقارات مطابقة",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:154"
+    ]
+  },
+  {
+    "phrase": "عقار #",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:167"
+    ]
+  },
+  {
+    "phrase": "لا يمكن تكرار نفس الوحدة في أكثر من سطر",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:376"
+    ]
+  },
+  {
+    "phrase": "نسبة الحصة لكل وحدة يجب أن تكون بين",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:387"
+    ]
+  },
+  {
+    "phrase": "يجب إدخال تاريخ البداية لكل وحدة",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:393"
+    ]
+  },
+  {
+    "phrase": "تاريخ النهاية يجب أن يكون بعد أو يساوي تاريخ البداية",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:403"
+    ]
+  },
+  {
+    "phrase": ")          // كل رسالة في سطر",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:453"
+    ]
+  },
+  {
+    "phrase": "حدث خطأ أثناء الربط",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:454"
+    ]
+  },
+  {
+    "phrase": "رأس الصفحة",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:485",
+      "Pages\\Reviewer\\Home.jsx:141",
+      "Pages\\Reviewer\\TaxCalculation.jsx:227"
+    ]
+  },
+  {
+    "phrase": "هذا يعرض",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:499"
+    ]
+  },
+  {
+    "phrase": "مرتبط بـ",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:551"
+    ]
+  },
+  {
+    "phrase": "وحدة حالياً، سيتم إعادة استخدام بياناته",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:551"
+    ]
+  },
+  {
+    "phrase": "اختر منها أدناه",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:663"
+    ]
+  },
+  {
+    "phrase": "هذا العقار لا يحتوي على وحدات مسجّلة",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:668"
+    ]
+  },
+  {
+    "phrase": "رأس الجدول",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:688"
+    ]
+  },
+  {
+    "phrase": "الحصة",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:694"
+    ]
+  },
+  {
+    "phrase": "أو شقة",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:733"
+    ]
+  },
+  {
+    "phrase": "نسبة الحصة",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:751"
+    ]
+  },
+  {
+    "phrase": "حذف هذه الوحدة",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:795"
+    ]
+  },
+  {
+    "phrase": "شريط الإجماليات",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:803"
+    ]
+  },
+  {
+    "phrase": "توزيع متساوٍ",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:821"
+    ]
+  },
+  {
+    "phrase": "مجموع الحصص:",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:827"
+    ]
+  },
+  {
+    "phrase": "المودالات",
+    "locations": [
+      "Pages\\DataEntry\\LinkOwner.jsx:865"
+    ]
+  },
+  {
+    "phrase": "تم حذف الربط بنجاح",
+    "locations": [
+      "Pages\\DataEntry\\OwnerDetails.jsx:67"
+    ]
+  },
+  {
+    "phrase": "فشل حذف الربط، حاول مرة أخرى",
+    "locations": [
+      "Pages\\DataEntry\\OwnerDetails.jsx:70"
+    ]
+  },
+  {
+    "phrase": "بدل الكود القديم",
+    "locations": [
+      "Pages\\DataEntry\\OwnerDetails.jsx:135"
+    ]
+  },
+  {
+    "phrase": "تاريخ بداية الملكية",
+    "locations": [
+      "Pages\\DataEntry\\OwnerDetails.jsx:204"
+    ]
+  },
+  {
+    "phrase": "حذف الربط",
+    "locations": [
+      "Pages\\DataEntry\\OwnerDetails.jsx:224"
+    ]
+  },
+  {
+    "phrase": "إيصال سداد ضريبة عقارية",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:49"
+    ]
+  },
+  {
+    "phrase": "نسخة رسمية صادرة من نظام التحصيل",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:50"
+    ]
+  },
+  {
+    "phrase": "ختم المأمورية",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:91"
+    ]
+  },
+  {
+    "phrase": "تمت الطباعة في:",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:93"
+    ]
+  },
+  {
+    "phrase": "// مسح الوحدة القديمة أثناء البحث",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:118"
+    ]
+  },
+  {
+    "phrase": "هذه الوحدة لم توافق عليها الإدارة بعد ولا يمكن تسجيل سداد أو طباعة فاتورة.",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:129"
+    ]
+  },
+  {
+    "phrase": "وحدة غير موجودة برقم:",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:143"
+    ]
+  },
+  {
+    "phrase": "حدث خطأ في البحث",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:147"
+    ]
+  },
+  {
+    "phrase": "هل أنت متأكد من تسجيل مبلغ",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:168"
+    ]
+  },
+  {
+    "phrase": "فشلت العملية:",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:190"
+    ]
+  },
+  {
+    "phrase": "حدث خطأ غير متوقع",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:190",
+      "services\\apiClient.js:24",
+      "services\\apiClient.js:80"
+    ]
+  },
+  {
+    "phrase": ". البحث السريع في أعلى الصفحة (نفس التقدير)",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:201"
+    ]
+  },
+  {
+    "phrase": "رسالة الخطأ (تظهر تحت الشريط مباشرة)",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:217"
+    ]
+  },
+  {
+    "phrase": ". الكارت الأساسي (ظاهر دايماً ومحتواه يتغير)",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:225"
+    ]
+  },
+  {
+    "phrase": "تسجيل سداد (",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:232"
+    ]
+  },
+  {
+    "phrase": "وحدة رقم:",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:235",
+      "Pages\\Reviewer\\TaxCalculation.jsx:232"
+    ]
+  },
+  {
+    "phrase": "تسجيل سداد ضريبي",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:235"
+    ]
+  },
+  {
+    "phrase": "جاهز للدفع",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:240"
+    ]
+  },
+  {
+    "phrase": ": جاري البحث",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:246"
+    ]
+  },
+  {
+    "phrase": "جاري البحث عن الوحدة...",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:247"
+    ]
+  },
+  {
+    "phrase": ": لم يتم البحث بعد",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:249"
+    ]
+  },
+  {
+    "phrase": ": تم العثور على الوحدة",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:258"
+    ]
+  },
+  {
+    "phrase": "جميع الأقساط المسجلة لهذه الوحدة تم دفعها",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:264"
+    ]
+  },
+  {
+    "phrase": "معلومات الوحدة",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:269"
+    ]
+  },
+  {
+    "phrase": "فوري (",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:352"
+    ]
+  },
+  {
+    "phrase": "إنستا باي",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:354"
+    ]
+  },
+  {
+    "phrase": "إيصال السداد بعد النجاح",
+    "locations": [
+      "Pages\\Finance\\Collection.jsx:400"
+    ]
+  },
+  {
+    "phrase": "التحصيل المالي (",
+    "locations": [
+      "Pages\\Finance\\Home.jsx:39"
+    ]
+  },
+  {
+    "phrase": "البطاقات الإحصائية",
+    "locations": [
+      "Pages\\Finance\\Home.jsx:44"
+    ]
+  },
+  {
+    "phrase": "إجمالي المحصل (",
+    "locations": [
+      "Pages\\Finance\\Home.jsx:50"
+    ]
+  },
+  {
+    "phrase": "جدول السجل المالي",
+    "locations": [
+      "Pages\\Finance\\Home.jsx:80"
+    ]
+  },
+  {
+    "phrase": "لوحة متابعة تشغيلية فورية",
+    "locations": [
+      "Pages\\Manager\\Home.jsx:78"
+    ]
+  },
+  {
+    "phrase": "- تصميم أفقي مع أيقونات دائرية",
+    "locations": [
+      "Pages\\Manager\\Home.jsx:90"
+    ]
+  },
+  {
+    "phrase": "عرض الكل",
+    "locations": [
+      "Pages\\Manager\\Home.jsx:152"
+    ]
+  },
+  {
+    "phrase": "تاريخ الإصدار:",
+    "locations": [
+      "Pages\\Manager\\Reports.jsx:88"
+    ]
+  },
+  {
+    "phrase": "لا توجد بيانات أداء متاحة",
+    "locations": [
+      "Pages\\Manager\\Reports.jsx:102"
+    ]
+  },
+  {
+    "phrase": "تم سداد",
+    "locations": [
+      "Pages\\Manager\\Reports.jsx:202"
+    ]
+  },
+  {
+    "phrase": "قسط من إجمالي الأقساط",
+    "locations": [
+      "Pages\\Manager\\Reports.jsx:202"
+    ]
+  },
+  {
+    "phrase": "غير فعال",
+    "locations": [
+      "Pages\\Manager\\Reports.jsx:277"
+    ]
+  },
+  {
+    "phrase": "// عرض توصيات اللجنة فقط",
+    "locations": [
+      "Pages\\Manager\\Verdict.jsx:44"
+    ]
+  },
+  {
+    "phrase": "فشل",
+    "locations": [
+      "Pages\\Manager\\Verdict.jsx:76",
+      "Pages\\Manager\\Verdict.jsx:98"
+    ]
+  },
+  {
+    "phrase": "هل أنت متأكد من",
+    "locations": [
+      "Pages\\Manager\\Verdict.jsx:104"
+    ]
+  },
+  {
+    "phrase": "طلب الإعفاء؟",
+    "locations": [
+      "Pages\\Manager\\Verdict.jsx:104"
+    ]
+  },
+  {
+    "phrase": "فشل العملية",
+    "locations": [
+      "Pages\\Manager\\Verdict.jsx:121"
+    ]
+  },
+  {
+    "phrase": "وحدة:",
+    "locations": [
+      "Pages\\Manager\\Verdict.jsx:238"
+    ]
+  },
+  {
+    "phrase": "ملاحظات المدير...",
+    "locations": [
+      "Pages\\Manager\\Verdict.jsx:241"
+    ]
+  },
+  {
+    "phrase": "بانتظار الحساب",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:21",
+      "Pages\\Reviewer\\Home.jsx:42",
+      "Pages\\Reviewer\\ReviewerTaskExpandedDetails.jsx:63",
+      "Pages\\Reviewer\\TaxCalculation.jsx:45"
+    ]
+  },
+  {
+    "phrase": "معتمدة",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:28"
+    ]
+  },
+  {
+    "phrase": "معتمد",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:40",
+      "Pages\\Reviewer\\ReviewerTaskExpandedDetails.jsx:62",
+      "Pages\\Reviewer\\TaxCalculation.jsx:44"
+    ]
+  },
+  {
+    "phrase": "شريط الفلاتر",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:160"
+    ]
+  },
+  {
+    "phrase": "مسح البحث",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:201"
+    ]
+  },
+  {
+    "phrase": "شريط الإحصاء",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:213"
+    ]
+  },
+  {
+    "phrase": "نتائج البحث عن:",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:220"
+    ]
+  },
+  {
+    "phrase": "المحتوى",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:231"
+    ]
+  },
+  {
+    "phrase": "لا توجد وحدات مطابقة",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:241"
+    ]
+  },
+  {
+    "phrase": "جرّب بحثاً مختلفاً أو امسح الفلتر",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:243"
+    ]
+  },
+  {
+    "phrase": "إخفاء",
+    "locations": [
+      "Pages\\Reviewer\\Home.jsx:316"
+    ]
+  },
+  {
+    "phrase": "ملخص نصي",
+    "locations": [
+      "Pages\\Reviewer\\PaginationBar.jsx:49"
+    ]
+  },
+  {
+    "phrase": "عنصر",
+    "locations": [
+      "Pages\\Reviewer\\PaginationBar.jsx:52"
+    ]
+  },
+  {
+    "phrase": "لا توجد عناصر",
+    "locations": [
+      "Pages\\Reviewer\\PaginationBar.jsx:53"
+    ]
+  },
+  {
+    "phrase": "أزرار التنقل",
+    "locations": [
+      "Pages\\Reviewer\\PaginationBar.jsx:56"
+    ]
+  },
+  {
+    "phrase": "القفز",
+    "locations": [
+      "Pages\\Reviewer\\PaginationBar.jsx:56"
+    ]
+  },
+  {
+    "phrase": "الصفحة الأولى",
+    "locations": [
+      "Pages\\Reviewer\\PaginationBar.jsx:63"
+    ]
+  },
+  {
+    "phrase": "السابق",
+    "locations": [
+      "Pages\\Reviewer\\PaginationBar.jsx:73"
+    ]
+  },
+  {
+    "phrase": "التالي",
+    "locations": [
+      "Pages\\Reviewer\\PaginationBar.jsx:86"
+    ]
+  },
+  {
+    "phrase": "الصفحة الأخيرة",
+    "locations": [
+      "Pages\\Reviewer\\PaginationBar.jsx:93"
+    ]
+  },
+  {
+    "phrase": "طريقة العلاقة",
+    "locations": [
+      "Pages\\Reviewer\\ReviewerTaskExpandedDetails.jsx:111"
+    ]
+  },
+  {
+    "phrase": "مكوّنات مساعدة صغيرة",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:20"
+    ]
+  },
+  {
+    "phrase": "مودال تأكيد بدلاً من",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:101"
+    ]
+  },
+  {
+    "phrase": "معرّف الوحدة غير صحيح",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:148"
+    ]
+  },
+  {
+    "phrase": "يرجى إدخال سنة ضريبية صحيحة",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:149"
+    ]
+  },
+  {
+    "phrase": "القيمة الإيجارية لا يمكن أن تكون سالبة",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:151"
+    ]
+  },
+  {
+    "phrase": "حدث خطأ أثناء معاينة التقدير الضريبي",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:166"
+    ]
+  },
+  {
+    "phrase": "لا توجد بيانات لهذه الوحدة",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:213"
+    ]
+  },
+  {
+    "phrase": "العرض الرئيسي",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:219"
+    ]
+  },
+  {
+    "phrase": "شاشة التقدير الضريبي",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:230"
+    ]
+  },
+  {
+    "phrase": "معرّف الوحدة:",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:234"
+    ]
+  },
+  {
+    "phrase": "أخطاء",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:249"
+    ]
+  },
+  {
+    "phrase": "بيانات الوحدة والعقار",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:264"
+    ]
+  },
+  {
+    "phrase": "إعدادات التقدير الضريبي",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:338"
+    ]
+  },
+  {
+    "phrase": "السنة الضريبية",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:342",
+      "Pages\\Reviewer\\TaxCalculation.jsx:346",
+      "Pages\\Reviewer\\TaxCalculation.jsx:457"
+    ]
+  },
+  {
+    "phrase": "القيمة الإيجارية",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:358"
+    ]
+  },
+  {
+    "phrase": "القيمة الإيجارية السنوية",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:362",
+      "Pages\\Reviewer\\TaxCalculation.jsx:464"
+    ]
+  },
+  {
+    "phrase": "تقدير تلقائي إذا تُرك فارغاً",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:369"
+    ]
+  },
+  {
+    "phrase": "الاستخدام (قراءة فقط)",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:378"
+    ]
+  },
+  {
+    "phrase": "المسؤول عن السداد",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:386",
+      "Pages\\Reviewer\\TaxCalculation.jsx:388"
+    ]
+  },
+  {
+    "phrase": "خطة السداد",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:403",
+      "Pages\\Reviewer\\TaxCalculation.jsx:406"
+    ]
+  },
+  {
+    "phrase": "دفع كامل",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:411"
+    ]
+  },
+  {
+    "phrase": "تقسيط على دفعتين",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:412"
+    ]
+  },
+  {
+    "phrase": "رسوم الطعن",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:417",
+      "Pages\\Reviewer\\TaxCalculation.jsx:496"
+    ]
+  },
+  {
+    "phrase": "إضافة رسوم طعن (",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:422"
+    ]
+  },
+  {
+    "phrase": "جاري المعاينة...",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:436"
+    ]
+  },
+  {
+    "phrase": "معاينة الحساب",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:438"
+    ]
+  },
+  {
+    "phrase": "نتيجة المعاينة",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:445"
+    ]
+  },
+  {
+    "phrase": "نتيجة المعاينة الضريبية",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:450"
+    ]
+  },
+  {
+    "phrase": "رأس النتيجة",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:454"
+    ]
+  },
+  {
+    "phrase": "وصف الموقع / العقار",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:458"
+    ]
+  },
+  {
+    "phrase": "خصم الصيانة / الاستهلاك (",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:468"
+    ]
+  },
+  {
+    "phrase": "صافي القيمة الإيجارية السنوية",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:474"
+    ]
+  },
+  {
+    "phrase": "إعفاء ضريبي",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:480"
+    ]
+  },
+  {
+    "phrase": "دفعات)",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:514"
+    ]
+  },
+  {
+    "phrase": "تم الحساب باستخدام قيمة إيجارية مدخلة يدوياً.",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:525"
+    ]
+  },
+  {
+    "phrase": "تم الحساب باستخدام التقدير التلقائي للقيمة الإيجارية.",
+    "locations": [
+      "Pages\\Reviewer\\TaxCalculation.jsx:526"
+    ]
+  },
+  {
+    "phrase": "أهلاً بك في نظام المساعدة الذكي. كيف أساعدك اليوم؟",
+    "locations": [
+      "Pages\\Shared\\Chatbot.jsx:10"
+    ]
+  },
+  {
+    "phrase": "شكراً لسؤالك",
+    "locations": [
+      "Pages\\Shared\\Chatbot.jsx:27"
+    ]
+  },
+  {
+    "phrase": ". سيتم مراجعة استفسارك والرد عليك حالا انتظر.",
+    "locations": [
+      "Pages\\Shared\\Chatbot.jsx:27"
+    ]
+  },
+  {
+    "phrase": "مساعد النظام (",
+    "locations": [
+      "Pages\\Shared\\Chatbot.jsx:69"
+    ]
+  },
+  {
+    "phrase": "متصل الآن للرد على استفساراتك",
+    "locations": [
+      "Pages\\Shared\\Chatbot.jsx:70"
+    ]
+  },
+  {
+    "phrase": "اكتب استفسارك هنا...",
+    "locations": [
+      "Pages\\Shared\\Chatbot.jsx:98"
+    ]
+  },
+  {
+    "phrase": "إرسال",
+    "locations": [
+      "Pages\\Shared\\Chatbot.jsx:103"
+    ]
+  },
+  {
+    "phrase": "هل أنت متأكد من حذف طلب الإعفاء هذا؟",
+    "locations": [
+      "Pages\\Shared\\Dashboard.jsx:97"
+    ]
+  },
+  {
+    "phrase": "فشل الحذف",
+    "locations": [
+      "Pages\\Shared\\Dashboard.jsx:103",
+      "Pages\\Shared\\Dashboard.jsx:114"
+    ]
+  },
+  {
+    "phrase": "هل أنت متأكد من حذف طلب الطعن هذا؟",
+    "locations": [
+      "Pages\\Shared\\Dashboard.jsx:108"
+    ]
+  },
+  {
+    "phrase": "تم حذف الطعن بنجاح",
+    "locations": [
+      "Pages\\Shared\\Dashboard.jsx:111"
+    ]
+  },
+  {
+    "phrase": "--- الإحصائيات ---",
+    "locations": [
+      "Pages\\Shared\\Dashboard.jsx:128"
+    ]
+  },
+  {
+    "phrase": "--- الجداول ---",
+    "locations": [
+      "Pages\\Shared\\Dashboard.jsx:222"
+    ]
+  },
+  {
+    "phrase": "زر الحذف يظهر فقط للحالة المعلقة",
+    "locations": [
+      "Pages\\Shared\\Dashboard.jsx:302"
+    ]
+  },
+  {
+    "phrase": "تم إنشاء نسخة احتياطية بنجاح",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:144"
+    ]
+  },
+  {
+    "phrase": "تم تصدير البيانات بنجاح",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:159"
+    ]
+  },
+  {
+    "phrase": "مركز التحكم",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:166"
+    ]
+  },
+  {
+    "phrase": "سجل محفوظ",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:176"
+    ]
+  },
+  {
+    "phrase": "تفضيلات الواجهة",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:193"
+    ]
+  },
+  {
+    "phrase": "اختاري شكل وتجربة الاستخدام المناسبة.",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:194"
+    ]
+  },
+  {
+    "phrase": "تفعيل تنبيهات المتصفح عند توفرها.",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:201"
+    ]
+  },
+  {
+    "phrase": "تقليل المسافات لعرض بيانات أكثر.",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:209"
+    ]
+  },
+  {
+    "phrase": "تبديل ألوان النظام للوضع الليلي.",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:217"
+    ]
+  },
+  {
+    "phrase": "العربية مفعلة الآن",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:242"
+    ]
+  },
+  {
+    "phrase": "النسخ الاحتياطي والتصدير",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:258"
+    ]
+  },
+  {
+    "phrase": "احتفظي بنسخة كاملة أو صدّري الجداول الأساسية.",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:259"
+    ]
+  },
+  {
+    "phrase": "يحتوي على بيانات النظام المحفوظة محليًا.",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:269"
+    ]
+  },
+  {
+    "phrase": "إنشاء نسخة",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:273"
+    ]
+  },
+  {
+    "phrase": "قابل للفتح في",
+    "locations": [
+      "Pages\\Shared\\Settings.jsx:282"
+    ]
+  },
+  {
+    "phrase": "تم تشغيل النظام بنجاح",
+    "locations": [
+      "services\\adminService.js:33"
+    ]
+  },
+  {
+    "phrase": "فحص سلامة قاعدة البيانات",
+    "locations": [
+      "services\\adminService.js:35"
+    ]
+  },
+  {
+    "phrase": "تسجيل إيصال رقم",
+    "locations": [
+      "services\\adminService.js:37"
+    ]
+  },
+  {
+    "phrase": "تعذر الاتصال بالخادم. تأكد من تشغيل الـ",
+    "locations": [
+      "services\\apiClient.js:33"
+    ]
+  },
+  {
+    "phrase": "بيانات الإدخال غير صحيحة",
+    "locations": [
+      "services\\apiClient.js:54"
+    ]
+  },
+  {
+    "phrase": "حدثت أخطاء في البيانات",
+    "locations": [
+      "services\\apiClient.js:67"
+    ]
+  },
+  {
+    "phrase": "// يحتوي على:",
+    "locations": [
+      "services\\appealService.js:29"
+    ]
+  },
+  {
+    "phrase": "الطعن غير موجود",
+    "locations": [
+      "services\\appealService.js:61",
+      "services\\committeeService.js:32",
+      "services\\managerService.js:12"
+    ]
+  },
+  {
+    "phrase": "أحمد علي",
+    "locations": [
+      "services\\authService.js:5"
+    ]
+  },
+  {
+    "phrase": "منى سعيد",
+    "locations": [
+      "services\\authService.js:6"
+    ]
+  },
+  {
+    "phrase": "كمال محمد",
+    "locations": [
+      "services\\authService.js:7"
+    ]
+  },
+  {
+    "phrase": "د. حسين",
+    "locations": [
+      "services\\authService.js:8"
+    ]
+  },
+  {
+    "phrase": "محمد القاضي",
+    "locations": [
+      "services\\authService.js:10"
+    ]
+  },
+  {
+    "phrase": "رقم قومي غير مسجل في النظام",
+    "locations": [
+      "services\\authService.js:47"
+    ]
+  },
+  {
+    "phrase": "// تأخير",
+    "locations": [
+      "services\\authService.js:50"
+    ]
+  },
+  {
+    "phrase": "مللي ثانية",
+    "locations": [
+      "services\\authService.js:50"
+    ]
+  },
+  {
+    "phrase": "طلب الإعفاء غير موجود",
+    "locations": [
+      "services\\committeeService.js:58"
+    ]
+  },
+  {
+    "phrase": "تم تسجيل السداد بنجاح",
+    "locations": [
+      "services\\financeService.js:51"
+    ]
+  },
+  {
+    "phrase": "// جاهز للمالية",
+    "locations": [
+      "services\\managerService.js:27"
+    ]
+  },
+  {
+    "phrase": "العقار غير موجود في النظام",
+    "locations": [
+      "services\\managerService.js:39"
+    ]
+  },
+  {
+    "phrase": "حدث خطأ في التحويل",
+    "locations": [
+      "services\\managerService.js:43"
+    ]
+  },
+  {
+    "phrase": "غير متاحة حالياً. سيتم تفعيلها بعد تنفيذ",
+    "locations": [
+      "services\\propertyService.js:147"
+    ]
+  },
+  {
+    "phrase": "// الافتراضي: سكني",
+    "locations": [
+      "utils\\calculateTax.js:7"
+    ]
+  },
+  {
+    "phrase": "// القيمة الصافية بعد الخصم",
+    "locations": [
+      "utils\\calculateTax.js:15"
+    ]
+  },
+  {
+    "phrase": "معفى (خصم",
+    "locations": [
+      "utils\\calculateTax.js:31"
+    ]
+  },
+  {
+    "phrase": "من إيجار وحدة سكنية أساسية)",
+    "locations": [
+      "utils\\calculateTax.js:31"
+    ]
+  },
+  {
+    "phrase": "وحدة سكنية إضافية",
+    "locations": [
+      "utils\\calculateTax.js:37"
+    ]
+  },
+  {
+    "phrase": "(خصم صيانة",
+    "locations": [
+      "utils\\calculateTax.js:37"
+    ]
+  },
+  {
+    "phrase": "// لإظهار النسبة في الـ",
+    "locations": [
+      "utils\\calculateTax.js:44"
+    ]
+  },
+  {
+    "phrase": "موظف التحصيل",
+    "locations": [
+      "utils\\performance.js:10"
+    ]
+  },
+  {
+    "phrase": "مراجع الضرائب",
+    "locations": [
+      "utils\\performance.js:11"
+    ]
+  },
+  {
+    "phrase": "مدخل البيانات",
+    "locations": [
+      "utils\\performance.js:12"
+    ]
+  },
+  {
+    "phrase": "لا توجد عمليات مسجلة بعد",
+    "locations": [
+      "utils\\performance.js:43"
+    ]
+  }
+]
