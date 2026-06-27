@@ -84,7 +84,6 @@ function App() {
     const handleSettingsChanged = (event) => {
       setSettings(event.detail);
     };
-
     window.addEventListener('tax-settings-changed', handleSettingsChanged);
     return () => window.removeEventListener('tax-settings-changed', handleSettingsChanged);
   }, []);
@@ -97,7 +96,6 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* التطبيق الرئيسي */}
         <Route path="/*" element={
           <ProtectedRoute>
             <div className="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -130,7 +128,8 @@ function App() {
                     <Route path="/data-entry/edit-exemption/:id" element={<EditExemption />} />
 
                     <Route path="/reviewer/home" element={<ReviewerHome />} />
-                    <Route path="/reviewer/calc/:id?" element={<TaxCalculation />} />
+                    {/* ✅ إزالة ? — الصفحة تتطلب id دائماً */}
+                    <Route path="/reviewer/calc/:id" element={<TaxCalculation />} />
 
                     <Route path="/finance/home" element={<FinanceHome />} />
                     <Route path="/finance/collect" element={<FinanceCollection />} />

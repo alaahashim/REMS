@@ -17,7 +17,7 @@ namespace Core.DomainLayer.Entities
 
         public DateTime ExemptionDate { get; set; }
 
-        public WorkflowStatus Status { get; set; } = WorkflowStatus.Pending;
+        public ExemptionStatus Status { get; set; } = ExemptionStatus.PendingCommittee;
 
         // قرار المدير / اللجنة
         public string? DecisionResult { get; set; }
@@ -29,15 +29,27 @@ namespace Core.DomainLayer.Entities
         public string? ExemptionReason { get; set; }
         public string? InspectionResult { get; set; }
         public string? Notes { get; set; }
+/////////////////////
+public string? CommitteeVerdict { get; set; }
 
-        public ICollection<ExemptionAttachment> Attachments { get; set; } = new List<ExemptionAttachment>();
+public string? CommitteeNote { get; set; }
+
+public DateTime? CommitteeDecisionDate { get; set; }
+
+public int? CommitteeUserId { get; set; }
+
+///////////////////
+  public ICollection<ExemptionAttachment> Attachments { get; set; } = new List<ExemptionAttachment>();
     }
 
-    public enum WorkflowStatus
-    {
-        Pending = 1,   // قيد المراجعة
-        Approved = 2,        // موافق عليه
-        Rejected = 3,        // مرفوض
-        NeedsMoreInfo = 4    // يحتاج استيفاء
-    }
+   public enum ExemptionStatus
+{
+    PendingCommittee = 1,
+
+    PendingManager = 2,
+
+    Approved = 3,
+
+    Rejected = 4
+}
 }

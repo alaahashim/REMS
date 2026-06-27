@@ -22,7 +22,9 @@ namespace Persistence.Data
 
          public DbSet<RoleAssignment> RoleAssignments { get; set; }
          public DbSet<TaxRule> TaxRules { get; set; }
-           public DbSet<TaxAssessment> TaxAssessments { get; set; }
+        public DbSet<TaxAssessment> TaxAssessments { get; set; }
+        public DbSet<Appeal> Appeals { get; set; }
+        public DbSet<AppealAttachment> AppealAttachments { get; set; }
         #endregion
        
         protected override void OnModelCreating(ModelBuilder modelBuilder)

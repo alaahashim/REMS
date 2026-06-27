@@ -70,7 +70,8 @@ namespace Shared.DTOS
     /// العنصر الظاهر في قائمة مهام المراجع
     /// </summary>
     public class ReviewerTaxTaskListItemDto
-    {
+    {        public int? TaxYear { get; set; }
+
         public int UnitId { get; set; }
         public string UnitNumber { get; set; } = string.Empty;
         public string? UnitType { get; set; }
@@ -157,7 +158,7 @@ namespace Shared.DTOS
         /// <summary>
         /// هل تُضاف رسوم الطعن؟
         /// </summary>
-        public bool IncludeAppealFee { get; set; } = false;
+       // public bool IncludeAppealFee { get; set; } = false;
     }
 
 
@@ -178,7 +179,7 @@ namespace Shared.DTOS
         public PayerType PayerType { get; set; } = PayerType.Owner;
         public PaymentPlan PaymentPlan { get; set; } = PaymentPlan.Full;
 
-        public bool IncludeAppealFee { get; set; } = false;
+       // public bool IncludeAppealFee { get; set; } = false;
     }
 
 

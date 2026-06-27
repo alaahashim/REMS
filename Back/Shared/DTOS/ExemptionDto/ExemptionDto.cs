@@ -85,7 +85,6 @@ namespace Shared.DTOS
 {
     public int Id { get; set; }
 
-    public string NationalId { get; set; } = null!;
     public string OwnerName { get; set; } = null!;
         public string UnitNumber { get; set; } = null!;
 
@@ -95,5 +94,14 @@ namespace Shared.DTOS
     public string? LegalReference { get; set; }
 
     public string Type { get; set; } = null!; // "إعفاء" أو "طعن"
+}
+
+public class AttachmentDownloadDto
+{
+    public string FullPath { get; set; } = string.Empty;
+
+    public string FileName { get; set; } = string.Empty;
+
+    public string ContentType { get; set; } = "application/octet-stream";
 }
 }

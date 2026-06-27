@@ -9,16 +9,13 @@ import {
   getReviewerTaskDetails,
   previewTaxCalculation,
   approveTaxCalculation,
+  hasAppealsForAssessment,
 } from "../../services/taxService";
 
 const CURRENT_YEAR = new Date().getFullYear();
+const PAYER_TYPE   = { OWNER: 1, TENANT: 2 };
+const PAYMENT_PLAN = { FULL: 1, INSTALLMENT_2: 2 };
 
-const PAYER_TYPE    = { OWNER: 1, TENANT: 2 };
-const PAYMENT_PLAN  = { FULL: 1, INSTALLMENT_2: 2 };
-
-/* ──────────────────────────────────────────
-   مكوّنات مساعدة صغيرة
-────────────────────────────────────────── */
 const InfoField = ({ label, value, primary = false }) => (
   <div>
     <div className="text-muted mb-1" style={{ fontSize: "0.72rem", letterSpacing: "0.02em" }}>
@@ -31,7 +28,7 @@ const InfoField = ({ label, value, primary = false }) => (
 );
 
 const SectionHeading = ({ icon, label, color = "primary" }) => (
-  <div className={`d-flex align-items-center gap-2 mb-3`}>
+  <div className="d-flex align-items-center gap-2 mb-3">
     <i className={`fa-solid ${icon} text-${color}`} />
     <span className={`fw-bold text-${color}`}>{label}</span>
   </div>
@@ -45,7 +42,6 @@ const TaxStatusBadge = ({ status }) => {
     : <Badge bg="warning" text="dark">بانتظار الحساب</Badge>;
 };
 
-/** صف في جدول الملاك أو المستأجرين */
 const PersonRow = ({ person, showShare = false }) => (
   <tr>
     <td className="fw-semibold">{person.fullName || "-"}</td>
@@ -57,7 +53,6 @@ const PersonRow = ({ person, showShare = false }) => (
   </tr>
 );
 
-/** سطر مبلغ في ملخص المعاينة */
 const AmountRow = ({ label, amount, variant = "", minus = false, bold = false, large = false }) => {
   const cls = [variant ? `text-${variant}` : "", bold ? "fw-bold" : "", large ? "fs-5" : ""].join(" ").trim();
   const formatted = `${Number(amount ?? 0).toLocaleString("en-US")} ج.م`;
@@ -69,19 +64,14 @@ const AmountRow = ({ label, amount, variant = "", minus = false, bold = false, l
   );
 };
 
-/* ══════════════════════════════════════════
-   الصفحة الرئيسية
-══════════════════════════════════════════ */
 const TaxCalculation = () => {
-  const { id }    = useParams();
-  const navigate  = useNavigate();
+  const { id }   = useParams();
+  const navigate = useNavigate();
 
-  /* تحميل بيانات الوحدة */
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [details,         setDetails]        = useState(null);
   const [detailsError,    setDetailsError]   = useState("");
 
-  /* نموذج الإعدادات */
   const [form, setForm] = useState({
     taxYear:            CURRENT_YEAR,
     annualRentOverride: "",
@@ -90,15 +80,13 @@ const TaxCalculation = () => {
     includeAppealFee:   false,
   });
 
-  /* المعاينة */
+  const [hasAppeals,     setHasAppeals]     = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewResult,  setPreviewResult]  = useState(null);
   const [previewError,   setPreviewError]   = useState("");
-
-  /* الاعتماد */
-  const [approving,     setApproving]     = useState(false);
-  const [approveError,  setApproveError]  = useState("");
-  const [showConfirm,   setShowConfirm]   = useState(false); // ← مودال تأكيد بدلاً من window.confirm
+  const [approving,      setApproving]      = useState(false);
+  const [approveError,   setApproveError]   = useState("");
+  const [showConfirm,    setShowConfirm]    = useState(false);
 
   /* ── تحميل التفاصيل ── */
   useEffect(() => {
@@ -117,7 +105,21 @@ const TaxCalculation = () => {
     })();
   }, [id]);
 
-  /* ── حسابات مشتقة ── */
+  /* ── التحقق من وجود طعون وتفعيل السويتش تلقائياً ── */
+  useEffect(() => {
+    if (!id || !form.taxYear || Number(form.taxYear) < 2010) return;
+
+    (async () => {
+      try {
+        const result = await hasAppealsForAssessment(Number(id), Number(form.taxYear));
+        setHasAppeals(result);
+        setField("includeAppealFee", result);
+      } catch {
+        setHasAppeals(false);
+      }
+    })();
+  }, [id, form.taxYear]);
+
   const owners = useMemo(
     () => (Array.isArray(details?.owners) ? details.owners : []),
     [details],
@@ -133,7 +135,6 @@ const TaxCalculation = () => {
     [owners],
   );
 
-  /* ── بناء الـ payload ── */
   const buildPayload = () => ({
     unitId:             Number(id),
     taxYear:            Number(form.taxYear),
@@ -143,16 +144,14 @@ const TaxCalculation = () => {
     includeAppealFee:   !!form.includeAppealFee,
   });
 
-  /* ── التحقق ── */
   const validate = () => {
-    if (!id || Number(id) <= 0)                                   return "معرّف الوحدة غير صحيح";
-    if (!form.taxYear || Number(form.taxYear) < 2010)             return "يرجى إدخال سنة ضريبية صحيحة";
+    if (!id || Number(id) <= 0)                                  return "معرّف الوحدة غير صحيح";
+    if (!form.taxYear || Number(form.taxYear) < 2010)            return "يرجى إدخال سنة ضريبية صحيحة";
     if (form.annualRentOverride !== "" && Number(form.annualRentOverride) < 0)
-                                                                  return "القيمة الإيجارية لا يمكن أن تكون سالبة";
+                                                                 return "القيمة الإيجارية لا يمكن أن تكون سالبة";
     return "";
   };
 
-  /* ── معاينة ── */
   const handlePreview = async () => {
     const msg = validate();
     if (msg) { setPreviewError(msg); return; }
@@ -169,7 +168,6 @@ const TaxCalculation = () => {
     }
   };
 
-  /* ── اعتماد ── */
   const handleApprove = () => {
     const msg = validate();
     if (msg) { setApproveError(msg); return; }
@@ -193,7 +191,6 @@ const TaxCalculation = () => {
 
   const setField = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
-  /* ── حالات التحميل / الخطأ ── */
   if (loadingDetails) return (
     <Container fluid className="py-5 text-center">
       <Spinner animation="border" variant="primary" />
@@ -215,9 +212,6 @@ const TaxCalculation = () => {
     </Container>
   );
 
-  /* ══════════════════════════════
-     العرض الرئيسي
-  ══════════════════════════════ */
   return (
     <>
       <Container fluid className="py-4">
@@ -228,25 +222,18 @@ const TaxCalculation = () => {
             <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
               <div>
                 <div className="text-muted small mb-1">شاشة التقدير الضريبي</div>
-                <h4 className="fw-bold mb-1">
-                  وحدة رقم: {details.unitNumber || details.unitId}
-                </h4>
+                <h4 className="fw-bold mb-1">وحدة رقم: {details.unitNumber || details.unitId}</h4>
                 <div className="text-muted small">معرّف الوحدة: {details.unitId}</div>
               </div>
               <div className="d-flex align-items-center gap-3">
                 <TaxStatusBadge status={details.taxStatus} />
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={() => navigate("/reviewer/home")}
-                >
+                <Button variant="outline-secondary" size="sm" onClick={() => navigate("/reviewer/home")}>
                   <i className="fa-solid fa-arrow-right me-1" />
                   عودة
                 </Button>
               </div>
             </div>
 
-            {/* أخطاء */}
             {previewError && (
               <Alert variant="danger" dismissible onClose={() => setPreviewError("")} className="mb-3">
                 {previewError}
@@ -258,7 +245,7 @@ const TaxCalculation = () => {
               </Alert>
             )}
 
-            {/* ════════ بيانات الوحدة ════════ */}
+            {/* ── بيانات الوحدة ── */}
             <Card className="mb-4 shadow-sm border-0">
               <Card.Body>
                 <SectionHeading icon="fa-house" label="بيانات الوحدة والعقار" />
@@ -274,9 +261,8 @@ const TaxCalculation = () => {
               </Card.Body>
             </Card>
 
-            {/* ════════ الملاك والمستأجرون ════════ */}
+            {/* ── الملاك والمستأجرون ── */}
             <Row className="g-3 mb-4">
-              {/* الملاك */}
               <Col lg={6}>
                 <Card className="h-100 shadow-sm border-0">
                   <Card.Body>
@@ -286,17 +272,10 @@ const TaxCalculation = () => {
                     ) : (
                       <Table size="sm" bordered responsive className="mb-0 align-middle">
                         <thead className="table-light">
-                          <tr>
-                            <th>الاسم</th>
-                            <th>نوع العلاقة</th>
-                            <th>نسبة الملكية</th>
-                            <th>الهاتف</th>
-                          </tr>
+                          <tr><th>الاسم</th><th>نوع العلاقة</th><th>نسبة الملكية</th><th>الهاتف</th></tr>
                         </thead>
                         <tbody>
-                          {owners.map((o, i) => (
-                            <PersonRow key={`o-${o.ownerId ?? i}`} person={o} showShare />
-                          ))}
+                          {owners.map((o, i) => <PersonRow key={`o-${o.ownerId ?? i}`} person={o} showShare />)}
                         </tbody>
                       </Table>
                     )}
@@ -304,7 +283,6 @@ const TaxCalculation = () => {
                 </Card>
               </Col>
 
-              {/* المستأجرون */}
               <Col lg={6}>
                 <Card className="h-100 shadow-sm border-0">
                   <Card.Body>
@@ -314,16 +292,10 @@ const TaxCalculation = () => {
                     ) : (
                       <Table size="sm" bordered responsive className="mb-0 align-middle">
                         <thead className="table-light">
-                          <tr>
-                            <th>الاسم</th>
-                            <th>نوع العلاقة</th>
-                            <th>الهاتف</th>
-                          </tr>
+                          <tr><th>الاسم</th><th>نوع العلاقة</th><th>الهاتف</th></tr>
                         </thead>
                         <tbody>
-                          {tenants.map((t, i) => (
-                            <PersonRow key={`t-${t.ownerId ?? i}`} person={t} />
-                          ))}
+                          {tenants.map((t, i) => <PersonRow key={`t-${t.ownerId ?? i}`} person={t} />)}
                         </tbody>
                       </Table>
                     )}
@@ -332,14 +304,13 @@ const TaxCalculation = () => {
               </Col>
             </Row>
 
-            {/* ════════ نموذج الإعدادات ════════ */}
+            {/* ── نموذج الإعدادات ── */}
             <Card className="mb-4 shadow-sm border-0 border-top border-3 border-primary">
               <Card.Header className="bg-white border-bottom py-3">
                 <SectionHeading icon="fa-calculator" label="إعدادات التقدير الضريبي" />
               </Card.Header>
               <Card.Body>
                 <Row className="g-3">
-                  {/* السنة الضريبية */}
                   <Col md={4}>
                     <Form.Group>
                       <Form.Label className="fw-semibold small">
@@ -355,7 +326,6 @@ const TaxCalculation = () => {
                     </Form.Group>
                   </Col>
 
-                  {/* القيمة الإيجارية */}
                   <Col md={4}>
                     <Form.Group>
                       <Form.Label className="fw-semibold small">
@@ -375,7 +345,6 @@ const TaxCalculation = () => {
                     </Form.Group>
                   </Col>
 
-                  {/* الاستخدام (قراءة فقط) */}
                   <Col md={4}>
                     <Form.Group>
                       <Form.Label className="fw-semibold small">نوع الاستخدام</Form.Label>
@@ -383,7 +352,6 @@ const TaxCalculation = () => {
                     </Form.Group>
                   </Col>
 
-                  {/* المسؤول عن السداد */}
                   <Col md={6}>
                     <Form.Label className="fw-semibold small d-block">المسؤول عن السداد</Form.Label>
                     <div className="d-flex gap-4 mt-1">
@@ -400,7 +368,6 @@ const TaxCalculation = () => {
                     </div>
                   </Col>
 
-                  {/* خطة السداد */}
                   <Col md={6}>
                     <Form.Group>
                       <Form.Label className="fw-semibold small">خطة السداد</Form.Label>
@@ -414,12 +381,21 @@ const TaxCalculation = () => {
                     </Form.Group>
                   </Col>
 
-                  {/* رسوم الطعن */}
+                  {/* ── السويتش ── */}
                   <Col xs={12}>
                     <Form.Check
                       type="switch"
                       id="appeal-fee-switch"
-                      label="إضافة رسوم طعن (50 ج.م)"
+                      label={
+                        <>
+                          إضافة رسوم طعن (50 ج.م)
+                          {hasAppeals && (
+                            <Badge bg="warning" text="dark" className="ms-2 small">
+                              تفعّل تلقائياً — يوجد طعن مسجّل
+                            </Badge>
+                          )}
+                        </>
+                      }
                       checked={form.includeAppealFee}
                       onChange={(e) => setField("includeAppealFee", e.target.checked)}
                     />
@@ -442,7 +418,7 @@ const TaxCalculation = () => {
               </Card.Body>
             </Card>
 
-            {/* ════════ نتيجة المعاينة ════════ */}
+            {/* ── نتيجة المعاينة ── */}
             {previewResult && (
               <>
                 <Card className="mb-4 shadow-sm border-0">
@@ -450,37 +426,26 @@ const TaxCalculation = () => {
                     <SectionHeading icon="fa-file-invoice-dollar" label="نتيجة المعاينة الضريبية" color="info" />
                   </Card.Header>
                   <Card.Body>
-
-                    {/* رأس النتيجة */}
                     <Row className="g-3 mb-4">
                       <Col md={4}><InfoField label="المالك المستخدم في الحساب" value={previewResult.ownerName} primary /></Col>
                       <Col md={4}><InfoField label="السنة الضريبية"            value={previewResult.taxYear} /></Col>
                       <Col md={4}><InfoField label="وصف الموقع / العقار"       value={previewResult.zoneDescription} /></Col>
                     </Row>
 
-                    {/* تفاصيل الأرقام */}
                     <div className="rounded border p-3" style={{ background: "#f8f9fb" }}>
-                      <AmountRow
-                        label="القيمة الإيجارية السنوية"
-                        amount={previewResult.annualRent}
-                      />
+                      <AmountRow label="القيمة الإيجارية السنوية" amount={previewResult.annualRent} />
                       <AmountRow
                         label={`خصم الصيانة / الاستهلاك (${previewResult.discountRate}%)`}
                         amount={previewResult.discountAmount}
-                        variant="danger"
-                        minus
+                        variant="danger" minus
                       />
-                      <AmountRow
-                        label="صافي القيمة الإيجارية السنوية"
-                        amount={previewResult.netAnnualRentalValue}
-                      />
+                      <AmountRow label="صافي القيمة الإيجارية السنوية" amount={previewResult.netAnnualRentalValue} />
 
                       {Number(previewResult.exemptionAmount || 0) > 0 && (
                         <AmountRow
                           label={`إعفاء ضريبي${previewResult.exemptionReason ? ` – ${previewResult.exemptionReason}` : ""}`}
                           amount={previewResult.exemptionAmount}
-                          variant="success"
-                          minus
+                          variant="success" minus
                         />
                       )}
 
@@ -489,13 +454,9 @@ const TaxCalculation = () => {
                       <AmountRow
                         label={`الضريبة السنوية (${previewResult.taxRate}%)`}
                         amount={previewResult.annualTax}
-                        variant="success"
-                        bold
+                        variant="success" bold
                       />
-                      <AmountRow
-                        label="رسوم الطعن"
-                        amount={previewResult.appealFee}
-                      />
+                      <AmountRow label="رسوم الطعن" amount={previewResult.appealFee} />
 
                       <div
                         className="d-flex justify-content-between align-items-center mt-3 rounded p-3 border"
@@ -510,9 +471,7 @@ const TaxCalculation = () => {
                       {Number(previewResult.installmentCount || 1) > 1 && (
                         <Alert variant="info" className="mt-3 mb-0 py-2">
                           <div className="d-flex justify-content-between align-items-center">
-                            <span className="small">
-                              قيمة القسط ({previewResult.installmentCount} دفعات)
-                            </span>
+                            <span className="small">قيمة القسط ({previewResult.installmentCount} دفعات)</span>
                             <span className="fw-bold text-primary">
                               {Number(previewResult.installmentAmount ?? 0).toLocaleString("en-US")} ج.م
                             </span>
@@ -529,7 +488,6 @@ const TaxCalculation = () => {
                   </Card.Body>
                 </Card>
 
-                {/* ── زر الاعتماد ── */}
                 <div className="d-flex justify-content-end">
                   <Button
                     variant="success"
@@ -551,7 +509,7 @@ const TaxCalculation = () => {
         </Row>
       </Container>
 
-      {/* ════════ مودال تأكيد الاعتماد ════════ */}
+      {/* ── مودال تأكيد الاعتماد ── */}
       <Modal show={showConfirm} onHide={() => setShowConfirm(false)} centered>
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">تأكيد الاعتماد</Modal.Title>
@@ -568,9 +526,7 @@ const TaxCalculation = () => {
           </div>
         </Modal.Body>
         <Modal.Footer className="border-0 pt-0">
-          <Button variant="outline-secondary" onClick={() => setShowConfirm(false)}>
-            إلغاء
-          </Button>
+          <Button variant="outline-secondary" onClick={() => setShowConfirm(false)}>إلغاء</Button>
           <Button variant="success" onClick={confirmApprove}>
             <i className="fa-solid fa-check me-1" />
             نعم، اعتماد

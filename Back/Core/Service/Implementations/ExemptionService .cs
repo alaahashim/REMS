@@ -5,6 +5,7 @@ using Core.DomainLayer.Exceptions;
 using Core.ServiceAbstraction;
 using Core.Service.Specifications;
 using Shared.DTOS;
+using static Core.Service.Specifications.PendingCommitteeAppealsSpec;
 
 public class ExemptionService : IExemptionService
 {
@@ -28,7 +29,7 @@ public class ExemptionService : IExemptionService
 
         entity.CreatedBy = userId;
         entity.CreatedAt = DateTime.UtcNow;
-        entity.Status = WorkflowStatus.Pending;
+        entity.Status = ExemptionStatus.PendingCommittee;
 
         if (attachment != null && attachment.Content.Length > 0)
         {
@@ -174,7 +175,7 @@ public async Task<TaxExemptionCheckResultDto> CheckTaxExemptionAsync(
     var primaryHomeExemptions = allOwnerExemptions
         .Where(x =>
             x.OwnerId == ownerId &&
-            x.Status  == WorkflowStatus.Approved &&
+            x.Status  == ExemptionStatus.Approved &&
             IsPrimaryHomeType(x.ExemptionType))
         .OrderBy(x => x.ExemptionDate)
         .ToList();
@@ -224,5 +225,100 @@ private static bool IsPrimaryHomeType(string? type)
         "سكن رئيسي"   or
         "مسكن رئيسي"  or
         "الوحدة السكنية الأساسية";
+}
+
+#region Committee
+public async Task<IEnumerable<CommitteeExemptionDto>> GetCommitteeExemptionsAsync()
+{
+    var repo =
+        _unitOfWork.GetRepository<Exemption, int>();
+
+    var exemptions =
+        await repo.GetAllAsync(
+            new PendingCommitteeExemptionsSpec());
+
+    return _mapper.Map<IEnumerable<CommitteeExemptionDto>>(exemptions);
+}
+public async Task CommitteeDecisionAsync(
+    int exemptionId,
+    CommitteeDecisionDto dto,
+    int committeeUserId)
+{
+    var repo =
+        _unitOfWork.GetRepository<Exemption,int>();
+
+    var exemption =
+        await repo.GetByIdAsync(exemptionId);
+
+    if (exemption == null)
+        throw new NotFoundException("Exemption not found");
+
+    if (exemption.Status != ExemptionStatus.PendingCommittee)
+        throw new BusinessException("تمت مراجعة الطلب بالفعل");
+
+    exemption.CommitteeVerdict = dto.Verdict;
+
+    exemption.CommitteeNote = dto.Note;
+
+    exemption.CommitteeDecisionDate = DateTime.UtcNow;
+
+    exemption.CommitteeUserId = committeeUserId;
+
+    exemption.Status =
+        ExemptionStatus.PendingManager;
+
+    repo.Update(exemption);
+
+    await _unitOfWork.SaveChangesAsync();
+}
+#endregion
+
+
+
+public async Task<AttachmentDownloadDto?> GetAttachmentAsync(int exemptionId)
+{
+    var repo = _unitOfWork.GetRepository<Exemption, int>();
+
+    var exemption = (await repo.GetAllAsync(new ExemptionWithAttachmentsSpec(exemptionId)))
+        .FirstOrDefault();
+
+    if (exemption == null)
+        throw new NotFoundException("طلب الإعفاء غير موجود");
+
+    var attachment = exemption.Attachments.FirstOrDefault();
+
+    if (attachment == null)
+        return null;
+
+    var fullPath = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "wwwroot",
+        attachment.FilePath.Replace("/", Path.DirectorySeparatorChar.ToString()));
+
+    if (!File.Exists(fullPath))
+        throw new NotFoundException("الملف غير موجود");
+
+    return new AttachmentDownloadDto
+    {
+        FullPath = fullPath,
+        FileName = Path.GetFileName(fullPath),
+        ContentType = GetContentType(fullPath)
+    };
+}
+
+private static string GetContentType(string path)
+{
+    var extension = Path.GetExtension(path).ToLower();
+
+    return extension switch
+    {
+        ".pdf" => "application/pdf",
+        ".png" => "image/png",
+        ".jpg" => "image/jpeg",
+        ".jpeg" => "image/jpeg",
+        ".doc" => "application/msword",
+        ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        _ => "application/octet-stream"
+    };
 }
 }
