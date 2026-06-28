@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, Container, Spinner, Table, Modal, Form } from 'react-bootstrap';
 import { getAppeals, committeeDecision } from '../../services/committeeService';
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const CommitteeAppeals = () => {
+  const { lang } = useLanguage(); 
   const [appeals, setAppeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAppeal, setSelectedAppeal] = useState(null);
@@ -67,7 +76,6 @@ const CommitteeAppeals = () => {
     }
   };
 
-const pendingAppeals =appeals.filter(x=>x.status==="PendingCommittee");
   return (
     <Container fluid className="mt-4">
       <Card className="mb-3">
@@ -102,32 +110,23 @@ const pendingAppeals =appeals.filter(x=>x.status==="PendingCommittee");
                   <tr key={appeal.id} className="table-action-row">
                     <td className="fw-bold text-primary">#{appeal.id}</td>
                     <td>{appeal.unitNumber}</td>
-                    <td>{appeal.personName ||  '-'}</td>
-                    <td style={{ maxWidth: 260 }}>{appeal.appealReason || '-'}</td>
+                    <td><DynText text={appeal.personName} lang={lang} /></td>
+                    <td style={{ maxWidth: 260 }}><DynText text={appeal.appealReason} lang={lang} /></td>
                     <td>
-                      {appeal.status==="PendingCommittee" ? <Badge bg="warning">معلقة للجنة</Badge> :
-                       appeal.status==="PendingManager" ? <Badge bg="info">معروضة على المدير</Badge> :
+                      {appeal.status === "PendingCommittee" ? <Badge bg="warning">معلقة للجنة</Badge> :
+                       appeal.status === "PendingManager" ? <Badge bg="info">معروضة على المدير</Badge> :
                        <Badge bg="secondary">{appeal.status}</Badge>}
                     </td>
                     <td>
                       {appeal.status === "PendingCommittee" ? (
-    <Button
-      size="sm"
-      variant="primary"
-      onClick={() => openDecisionModal(appeal)}
-    >
-      إصدار توصية
-    </Button>
-) : (
-    <Button
-      size="sm"
-      variant="secondary"
-      disabled
-    >
-      تم الإرسال
-    </Button>
-)}
-                
+                        <Button size="sm" variant="primary" onClick={() => openDecisionModal(appeal)}>
+                          إصدار توصية
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="secondary" disabled>
+                          تم الإرسال
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -145,7 +144,7 @@ const pendingAppeals =appeals.filter(x=>x.status==="PendingCommittee");
           {selectedAppeal && (
             <>
               <Alert variant="secondary">
-               <strong>الوحدة:</strong> {selectedAppeal.unitNumber}| <strong>سبب الطعن:</strong> {selectedAppeal.appealReason || '-'}
+                <span><strong>الوحدة:</strong> {selectedAppeal.unitNumber}</span> | <span><strong>سبب الطعن:</strong> <DynText text={selectedAppeal.appealReason || '-'} lang={lang} /></span>
               </Alert>
 
               <Form.Group className="mb-3">
@@ -160,13 +159,22 @@ const pendingAppeals =appeals.filter(x=>x.status==="PendingCommittee");
               {verdict === 'Accept' && (
                 <Form.Group className="mb-3">
                   <Form.Label>الضريبة المقترحة بعد قبول الطعن</Form.Label>
-                  <Form.Control type="number" value={newTaxAmount} onChange={(event) => setNewTaxAmount(event.target.value)} />
+                  <Form.Control 
+                    type="number" 
+                    value={newTaxAmount} 
+                    onChange={(event) => setNewTaxAmount(event.target.value)} 
+                  />
                 </Form.Group>
               )}
 
               <Form.Group>
                 <Form.Label>ملاحظات اللجنة</Form.Label>
-                <Form.Control as="textarea" rows={3} value={committeeNote} onChange={(event) => setCommitteeNote(event.target.value)} />
+                <Form.Control 
+                  as="textarea" 
+                  rows={3} 
+                  value={committeeNote} 
+                  onChange={(event) => setCommitteeNote(event.target.value)} 
+                />
               </Form.Group>
             </>
           )}

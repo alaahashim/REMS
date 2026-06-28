@@ -1,11 +1,15 @@
-import { openExemptionAttachment } from "../../services/exemptionService";
 import React, { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, Container, Spinner, Table, Modal, Form } from 'react-bootstrap';
-import {
-    getExemptions,
-    committeeExemptionDecision
-}
-from "../../services/committeeService";
+import { getExemptions, committeeExemptionDecision } from "../../services/committeeService";
+import { openExemptionAttachment } from "../../services/exemptionService";
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const exemptionLabels = {
   basic_unit: 'الوحدة السكنية الأساسية',
@@ -15,6 +19,7 @@ const exemptionLabels = {
 };
 
 const CommitteeExemptions = () => {
+  const { lang } = useLanguage(); 
   const [exemptions, setExemptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedExemption, setSelectedExemption] = useState(null);
@@ -26,7 +31,6 @@ const CommitteeExemptions = () => {
     setLoading(true);
     try {
       const exemptionsData = await getExemptions();
-
       setExemptions(exemptionsData);
     } finally {
       setLoading(false);
@@ -72,8 +76,6 @@ const CommitteeExemptions = () => {
     }
   };
 
-  const pendingExemptions = exemptions.filter((exemption) => exemption.status === 'PendingCommittee');
-
   return (
     <Container fluid className="mt-4">
       <Card className="mb-3">
@@ -103,27 +105,21 @@ const CommitteeExemptions = () => {
               </thead>
               <tbody>
                 {exemptions.length === 0 ? (
-                  <tr><td colSpan="7" className="text-center text-muted py-4">لا توجد طلبات إعفاء</td></tr>
+                  <tr><td colSpan="6" className="text-center text-muted py-4">لا توجد طلبات إعفاء</td></tr>
                 ) : exemptions.map((exemption) => (
                   <tr key={exemption.id} className="table-action-row">
                     <td className="fw-bold text-primary">#{exemption.id}</td>
-                    <td>{exemption.personName || exemption.personId || '-'}</td>
-                    <td>{exemptionLabels[exemption.exemptionType] || exemption.exemptionType || '-'}</td>
+                    <td><DynText text={exemption.personName || exemption.personId} lang={lang} /></td>
+                    <td><DynText text={exemptionLabels[exemption.exemptionType] || exemption.exemptionType} lang={lang} /></td>
                     <td>
-    {exemption.fileName ? (
-        <Button
-    size="sm"
-    variant="outline-primary"
-    onClick={() => openExemptionAttachment(exemption.id)}
->
-    فتح الملف
-</Button>
-    ) : (
-        <span className="text-muted">
-            لا يوجد
-        </span>
-    )}
-</td>
+                      {exemption.fileName ? (
+                        <Button size="sm" variant="outline-primary" onClick={() => openExemptionAttachment(exemption.id)}>
+                          فتح الملف
+                        </Button>
+                      ) : (
+                        <span className="text-muted">لا يوجد</span>
+                      )}
+                    </td>
                     <td>
                       {exemption.status === 'PendingCommittee' ? <Badge bg="warning">معلقة للجنة</Badge> :
                        exemption.status === 'PendingManager' ? <Badge bg="info">معروضة على المدير</Badge> :
@@ -154,7 +150,7 @@ const CommitteeExemptions = () => {
           {selectedExemption && (
             <>
               <Alert variant="secondary">
-                <strong>العقار:</strong> {selectedExemption.propertyId || '-'} | <strong>نوع الإعفاء:</strong> {exemptionLabels[selectedExemption.exemptionType] || selectedExemption.exemptionType || '-'}
+                <span>العقار:</span> {selectedExemption.propertyId || '-'} | <span>نوع الإعفاء:</span> <DynText text={exemptionLabels[selectedExemption.exemptionType] || selectedExemption.exemptionType || '-'} lang={lang} />
               </Alert>
 
               <Form.Group className="mb-3">

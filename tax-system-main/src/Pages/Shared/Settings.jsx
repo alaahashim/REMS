@@ -1,6 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Form, Row } from 'react-bootstrap';
 import { useLanguage } from '../../context/LanguageContext';
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation';
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const BACKUP_KEYS = [
   'tax_admin_profile',
@@ -82,7 +89,7 @@ const arrayToCsv = (rows) => {
 };
 
 const SettingsPage = () => {
-  const { lang, toggleLanguage, t } = useLanguage();
+  const { lang, toggleLanguage } = useLanguage();
   const [message, setMessage] = useState('');
   const [preferences, setPreferences] = useState(() => {
     const saved = JSON.parse(localStorage.getItem('tax_settings') || '{}');
@@ -122,7 +129,7 @@ const SettingsPage = () => {
 
   const handleSave = () => {
     localStorage.setItem('tax_settings', JSON.stringify(preferences));
-    setMessage(t('settingsSaved'));
+    setMessage('تم حفظ الإعدادات');
   };
 
   const handleBackup = () => {
@@ -141,7 +148,7 @@ const SettingsPage = () => {
       JSON.stringify(backup, null, 2),
       'application/json;charset=utf-8'
     );
-    setMessage(lang === 'ar' ? 'تم إنشاء نسخة احتياطية بنجاح' : 'Backup created successfully');
+    setMessage('تم إنشاء نسخة احتياطية بنجاح');
   };
 
   const handleExport = () => {
@@ -156,24 +163,22 @@ const SettingsPage = () => {
       sections.join('\n\n'),
       'text/csv;charset=utf-8'
     );
-    setMessage(lang === 'ar' ? 'تم تصدير البيانات بنجاح' : 'Data exported successfully');
+    setMessage('تم تصدير البيانات بنجاح');
   };
 
   return (
     <div className="settings-page p-3 p-md-4">
       <div className="settings-hero mb-4">
         <div>
-          <div className="settings-kicker">{lang === 'ar' ? 'مركز التحكم' : 'Control Center'}</div>
-          <h3 className="mb-1">{t('settings')}</h3>
+          <div className="settings-kicker">مركز التحكم</div>
+          <h3 className="mb-1">الإعدادات</h3>
           <p className="mb-0 text-muted">
-            {lang === 'ar'
-              ? 'تحكم في شكل النظام، اللغة، والتنبيهات مع أدوات حفظ وتصدير البيانات.'
-              : 'Manage appearance, language, alerts, backup, and exports.'}
+            تحكم في شكل النظام، اللغة، والتنبيهات مع أدوات حفظ وتصدير البيانات.
           </p>
         </div>
         <Badge bg="light" text="dark" className="settings-status">
           <i className="fa-solid fa-database"></i>
-          {storageSummary.records} {lang === 'ar' ? 'سجل محفوظ' : 'saved records'}
+          {storageSummary.records} سجل محفوظ
         </Badge>
       </div>
 
@@ -190,38 +195,38 @@ const SettingsPage = () => {
               <div className="settings-panel-title">
                 <span className="settings-icon"><i className="fa-solid fa-sliders"></i></span>
                 <div>
-                  <h5>{lang === 'ar' ? 'تفضيلات الواجهة' : 'Interface Preferences'}</h5>
-                  <p>{lang === 'ar' ? 'اختاري شكل وتجربة الاستخدام المناسبة.' : 'Choose the display and interaction style.'}</p>
+                  <h5>تفضيلات الواجهة</h5>
+                  <p>اختاري شكل وتجربة الاستخدام المناسبة.</p>
                 </div>
               </div>
 
               <div className="settings-option">
                 <div>
-                  <strong>{t('emailAlerts')}</strong>
-                  <small>{lang === 'ar' ? 'تفعيل تنبيهات المتصفح عند توفرها.' : 'Enable browser alerts when available.'}</small>
+                  <strong>تنبيهات البريد الإلكتروني</strong>
+                  <small>تفعيل تنبيهات المتصفح عند توفرها.</small>
                 </div>
                 <Form.Check type="switch" id="email-alerts" checked={preferences.emailAlerts} onChange={() => updatePreference('emailAlerts')} />
               </div>
 
               <div className="settings-option">
                 <div>
-                  <strong>{t('compactView')}</strong>
-                  <small>{lang === 'ar' ? 'تقليل المسافات لعرض بيانات أكثر.' : 'Reduce spacing to show more data.'}</small>
+                  <strong>عرض مضغوط</strong>
+                  <small>تقليل المسافات لعرض بيانات أكثر.</small>
                 </div>
                 <Form.Check type="switch" id="compact-view" checked={preferences.compactView} onChange={() => updatePreference('compactView')} />
               </div>
 
               <div className="settings-option">
                 <div>
-                  <strong>{t('darkMode')}</strong>
-                  <small>{lang === 'ar' ? 'تبديل ألوان النظام للوضع الليلي.' : 'Switch the system colors to dark mode.'}</small>
+                  <strong>الوضع الليلي</strong>
+                  <small>تبديل ألوان النظام للوضع الليلي.</small>
                 </div>
                 <Form.Check type="switch" id="dark-mode" checked={preferences.darkMode} onChange={() => updatePreference('darkMode')} />
               </div>
 
               <Button className="mt-3" variant="primary" onClick={handleSave}>
                 <i className="fa-solid fa-floppy-disk"></i>
-                {t('save')}
+                حفظ
               </Button>
             </Card.Body>
           </Card>
@@ -233,16 +238,16 @@ const SettingsPage = () => {
               <div className="settings-panel-title">
                 <span className="settings-icon"><i className="fa-solid fa-language"></i></span>
                 <div>
-                  <h5>{t('language')}</h5>
-                  <p>{lang === 'ar' ? 'تغيير اللغة والاتجاه لكل النظام.' : 'Change language and layout direction.'}</p>
+                  <h5>اللغة</h5>
+                  <p>تغيير اللغة والاتجاه لكل النظام.</p>
                 </div>
               </div>
 
               <div className="language-card">
-                <span>{lang === 'ar' ? 'العربية مفعلة الآن' : 'English is active'}</span>
+                <span>العربية مفعلة الآن</span>
                 <Button variant="outline-primary" onClick={() => toggleLanguage()}>
                   <i className="fa-solid fa-globe"></i>
-                  {lang === 'ar' ? 'English' : 'العربية'}
+                  English
                 </Button>
               </div>
             </Card.Body>
@@ -255,8 +260,8 @@ const SettingsPage = () => {
               <div className="settings-panel-title">
                 <span className="settings-icon"><i className="fa-solid fa-shield-halved"></i></span>
                 <div>
-                  <h5>{lang === 'ar' ? 'النسخ الاحتياطي والتصدير' : 'Backup & Export'}</h5>
-                  <p>{lang === 'ar' ? 'احتفظي بنسخة كاملة أو صدّري الجداول الأساسية.' : 'Keep a full backup or export the main tables.'}</p>
+                  <h5>النسخ الاحتياطي والتصدير</h5>
+                  <p>احتفظي بنسخة كاملة أو صدّري الجداول الأساسية.</p>
                 </div>
               </div>
 
@@ -265,12 +270,12 @@ const SettingsPage = () => {
                   <div className="data-action">
                     <i className="fa-solid fa-box-archive"></i>
                     <div>
-                      <h6>{lang === 'ar' ? 'Backup' : 'Backup'}</h6>
-                      <p>{lang === 'ar' ? 'تنزيل ملف JSON يحتوي على بيانات النظام المحفوظة محليًا.' : 'Download a JSON file with locally stored system data.'}</p>
+                      <h6>النسخ الاحتياطي</h6>
+                      <p>تنزيل ملف JSON يحتوي على بيانات النظام المحفوظة محليًا.</p>
                     </div>
                     <Button variant="success" onClick={handleBackup}>
                       <i className="fa-solid fa-download"></i>
-                      {lang === 'ar' ? 'إنشاء نسخة' : 'Create Backup'}
+                      إنشاء نسخة
                     </Button>
                   </div>
                 </Col>
@@ -278,12 +283,12 @@ const SettingsPage = () => {
                   <div className="data-action">
                     <i className="fa-solid fa-file-export"></i>
                     <div>
-                      <h6>{lang === 'ar' ? 'Export' : 'Export'}</h6>
-                      <p>{lang === 'ar' ? 'تصدير البيانات الأساسية في ملف CSV قابل للفتح في Excel.' : 'Export main data as a CSV file for Excel.'}</p>
+                      <h6>تصدير البيانات</h6>
+                      <p>تصدير البيانات الأساسية في ملف CSV قابل للفتح في Excel.</p>
                     </div>
                     <Button variant="outline-primary" onClick={handleExport}>
                       <i className="fa-solid fa-file-arrow-down"></i>
-                      {lang === 'ar' ? 'تصدير CSV' : 'Export CSV'}
+                      تصدير CSV
                     </Button>
                   </div>
                 </Col>

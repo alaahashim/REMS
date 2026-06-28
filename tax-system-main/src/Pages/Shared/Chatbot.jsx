@@ -2,12 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Container, Card, Form, Button, InputGroup, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 // ========================================== //
 // دالة الاتصال بالباك إند (اللي أرسلتها رحاب) //
 // ========================================== //
 async function sendTaxQuestionToAgent(userInput) {
-    // الرابط السحري الخاص بكِ من شاشة ngrok
     const apiUrl = "https://defiling-catty-unblended.ngrok-free.dev/api/chat"; 
 
     try {
@@ -17,8 +24,8 @@ async function sendTaxQuestionToAgent(userInput) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                session_id: "rems_tax_chat_session", // معرف الجلسة للمحادثة
-                question: userInput                 // السؤال المكتوب في واجهة الـ Frontend
+                session_id: "rems_tax_chat_session", 
+                question: userInput                 
             })
         });
 
@@ -29,7 +36,6 @@ async function sendTaxQuestionToAgent(userInput) {
         const data = await response.json();
         
         if (data.status === "success") {
-            // إرجاع الإجابة الضريبية القادمة من الـ LangGraph Agent الخاص بكِ
             return data.answer; 
         } else {
             return "المعذرة، حدث خطأ أثناء معالجة الرد من السيرفر.";
@@ -41,24 +47,22 @@ async function sendTaxQuestionToAgent(userInput) {
     }
 }
 
-
 // ========================================== //
 // مكوّن الشات بوت الرئيسي                   //
 // ========================================== //
 const Chatbot = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { lang } = useLanguage(); 
   
   const [messages, setMessages] = useState([
     { sender: 'bot', text: 'أهلاً بك في نظام المساعدة الذكي. كيف أساعدك اليوم؟' }
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // حالة التحميل الجديدة
+  const [isLoading, setIsLoading] = useState(false); 
   
-  // مرجع للـ Auto Scroll
   const messagesEndRef = useRef(null);
 
-  // دالة تنزيل الشاشة للأسفل تلقائياً
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -67,32 +71,27 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // دالة إرسال الرسالة (تم التعديل لتتصل بالباك إند)
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return; // منع الإرسال إذا كان فارغاً أو يتم التحميل
+    if (!input.trim() || isLoading) return; 
 
     const userMsg = { sender: 'user', text: input };
     setMessages(prev => [...prev, userMsg]);
     
     const questionText = input;
-    setInput(''); // تفريغ حقل الكتابة فوراً
-    setIsLoading(true); // تفعيل حالة التحميل
+    setInput(''); 
+    setIsLoading(true); 
 
     try {
-      // استدعاء دالة الباك إند والانتظار حتى ترجع بالرد
       const botReply = await sendTaxQuestionToAgent(questionText);
-      
-      // إضافة رد البوت
       setMessages(prev => [...prev, { sender: 'bot', text: botReply }]);
     } catch (error) {
       setMessages(prev => [...prev, { sender: 'bot', text: "حدث خطأ غير متوقع في الواجهة." }]);
     } finally {
-      setIsLoading(false); // إيقاف حالة التحميل سواء نجح أو فشل
+      setIsLoading(false); 
     }
   };
 
-  // دالة العودة الذكية
   const handleBackToHome = () => {
     if (!user) return;
     const role = user.role;
@@ -139,7 +138,6 @@ const Chatbot = () => {
                 <div key={index} className={`d-flex ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
                   <div className="d-flex align-items-end gap-2" style={{ maxWidth: '75%' }}>
                     
-                    {/* أيقونة البوت */}
                     {msg.sender === 'bot' && (
                       <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '30px', height: '30px', fontSize: '14px' }}>
                         <i className="fa-solid fa-robot"></i>
@@ -150,10 +148,11 @@ const Chatbot = () => {
                       className={`p-3 rounded-4 ${msg.sender === 'user' ? 'bg-primary text-white rounded-bottom-right-0' : 'bg-white text-dark border rounded-bottom-left-0'}`}
                       style={{ boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}
                     >
-                      <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{msg.text}</div>
+                      <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                        <DynText text={msg.text} lang={lang} />
+                      </div>
                     </div>
 
-                    {/* أيقونة المستخدم */}
                     {msg.sender === 'user' && (
                       <div className="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '30px', height: '30px', fontSize: '14px' }}>
                         <i className="fa-solid fa-user"></i>
@@ -182,7 +181,6 @@ const Chatbot = () => {
                 </div>
               )}
               
-              {/* المكان اللي بينزل عليه السكرول */}
               <div ref={messagesEndRef} />
             </div>
           </Card.Body>
@@ -195,7 +193,7 @@ const Chatbot = () => {
                   placeholder="اكتب استفسارك هنا..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  disabled={isLoading} // قفل الإدخال أثناء التحميل
+                  disabled={isLoading} 
                   className="border-end-0"
                 />
                 <Button variant="primary" type="submit" disabled={isLoading} className="d-flex align-items-center gap-2 px-4">
@@ -211,7 +209,6 @@ const Chatbot = () => {
         </Card>
       </div>
 
-      {/* كود CSS بسيط علشان يشتغل مؤشر الكتابة */}
       <style>{`
         @keyframes pulse {
           0% { opacity: 0.3; transform: scale(0.8); }

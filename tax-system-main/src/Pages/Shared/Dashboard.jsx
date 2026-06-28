@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Container, Row, Col, Card, Spinner, Table, Tabs, Tab, Badge, Button } from 'react-bootstrap';
 import { useDataContext } from '../../context/DataContext';
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
 
 // استيراد الخدمات
 import { getUnits, getProperties } from '../../services/propertyService';
@@ -12,10 +14,16 @@ import { getSystemLogs } from '../../services/adminService';
 import { deleteExemption, getExemptions as getExemptionsDirect } from '../../services/exemptionService';
 import { deleteAppeal } from '../../services/appealService';
 
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
+
 const Dashboard = () => {
   const location = useLocation();
-  // ملاحظة: أزلنا getExemptions من هنا وسنستخدم الاستيراد المباشر
   const { getAssignments, getAppeals, fetchData } = useDataContext(); 
+  const { lang } = useLanguage(); 
 
   const [loading, setLoading] = useState(true);
   
@@ -35,12 +43,9 @@ const Dashboard = () => {
     const fetchDashboard = async () => {
       setLoading(true);
       try {
-        // 1. تحديث الكونتكست (للأشياء الأخرى)
         await fetchData();
         
-        // 2. جلب الإعفاءات مباشرة من السيرفيس (لضمان قراءة أحدث البيانات)
         const exempts = await getExemptionsDirect(); 
-        
         const assigns = await getAssignments();
         const appels = await getAppeals();
         
@@ -48,7 +53,6 @@ const Dashboard = () => {
         setAssignments(assigns);
         setAppeals(appels);
 
-        // 3. جلب البيانات الأخرى
         const [unitsData, propsData, govData, centerData, systemLogs] = await Promise.all([
           getUnits(),
           getProperties(),
@@ -114,13 +118,12 @@ const Dashboard = () => {
       alert(error.message || "فشل الحذف");
     }
   };
-  // --------------------
 
   return (
     <Container fluid className="mt-4">
       <Row className="mb-4">
         <Col>
-          <h3 className="text-primary fw-bold">لوحة التحكم الموحدة (System Dashboard)</h3>
+          <h3 className="text-primary fw-bold">لوحة التحكم الموحدة</h3>
           <p className="text-muted mb-0">نظرة عامة على المباني والوحدات والنشاطات الضريبية</p>
         </Col>
       </Row>
@@ -200,15 +203,15 @@ const Dashboard = () => {
                       <tr key={log.id || index}>
                         <td>{index + 1}</td>
                         <td style={{ fontSize: '0.9rem' }}>{new Date(log.date).toLocaleString('ar-EG')}</td>
-                        <td>{log.employeeName || '-'}</td>
-                        <td>{log.user || '-'}</td>
+                        <td><DynText text={log.employeeName} lang={lang} /></td>
+                        <td><DynText text={log.user} lang={lang} /></td>
                         <td>
                           <Badge bg={log.action === 'INSERT' ? 'success' : log.action === 'DELETE' ? 'danger' : 'warning'} className="fw-normal">
                             {log.action}
                           </Badge>
                         </td>
                         <td>{log.entity || log.table || '-'}</td>
-                        <td style={{ fontSize: '0.85rem', maxWidth: '250px' }} className="text-muted">{log.details || log.changeDetails || '-'}</td>
+                        <td style={{ fontSize: '0.85rem', maxWidth: '250px' }} className="text-muted"><DynText text={log.details || log.changeDetails} lang={lang} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -249,10 +252,10 @@ const Dashboard = () => {
                             return (
                               <tr key={unit.id}>
                                 <td>{index + 1}</td>
-                                <td className="fw-bold text-primary">Unit #{unit.id}</td>
-                                <td>{unit.unitType} (دور {unit.floor})</td>
-                                <td><small>{address}</small></td>
-                                <td>{parentProperty?.ownerName || 'غير معروف'}</td>
+                                <td className="fw-bold text-primary"><span>وحدة رقم:</span> {unit.id}</td>
+                                <td><DynText text={unit.unitType} lang={lang} /> (<span>دور </span>{unit.floor})</td>
+                                <td><small><DynText text={address} lang={lang} /></small></td>
+                                <td><DynText text={parentProperty?.ownerName || 'غير معروف'} lang={lang} /></td>
                                 <td>
                                   {unit.status === 'Paid' ? <Badge bg="success">مدفوع</Badge> : 
                                    unit.status === 'New' ? <Badge bg="warning">جديد</Badge> :
@@ -268,7 +271,6 @@ const Dashboard = () => {
                   )}
                 </Tab>
 
-                {/* تبويب الإعفاءات */}
                 <Tab eventKey="exemptions" title={<span className="text-info fw-bold">الإعفاءات</span>}>
                   {loading ? (
                     <div className="text-center p-5"><Spinner animation="border" /></div>
@@ -286,7 +288,7 @@ const Dashboard = () => {
                           exemptions.map((ex, index) => (
                             <tr key={ex.id}>
                               <td>{index + 1}</td>
-                              <td>{getExemptionType(ex.exemptionType)}</td>
+                              <td><DynText text={getExemptionType(ex.exemptionType)} lang={lang} /></td>
                               <td>{ex.propertyId}</td>
                               <td>{safeDate(ex.createdAt)}</td>
                               <td>
@@ -299,7 +301,6 @@ const Dashboard = () => {
                                 {ex.fileName ? <a href={ex.fileData} download={ex.fileName} className="btn btn-sm btn-outline-info"><i className="fa-solid fa-download"></i></a> : <span className="text-muted">-</span>}
                               </td>
                               <td>
-                                {/* زر الحذف يظهر فقط للحالة المعلقة */}
                                 {ex.status === 'Pending' || ex.status === 'Under Review' ? (
                                   <Button variant="outline-danger" size="sm" onClick={() => handleDeleteExemption(ex.id)}>
                                     <i className="fa-solid fa-trash"></i>
@@ -328,7 +329,7 @@ const Dashboard = () => {
                                 <tr key={assign.id || index}>
                                     <td>{index + 1}</td>
                                     <td>{assign.propertyId}</td>
-                                    <td>{assign.personName || 'غير محدد'}</td>
+                                    <td><DynText text={assign.personName || 'غير محدد'} lang={lang} /></td>
                                     <td>{assign.personId}</td>
                                     <td><Badge bg={assign.roleType === 'Owner' ? 'primary' : 'secondary'}>{assign.roleType === 'Owner' ? 'مالك' : 'مستأجر'}</Badge></td>
                                     <td>{safeDate(assign.startDate)}</td>
@@ -356,8 +357,8 @@ const Dashboard = () => {
                           appeals.map((appeal, index) => (
                             <tr key={appeal.id}>
                               <td>{index + 1}</td>
-                              <td className="fw-bold">Unit #{appeal.unitId}</td>
-                              <td style={{ maxWidth: '200px' }}>{appeal.appealReason}</td>
+                              <td className="fw-bold"><span>وحدة رقم:</span> {appeal.unitId}</td>
+                              <td style={{ maxWidth: '200px' }}><DynText text={appeal.appealReason} lang={lang} /></td>
                               <td>{safeDate(appeal.createdAt)}</td>
                               <td>
                                 {appeal.status === 'Pending_Payment' ? <Badge bg="warning">بانتظار الرسم</Badge> :

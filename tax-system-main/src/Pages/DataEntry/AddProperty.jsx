@@ -220,7 +220,7 @@ const AddProperty = () => {
                   <Col md={8}>
                     <Form.Group className="mb-3">
                       <Form.Label className="text-primary fw-bold">وصف العقار</Form.Label>
-                      <Form.Control as="textarea" rows={2} name="description" value={propertyData.description} onChange={handlePropertyChange} placeholder="اكتب وصف العقار..." />
+                      <Form.Control as="textarea" rows={2} name="description" value={propertyData.description} onChange={handlePropertyChange} placeholder=" وصف العقار..." />
                     </Form.Group>
                   </Col>
                 </Row>

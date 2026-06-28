@@ -3,6 +3,13 @@ import { Nav, Button, Badge } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation';
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 // ─── ثوابت ───────────────────────────────────────────────────────────────────
 const ROLES_MAP = {
@@ -17,7 +24,7 @@ const ROLES_MAP = {
 // ─── المكوّن الرئيسي ──────────────────────────────────────────────────────────
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
-  const { lang, translations } = useLanguage();
+  const { lang } = useLanguage();
   const navigate  = useNavigate();
   const location  = useLocation();
 
@@ -72,7 +79,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           <div className="mb-3 text-center">
             <small className="text-uppercase text-white fw-bold mb-1 d-block">مستخدم حالي</small>
             <div className="fw-bold fs-5 text-white text-truncate mb-1">
-              {user ? user.name : 'Guest'}
+              {user ? <DynText text={user.name} lang={lang} /> : 'زائر'}
             </div>
             <Badge bg="light" text="dark" className="px-2 py-1 fw-bold">
               {translateRole(role)}
@@ -141,29 +148,17 @@ const Sidebar = ({ isOpen, onClose }) => {
               </>
             )}
 
-            {/* ── لجنة الطعون ── */}
-           {/* ── لجنة الطعون والإعفاءات ── */}
-{role === 'Committee' && (
-  <>
-    <Nav.Link
-      onClick={() => handleNavigate('/committee/appeals')}
-      style={linkStyle('/committee/appeals')}
-      active={isActivePath('/committee/appeals')}
-    >
-      <i className="fa-solid fa-gavel me-2" />
-      لجنة الطعون
-    </Nav.Link>
-
-    <Nav.Link
-      onClick={() => handleNavigate('/committee/exemptions')}
-      style={linkStyle('/committee/exemptions')}
-      active={isActivePath('/committee/exemptions')}
-    >
-      <i className="fa-solid fa-shield-halved me-2" />
-      لجنة الإعفاءات
-    </Nav.Link>
-  </>
-)}
+            {/* ── لجنة الطعون والإعفاءات ── */}
+            {role === 'Committee' && (
+              <>
+                <Nav.Link onClick={() => handleNavigate('/committee/appeals')} style={linkStyle('/committee/appeals')} active={isActivePath('/committee/appeals')}>
+                  <i className="fa-solid fa-gavel me-2" /> لجنة الطعون
+                </Nav.Link>
+                <Nav.Link onClick={() => handleNavigate('/committee/exemptions')} style={linkStyle('/committee/exemptions')} active={isActivePath('/committee/exemptions')}>
+                  <i className="fa-solid fa-shield-halved me-2" /> لجنة الإعفاءات
+                </Nav.Link>
+              </>
+            )}
 
             {/* ── الأدمن ── */}
             {role === 'Admin' && (

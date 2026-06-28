@@ -1,5 +1,13 @@
 import React from 'react';
 import { Dropdown, Badge } from 'react-bootstrap';
+import { useLanguage } from '../../context/LanguageContext';
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation';
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const NotificationDropdown = () => {
   // بيانات وهمية للإشعارات
@@ -31,8 +39,8 @@ const NotificationDropdown = () => {
               <div className="d-flex align-items-start">
                 <div className={`me-2 mt-1`} style={{width: '8px', height: '8px', borderRadius:'50%', backgroundColor: not.type==='success'?'green': (not.type==='danger'?'red':'blue')}}></div>
                 <div>
-                  <p className="mb-0 small text-secondary">{not.text}</p>
-                  <small className="text-muted" style={{fontSize:'0.7rem'}}>{not.time}</small>
+                  <p className="mb-0 small text-secondary"><DynText text={not.text} lang={useLanguage().lang} /></p>
+                  <small className="text-muted" style={{fontSize:'0.7rem'}}><DynText text={not.time} lang={useLanguage().lang} /></small>
                 </div>
               </div>
             </Dropdown.Item>

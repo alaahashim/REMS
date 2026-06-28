@@ -2,10 +2,17 @@ import React, { useState } from 'react';
 import { Button, Card, Col, Form, Row, Alert } from 'react-bootstrap';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation';
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const ProfilePage = () => {
   const { user, updateCurrentUser } = useAuth();
-  const { t } = useLanguage();
+  const { lang } = useLanguage();
   const [form, setForm] = useState(() => ({
     name: user?.name || '',
     username: user?.username || '',
@@ -31,7 +38,7 @@ const ProfilePage = () => {
 
   const handleSave = () => {
     if (!form.username.trim() || !form.password.trim()) {
-      setMessage(t('usernamePasswordRequired'));
+      setMessage('اسم المستخدم وكلمة المرور مطلوبان');
       return;
     }
 
@@ -41,7 +48,7 @@ const ProfilePage = () => {
     );
 
     if (duplicate) {
-      setMessage(t('usernameExists'));
+      setMessage('اسم المستخدم موجود بالفعل');
       return;
     }
 
@@ -50,7 +57,7 @@ const ProfilePage = () => {
       username: form.username.trim(),
       password: form.password.trim()
     });
-    setMessage(t('changesSaved'));
+    setMessage('تم حفظ التغييرات بنجاح');
   };
 
   return (
@@ -69,12 +76,12 @@ const ProfilePage = () => {
               />
             </div>
             <div>
-              <h4 className="mb-1 fw-bold">{form.name || form.username || 'User'}</h4>
-              <p className="text-muted mb-0">{user?.role || 'User'}</p>
+              <h4 className="mb-1 fw-bold"><DynText text={form.name || form.username || 'مستخدم حالي'} lang={lang} /></h4>
+              <p className="text-muted mb-0"><DynText text={user?.role || 'مستخدم حالي'} lang={lang} /></p>
               <div className="d-flex gap-2 mt-2 flex-wrap">
                 <Form.Label htmlFor="profile-photo" className="btn btn-outline-primary btn-sm mb-0">
                   <i className="fa-solid fa-camera"></i>
-                  {t('changePhoto')}
+                  تغيير الصورة
                 </Form.Label>
                 {form.avatar && (
                   <Button
@@ -83,7 +90,7 @@ const ProfilePage = () => {
                     onClick={() => setForm({ ...form, avatar: '' })}
                   >
                     <i className="fa-solid fa-trash"></i>
-                    {t('removePhoto')}
+                    حذف الصورة
                   </Button>
                 )}
                 <Form.Control
@@ -103,7 +110,7 @@ const ProfilePage = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{t('name')}</Form.Label>
+                  <Form.Label>الاسم</Form.Label>
                   <Form.Control
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -112,7 +119,7 @@ const ProfilePage = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{t('username')}</Form.Label>
+                  <Form.Label>اسم المستخدم</Form.Label>
                   <Form.Control
                     value={form.username}
                     onChange={(e) => setForm({ ...form, username: e.target.value })}
@@ -124,7 +131,7 @@ const ProfilePage = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{t('password')}</Form.Label>
+                  <Form.Label>كلمة المرور</Form.Label>
                   <Form.Control
                     type="password"
                     value={form.password}
@@ -134,7 +141,7 @@ const ProfilePage = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{t('email')}</Form.Label>
+                  <Form.Label>البريد الإلكتروني</Form.Label>
                   <Form.Control
                     type="email"
                     value={form.email}
@@ -145,7 +152,7 @@ const ProfilePage = () => {
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>{t('phone')}</Form.Label>
+              <Form.Label>رقم الهاتف</Form.Label>
               <Form.Control
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -153,7 +160,7 @@ const ProfilePage = () => {
             </Form.Group>
 
             <Button variant="primary" onClick={handleSave}>
-              {t('save')}
+              حفظ
             </Button>
           </Form>
         </Card.Body>

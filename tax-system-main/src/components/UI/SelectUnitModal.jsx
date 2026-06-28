@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { Modal, Button, Table, Form, Badge } from 'react-bootstrap';
+import { Modal, Button, Table, Form } from 'react-bootstrap';
+import { useLanguage } from '../../context/LanguageContext';
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation';
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const SelectUnitModal = ({ show, handleClose, onSelect }) => {
+  const { lang } = useLanguage();
   const [search, setSearch] = useState('');
 
   // بيانات وهمية للوحدات
@@ -42,8 +51,8 @@ const SelectUnitModal = ({ show, handleClose, onSelect }) => {
             {filtered.map(u => (
               <tr key={u.id}>
                 <td className="fw-bold">{u.id}</td>
-                <td>{u.address}</td>
-                <td>{u.owner}</td>
+                <td><DynText text={u.address} lang={lang} /></td>
+                <td><DynText text={u.owner} lang={lang} /></td>
                 <td className="text-success">{u.tax} ج.م</td>
                 <td>
                   <Button 

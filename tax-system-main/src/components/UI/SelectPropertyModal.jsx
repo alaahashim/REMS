@@ -1,18 +1,27 @@
-import React from 'react';
-import { Modal, Table, Button, Badge } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Modal, Table, Button, Badge, Spinner } from 'react-bootstrap';
 import { getProperties } from '../../services/propertyService';
+import { useLanguage } from '../../context/LanguageContext';
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation';
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const SelectPropertyModal = ({ show, handleClose, onSelect }) => {
-  const [properties, setProperties] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
+  const { lang } = useLanguage();
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (show) {
       setLoading(true);
       getProperties().then(data => {
         setProperties(data);
         setLoading(false);
-      });
+      }).catch(() => setLoading(false));
     }
   }, [show]);
 
@@ -24,7 +33,7 @@ const SelectPropertyModal = ({ show, handleClose, onSelect }) => {
       <Modal.Body>
         {loading ? (
           <div className="text-center py-4">
-            <span className="spinner-border text-primary" role="status"></span>
+            <Spinner animation="border" />
           </div>
         ) : (
           <Table hover responsive size="sm">
@@ -42,8 +51,13 @@ const SelectPropertyModal = ({ show, handleClose, onSelect }) => {
               {properties.map((prop) => (
                 <tr key={prop.id} style={{ cursor: 'pointer' }} onClick={() => onSelect(prop)}>
                   <td className="fw-bold text-primary">{prop.id}</td>
-                  <td>{prop.address || `${prop.governorateName || prop.governorateId} - ${prop.centerName || prop.centerId} - ${prop.neighborhoodName || prop.streetName || prop.streetId}`}</td>
-                  <td>{prop.ownerName}</td>
+                  <td>
+                    <DynText 
+                      text={prop.address || `${prop.governorateName || prop.governorateId} - ${prop.centerName || prop.centerId} - ${prop.neighborhoodName || prop.streetName || prop.streetId}`} 
+                      lang={lang} 
+                    />
+                  </td>
+                  <td><DynText text={prop.ownerName} lang={lang} /></td>
                   <td>{prop.units?.length || '-'}</td>
                   <td>{prop.area || (prop.units ? prop.units.reduce((sum, u) => sum + Number(u.area || 0), 0) : '-')} م²</td>
                   <td className="text-center">

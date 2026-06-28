@@ -9,12 +9,12 @@ const TopNavbar = () => {
   const location = useLocation();
   const [showSettings, setShowSettings] = useState(false);
 
-  // دالة تحديد العنوان (جوه المكون مش بره عشان ما يصحش تاني)
+  // دالة تحديد العنوان
   const getPageTitle = () => {
     const path = location.pathname;
     if (path.includes('/home') || path === '/') return 'الرئيسية';
     if (path.includes('/add')) return 'إضافة عقار';
-    if (path.includes('/link')) return 'ربط الملاك';
+    if (path.includes('/link')) return 'ربط المالك';
     if (path.includes('/appeal')) return 'تسجيل طعون';
     if (path.includes('/exemption')) return 'تسجيل إعفاءات';
     if (path.includes('/calc')) return 'حساب وتقدير الضريبة';

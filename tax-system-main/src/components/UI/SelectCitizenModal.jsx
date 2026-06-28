@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Table, Spinner, Badge, Alert } from 'react-bootstrap';
 import { getOwners } from '../../services/assignmentService';
+import { useLanguage } from '../../context/LanguageContext';
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation';
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const SelectCitizenModal = ({ show, handleClose, onSelect }) => {
+  const { lang } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [citizens, setCitizens] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +25,7 @@ const SelectCitizenModal = ({ show, handleClose, onSelect }) => {
 
     setSearchTerm('');
     setError('');
-    loadOwners('');
+    loadOwners();
   }, [show]);
 
   // ─────────────────────────────
@@ -107,7 +116,7 @@ const SelectCitizenModal = ({ show, handleClose, onSelect }) => {
         {/* Error */}
         {error && (
           <Alert variant="danger" className="py-2">
-            {error}
+            <DynText text={error} lang={lang} />
           </Alert>
         )}
 
@@ -138,14 +147,14 @@ const SelectCitizenModal = ({ show, handleClose, onSelect }) => {
                 citizens.map((owner) => (
                   <tr key={owner.id}>
                     <td>{owner.nationalId}</td>
-                    <td>{owner.fullName}</td>
-                    <td>{owner.phone}</td>
-                    <td>{owner.address}</td>
+                    <td><DynText text={owner.fullName} lang={lang} /></td>
+                    <td><DynText text={owner.phone} lang={lang} /></td>
+                    <td><DynText text={owner.address} lang={lang} /></td>
                     <td>
                       <Badge
                         bg={owner.ownerType === 'Legal' ? 'info' : 'secondary'}
                       >
-                        {owner.ownerType === 'Legal' ? 'اعتباري' : 'طبيعي'}
+                        {owner.ownerType === 'Legal' ? <span>اعتباري</span> : <span>طبيعي</span>}
                       </Badge>
                     </td>
                     <td>
@@ -174,7 +183,7 @@ const SelectCitizenModal = ({ show, handleClose, onSelect }) => {
       {/* ───── Footer ───── */}
       <Modal.Footer>
         <Button variant="secondary" onClick={handleCloseModal}>
-          إغلاق
+          إلغاء
         </Button>
       </Modal.Footer>
     </Modal>
