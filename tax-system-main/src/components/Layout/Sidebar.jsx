@@ -66,7 +66,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         style={{ display: isOpen ? 'block' : 'none' }}
       />
 
-      <div className={`sidebar ${isOpen ? 'is-open' : ''}`} style={{ width: '280px', backgroundColor: '#004080', color: 'white', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* ─── تم استخدام bg-primary و text-white و d-flex و flex-column بدلاً من الـ inline styles ─── */}
+      <div className={`sidebar bg-primary text-white d-flex flex-column ${isOpen ? 'is-open' : ''}`} style={{ width: '280px', minHeight: '100vh' }}>
 
         {/* ── رأس القائمة ── */}
         <div className="p-5 border-bottom border-white text-center">
