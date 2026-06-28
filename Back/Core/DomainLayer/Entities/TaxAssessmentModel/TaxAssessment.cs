@@ -12,6 +12,7 @@ namespace Core.DomainLayer.Entities
 
         public int TaxYear { get; set; }
 public PaymentStatus PaymentStatus { get; set; }
+public bool IsAvailableForCollection { get; set; } = true;
         // القيمة الإيجارية السنوية
         public decimal AnnualRent { get; set; }
 public decimal? ManagerApprovedTax { get; set; }

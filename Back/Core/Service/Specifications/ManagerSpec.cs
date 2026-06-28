@@ -14,6 +14,9 @@ public class AppealWithTaxAssessmentSpec
         AddInclude("TaxAssessment.Owner");
 
         AddInclude("TaxAssessment.Unit");
+        AddInclude("TaxAssessment.Installments");
+
+       AddInclude("TaxAssessment.Installments.Payments");
     }
 }
 
@@ -32,7 +35,14 @@ public class PendingManagerAppealsSpec
         AddOrderByDescending(x => x.CommitteeDecisionDate);
     }
 }
-
+public class PaymentWithEmployeeSpecification
+    : BaseSpecifications<Payment, int>
+{
+    public PaymentWithEmployeeSpecification()
+    {
+        AddInclude(x => x.Employee);
+    }
+}
 
 
 public class ExemptionWithDetailsSpec
@@ -77,3 +87,4 @@ public class PendingManagerExemptionsSpec
         AddOrderByDescending(x => x.CommitteeDecisionDate);
     }
 }
+

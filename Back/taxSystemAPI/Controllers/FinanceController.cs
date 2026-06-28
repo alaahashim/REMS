@@ -39,11 +39,14 @@ namespace Presentation.Controllers
         // HISTORY
         // =========================================
         [HttpGet("history")]
-        public async Task<IActionResult> History()
-        {
-            var result = await _services.FinanceService.GetPaymentHistoryAsync();
-            return Ok(result);
-        }
+public async Task<IActionResult> History(
+    [FromQuery] int pageIndex = 1,
+    [FromQuery] int pageSize  = 8)
+{
+    var result = await _services.FinanceService
+        .GetPaymentHistoryAsync(pageIndex, pageSize);
+    return Ok(result);
+}
 
         // =========================================
         // DASHBOARD
@@ -67,5 +70,14 @@ namespace Presentation.Controllers
                 message = "Updated successfully"
             });
         }
+
+[HttpGet("manager/employees-performance")]
+public async Task<IActionResult> GetEmployeesPerformance()
+{
+    var result = await _services.FinanceService
+        .GetEmployeesPerformanceAsync();
+
+    return Ok(result);
+}
     }
 }

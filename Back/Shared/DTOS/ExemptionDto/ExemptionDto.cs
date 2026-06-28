@@ -36,9 +36,7 @@ namespace Shared.DTOS
         public string? DecisionResult { get; set; }
     }
 
-    // DTO كامل للتفاصيل والتعديل - GET /api/exemptions/{id}
-    // (كان ناقصًا في النسخة السابقة: UnitId/الأقسام الزمنية/المرجع القانوني،
-    // وهي بيانات ضرورية لملء فورم التعديل بشكل صحيح)
+   
     public class ExemptionDetailsDto : ExemptionDto
     {
         public int OwnerId { get; set; }
@@ -84,13 +82,13 @@ namespace Shared.DTOS
     public class RequestHomeDto
 {
     public int Id { get; set; }
+        public string NationalId { get; set; } = null!;
 
     public string OwnerName { get; set; } = null!;
         public string UnitNumber { get; set; } = null!;
 
     public string Status { get; set; } = null!;
     public DateTime RequestDate { get; set; }
-
     public string? LegalReference { get; set; }
 
     public string Type { get; set; } = null!; // "إعفاء" أو "طعن"

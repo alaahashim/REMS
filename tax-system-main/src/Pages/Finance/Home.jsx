@@ -1,32 +1,34 @@
 // src/pages/Finance/FinanceHome.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Container, Row, Col, Card, Table,
   Button, Spinner, Badge, Alert,
-} from 'react-bootstrap';
-import { getFinanceDashboard, getPaymentHistory } from '../../services/financeService';
+} from "react-bootstrap";
+import { getFinanceDashboard, getPaymentHistory } from "../../services/financeService";
 
-// ── ثوابت ──────────────────────────────────────────────────
 const METHOD_LABELS = {
-  Cash:     'نقدي',
-  Fawry:    'فوري',
-  Bank:     'تحويل بنكي',
-  InstaPay: 'إنستا باي',
+  Cash:     "نقدي",
+  Fawry:    "فوري",
+  Bank:     "تحويل بنكي",
+  InstaPay: "إنستا باي",
 };
 
-const INSTALLMENT_STATUS = {
-  Pending:  { bg: 'warning', text: 'معلق'  },
-  Paid:     { bg: 'success', text: 'مدفوع' },
-  Overdue:  { bg: 'danger',  text: 'متأخر' },
+const PAYMENT_STATUS = {
+  Pending:  { bg: "warning", text: "معلق"  },
+  Paid:     { bg: "success", text: "مدفوع" },
+  Overdue:  { bg: "danger",  text: "متأخر" },
 };
 
-// ── بطاقة إحصائية ──────────────────────────────────────────
+const formatAmount = (n) =>
+  Math.round(n ?? 0).toLocaleString("ar-EG");
+
+// ── بطاقة إحصائية ────────────────────────────────────────
 const StatCard = ({ title, value, icon, colorClass, loading }) => (
   <Card className={`border-0 shadow-sm border-start border-4 ${colorClass}`}>
     <Card.Body className="d-flex justify-content-between align-items-center">
       <div>
-        <h6 className="text-muted text-uppercase mb-1" style={{ fontSize: '0.75rem' }}>
+        <h6 className="text-muted text-uppercase mb-1" style={{ fontSize: "0.75rem" }}>
           {title}
         </h6>
         <h3 className="fw-bold mb-0">
@@ -38,30 +40,29 @@ const StatCard = ({ title, value, icon, colorClass, loading }) => (
   </Card>
 );
 
-// ── المكوّن الرئيسي ─────────────────────────────────────────
+// ── المكوّن الرئيسي ────────────────────────────────────────
 const FinanceHome = () => {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();       // ← للكشف عن العودة من صفحة الدفع
 
   const [dashLoading, setDashLoading] = useState(true);
   const [histLoading, setHistLoading] = useState(true);
-  const [error,       setError]       = useState('');
+  const [error,       setError]       = useState("");
 
-  // FinanceDashboardDto
   const [dashboard, setDashboard] = useState({
-    totalAssessments:   0,
-    paidAssessments:    0,
-    pendingAssessments: 0,
-    overdueInstallments:0,
-    totalCollected:     0,
-    remainingAmount:    0,
+    totalAssessments:    0,
+    paidAssessments:     0,
+    pendingAssessments:  0,
+    overdueInstallments: 0,
+    totalCollected:      0,
+    remainingAmount:     0,
   });
 
-  // PaymentHistoryDto[]
   const [history, setHistory] = useState([]);
 
-  // ── جلب البيانات ─────────────────────────────────────────
+  // ── جلب البيانات ────────────────────────────────────────
   const loadAll = useCallback(async () => {
-    setError('');
+    setError("");
     setDashLoading(true);
     setHistLoading(true);
 
@@ -71,31 +72,35 @@ const FinanceHome = () => {
         getPaymentHistory(),
       ]);
 
-      if (dash.status === 'fulfilled')  setDashboard(dash.value);
-      else setError('فشل تحميل الإحصائيات.');
+      if (dash.status === "fulfilled") setDashboard(dash.value);
+      else setError("فشل تحميل الإحصائيات.");
 
-      if (hist.status === 'fulfilled')  setHistory(hist.value);
-      else setError((prev) => prev + ' فشل تحميل سجل المدفوعات.');
-
+      if (hist.status === "fulfilled") setHistory(hist.value);
+      else setError((prev) => prev + " فشل تحميل سجل المدفوعات.");
     } finally {
       setDashLoading(false);
       setHistLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  // تحميل أولي + إعادة تحميل عند العودة من صفحة الدفع
+  useEffect(() => {
+    loadAll();
+  }, [loadAll, location.key]); // location.key يتغير في كل navigate
 
-  // ── عرض ──────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────
   return (
     <Container fluid className="mt-4">
 
-      {/* العنوان + تحديث */}
+      {/* عنوان + تحديث */}
       <Row className="mb-4 align-items-center">
         <Col>
           <h3 className="text-success fw-bold mb-0">
             التحصيل المالي (Finance Collection)
           </h3>
-          <p className="text-muted mb-0">لوحة متابعة المدفوعات والمستحقات</p>
+          <p className="text-muted mb-0">
+            لوحة متابعة المدفوعات والمستحقات
+          </p>
         </Col>
         <Col xs="auto">
           <Button variant="outline-secondary" size="sm" onClick={loadAll}>
@@ -105,17 +110,17 @@ const FinanceHome = () => {
       </Row>
 
       {error && (
-        <Alert variant="danger" onClose={() => setError('')} dismissible>
+        <Alert variant="danger" onClose={() => setError("")} dismissible>
           {error}
         </Alert>
       )}
 
-      {/* ── بطاقات الإحصائيات ─────────────────────────────── */}
+      {/* ── بطاقات المبالغ ─────────────────────────────── */}
       <Row className="mb-4 g-3">
         <Col md={4}>
           <StatCard
             title="إجمالي المحصل"
-            value={`${Math.round(dashboard.totalCollected).toLocaleString('ar-EG')} ج.م`}
+            value={`${formatAmount(dashboard.totalCollected)} ج.م`}
             icon={<i className="fa-solid fa-coins text-success" />}
             colorClass="border-success"
             loading={dashLoading}
@@ -124,7 +129,7 @@ const FinanceHome = () => {
         <Col md={4}>
           <StatCard
             title="المبلغ المتبقي"
-            value={`${Math.round(dashboard.remainingAmount).toLocaleString('ar-EG')} ج.م`}
+            value={`${formatAmount(dashboard.remainingAmount)} ج.م`}
             icon={<i className="fa-solid fa-file-invoice-dollar text-warning" />}
             colorClass="border-warning"
             loading={dashLoading}
@@ -141,12 +146,12 @@ const FinanceHome = () => {
         </Col>
       </Row>
 
-      {/* بطاقات العدد */}
+      {/* ── بطاقات العدد ───────────────────────────────── */}
       <Row className="mb-4 g-3">
         <Col md={4}>
           <Card className="border-0 shadow-sm text-center py-3">
             <h2 className="fw-bold text-dark mb-0">
-              {dashLoading ? '...' : dashboard.totalAssessments}
+              {dashLoading ? "..." : dashboard.totalAssessments}
             </h2>
             <small className="text-muted">إجمالي التقييمات</small>
           </Card>
@@ -154,7 +159,7 @@ const FinanceHome = () => {
         <Col md={4}>
           <Card className="border-0 shadow-sm text-center py-3">
             <h2 className="fw-bold text-success mb-0">
-              {dashLoading ? '...' : dashboard.paidAssessments}
+              {dashLoading ? "..." : dashboard.paidAssessments}
             </h2>
             <small className="text-muted">تقييمات مدفوعة بالكامل</small>
           </Card>
@@ -162,20 +167,20 @@ const FinanceHome = () => {
         <Col md={4}>
           <Card className="border-0 shadow-sm text-center py-3">
             <h2 className="fw-bold text-warning mb-0">
-              {dashLoading ? '...' : dashboard.pendingAssessments}
+              {dashLoading ? "..." : dashboard.pendingAssessments}
             </h2>
             <small className="text-muted">تقييمات معلقة / جزئية</small>
           </Card>
         </Col>
       </Row>
 
-      {/* زر التسجيل */}
+      {/* ── زر التسجيل ─────────────────────────────────── */}
       <Row className="mb-4">
         <Col className="text-end">
           <Button
             variant="success"
             size="lg"
-            onClick={() => navigate('/finance/collect')}
+            onClick={() => navigate("/finance/collect")}
           >
             <i className="fa-solid fa-plus-circle me-2" />
             تسجيل سداد جديد
@@ -183,12 +188,15 @@ const FinanceHome = () => {
         </Col>
       </Row>
 
-      {/* ── جدول سجل المدفوعات ───────────────────────────── */}
+      {/* ── جدول سجل المدفوعات ─────────────────────────── */}
       <Row>
         <Col>
           <Card className="shadow-sm border-0">
-            <Card.Header className="bg-white fw-bold">
-              سجل المدفوعات (Payment History)
+            <Card.Header className="bg-white fw-bold d-flex justify-content-between align-items-center">
+              <span>سجل المدفوعات (Payment History)</span>
+              {history.length > 0 && (
+                <Badge bg="secondary">{history.length} عملية</Badge>
+              )}
             </Card.Header>
             <Card.Body className="p-0">
               {histLoading ? (
@@ -197,7 +205,8 @@ const FinanceHome = () => {
                 </div>
               ) : history.length === 0 ? (
                 <div className="text-center py-5 text-muted">
-                  لا توجد مدفوعات مسجلة بعد.
+                  <i className="fa-solid fa-inbox fa-2x mb-3" />
+                  <p>لا توجد مدفوعات مسجلة بعد.</p>
                 </div>
               ) : (
                 <Table hover responsive className="mb-0">
@@ -216,29 +225,35 @@ const FinanceHome = () => {
                   <tbody>
                     {history.map((row, idx) => {
                       const statusMeta =
-                        INSTALLMENT_STATUS[row.status] ??
-                        { bg: 'secondary', text: row.status };
+                        PAYMENT_STATUS[row.status] ??
+                        { bg: "secondary", text: row.status };
                       return (
-                        <tr key={row.paymentId}>
+                        <tr key={row.paymentId ?? idx}>
                           <td className="text-muted">{idx + 1}</td>
                           <td className="fw-bold text-primary">
                             Unit #{row.unitId}
                           </td>
                           <td>{row.ownerName}</td>
                           <td className="text-end fw-bold">
-                            {Math.round(row.paidAmount).toLocaleString('ar-EG')} ج.م
+                            {formatAmount(row.paidAmount)} ج.م
                           </td>
                           <td>
                             <Badge bg="secondary">
                               {METHOD_LABELS[row.method] ?? row.method}
                             </Badge>
                           </td>
-                          <td className="font-monospace">{row.receiptNo || '—'}</td>
+                          <td className="font-monospace">
+                            {row.receiptNo || "—"}
+                          </td>
                           <td>
-                            {new Date(row.paymentDate).toLocaleDateString('ar-EG')}
+                            {new Date(row.paymentDate).toLocaleDateString(
+                              "ar-EG"
+                            )}
                           </td>
                           <td className="text-center">
-                            <Badge bg={statusMeta.bg}>{statusMeta.text}</Badge>
+                            <Badge bg={statusMeta.bg}>
+                              {statusMeta.text}
+                            </Badge>
                           </td>
                         </tr>
                       );
@@ -250,6 +265,7 @@ const FinanceHome = () => {
           </Card>
         </Col>
       </Row>
+
     </Container>
   );
 };

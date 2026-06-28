@@ -1,6 +1,7 @@
 using AutoMapper;
 using Core.DomainLayer.Contracts;
 using Core.DomainLayer.Entities;
+using Core.DomainLayer.Entities.AdminModule;
 using Core.DomainLayer.Exceptions;
 using Core.Service.Specifications;
 using Core.ServiceAbstraction;
@@ -27,106 +28,170 @@ namespace Core.Service.Implementations
         // ============================================================
         // SEARCH (الرقم القومي / اسم المالك)
         // ============================================================
-        public async Task<FinanceSearchResponseDto?> SearchAsync(FinanceSearchRequestDto dto)
-        {
-            if (string.IsNullOrWhiteSpace(dto.Search))
-                throw new Exception("يجب إدخال اسم المالك أو الرقم القومي.");
+      public async Task<FinanceSearchResponseDto?> SearchAsync(FinanceSearchRequestDto dto)
+{
+    if (string.IsNullOrWhiteSpace(dto.Search))
+        throw new Exception("يجب إدخال اسم المالك أو الرقم القومي.");
 
-            var repo = _unitOfWork.GetRepository<TaxAssessment, int>();
+    var repo = _unitOfWork.GetRepository<TaxAssessment, int>();
+    var spec = new FinanceSearchSpecification(dto.Search.Trim());
+    var assessment = await repo.FirstOrDefaultAsync(spec);
 
-            var spec = new FinanceSearchSpecification(dto.Search.Trim());
-
-            var assessment = await repo.FirstOrDefaultAsync(spec);
-
-            return assessment == null
-                ? null
-                : _mapper.Map<FinanceSearchResponseDto>(assessment);
-        }
-
+    return assessment == null
+        ? null
+        : _mapper.Map<FinanceSearchResponseDto>(assessment);
+}
         // ============================================================
         // REGISTER PAYMENT
         // ============================================================
-        public async Task<PaymentReceiptDto> RegisterPaymentAsync(CreatePaymentDto dto)
+       public async Task<PaymentReceiptDto> RegisterPaymentAsync(CreatePaymentDto dto)
+{
+    if (dto.InstallmentIds == null || !dto.InstallmentIds.Any())
+        throw new ValidationException(new List<string>
         {
-            var installmentRepo = _unitOfWork.GetRepository<Installment, int>();
-            var paymentRepo = _unitOfWork.GetRepository<Payment, int>();
+            "يجب اختيار قسط واحد على الأقل."
+        });
 
-            // -------------------------
-            // تحقق من الإيصال
-            // -------------------------
-            var existingReceipt = await paymentRepo.FirstOrDefaultAsync(
-                new PaymentReceiptNumberSpecification(dto.ReceiptNo));
+    var installmentRepo = _unitOfWork.GetRepository<Installment, int>();
+    var paymentRepo = _unitOfWork.GetRepository<Payment, int>();
 
-           if (existingReceipt != null)
-    throw new BusinessException("رقم الإيصال مستخدم بالفعل.");
+    // ---------------------------------
+    // التأكد أن رقم الإيصال غير مستخدم
+    // ---------------------------------
+    var existingReceipt = await paymentRepo.FirstOrDefaultAsync(
+        new PaymentReceiptNumberSpecification(dto.ReceiptNo));
 
-            // -------------------------
-            // جلب القسط
-            // -------------------------
-            var installment = await installmentRepo.FirstOrDefaultAsync(
-                new InstallmentForPaymentSpecification(dto.InstallmentId));
+    if (existingReceipt != null)
+        throw new BusinessException("رقم الإيصال مستخدم بالفعل.");
 
-                    if (installment == null)
-    throw new NotFoundException("القسط غير موجود.");
-if (installment.Status == InstallmentStatus.Paid)
-    throw new BusinessException("هذا القسط تم سداده بالفعل.");
-if (dto.PaidAmount != installment.Amount)
-    throw new ValidationException(new List<string>
+    // ---------------------------------
+    // جلب الأقساط
+    // ---------------------------------
+    var installments = (await installmentRepo.GetAllAsync(
+        new InstallmentsForPaymentSpecification(dto.InstallmentIds)))
+        .ToList();
+
+    if (installments.Count != dto.InstallmentIds.Count)
+        throw new NotFoundException("بعض الأقساط غير موجودة.");
+
+    // ---------------------------------
+    // التأكد أن جميع الأقساط لنفس التقييم
+    // ---------------------------------
+    var assessmentId = installments.First().TaxAssessmentId;
+
+    if (installments.Any(i => i.TaxAssessmentId != assessmentId))
+        throw new BusinessException("لا يمكن سداد أقساط من تقييمات مختلفة.");
+
+    // ---------------------------------
+    // التأكد أن التقييم مازال متاحاً للتحصيل
+    // ---------------------------------
+    var assessment = installments.First().TaxAssessment;
+
+    if (!assessment.IsAvailableForCollection)
+        throw new BusinessException(
+            "هذا التقييم غير متاح حالياً للتحصيل لأنه قيد المراجعة أو الطعن.");
+
+    if (assessment.Status != TaxStatus.Approved)
+        throw new BusinessException(
+            "هذا التقييم غير معتمد.");
+
+    // ---------------------------------
+    // التأكد من حالة الأقساط
+    // ---------------------------------
+    foreach (var installment in installments)
     {
-        "قيمة السداد لا تطابق قيمة القسط"
-    });
+        if (installment.Status == InstallmentStatus.Paid)
+            throw new BusinessException(
+                $"القسط رقم {installment.InstallmentNumber} تم سداده بالفعل.");
+    }
 
-            // -------------------------
-            // إنشاء Payment
-            // -------------------------
-            var payment = new Payment
-            {
-                InstallmentId = installment.Id,
-                PaidAmount = dto.PaidAmount,
-                PaymentDate = dto.PaymentDate,
-                ReceiptNo = dto.ReceiptNo,
-                Method = dto.Method,
-                EmployeeId = dto.EmployeeId,
-                Notes = dto.Notes
-            };
+    // ---------------------------------
+    // إنشاء المدفوعات
+    // ---------------------------------
+    decimal totalPaid = 0;
 
-            await paymentRepo.AddAsync(payment);
+    foreach (var installment in installments)
+    {
+        var payment = new Payment
+        {
+            InstallmentId = installment.Id,
+            PaidAmount = installment.Amount,
+            PaymentDate = dto.PaymentDate,
+            ReceiptNo = dto.ReceiptNo,
+            Method = dto.Method,
+            EmployeeId = dto.EmployeeId,
+            Notes = dto.Notes
+        };
 
-            // -------------------------
-            // تحديث القسط
-            // -------------------------
-            installment.Status = InstallmentStatus.Paid;
-            installmentRepo.Update(installment);
+        await paymentRepo.AddAsync(payment);
 
-            await _unitOfWork.SaveChangesAsync();
+        installment.Status = InstallmentStatus.Paid;
 
-            // -------------------------
-            // تحديث حالة التقييم
-            // -------------------------
-            await _installmentService.UpdateAssessmentPaymentStatusAsync(
-                installment.TaxAssessmentId);
+        installmentRepo.Update(installment);
 
-            // -------------------------
-            // إعادة الإيصال (للطباعة)
-            // -------------------------
-            var receipt = await paymentRepo.FirstOrDefaultAsync(
-                new PaymentReceiptSpecification(payment.Id));
+        totalPaid += installment.Amount;
+    }
 
-            return _mapper.Map<PaymentReceiptDto>(receipt);
-        }
+    await _unitOfWork.SaveChangesAsync();
+
+    // ---------------------------------
+    // تحديث حالة التقييم
+    // ---------------------------------
+    await _installmentService.UpdateAssessmentPaymentStatusAsync(
+        assessmentId);
+
+    // ---------------------------------
+    // إنشاء الإيصال
+    // ---------------------------------
+    return new PaymentReceiptDto
+    {
+        ReceiptNo = dto.ReceiptNo,
+
+        UnitId = assessment.UnitId,
+
+        OwnerName = assessment.Owner?.FullName ?? "",
+
+        Address =
+            $"{assessment.Unit.Property.Governorate.Name} - " +
+            $"{assessment.Unit.Property.Neighborhood.Name} - " +
+            $"{assessment.Unit.Property.Neighborhood.Center.Name}",
+
+        TotalPaid = totalPaid,
+
+        Method = dto.Method,
+
+        PaymentDate = dto.PaymentDate,
+
+        InstallmentNumbers = installments
+            .OrderBy(i => i.InstallmentNumber)
+            .Select(i => i.InstallmentNumber)
+            .ToList()
+    };
+}
 
         // ============================================================
         // PAYMENT HISTORY (للـ Front-end table)
         // ============================================================
-        public async Task<IEnumerable<PaymentHistoryDto>> GetPaymentHistoryAsync()
-        {
-            var repo = _unitOfWork.GetRepository<Payment, int>();
+      public async Task<PagedResult<PaymentHistoryDto>> GetPaymentHistoryAsync(
+    int pageIndex = 1, int pageSize = 8)
+{
+    var repo = _unitOfWork.GetRepository<Payment, int>();
 
-            var payments = await repo.GetAllAsync(
-                new PaymentHistorySpecification());
+    var payments = await repo.GetAllAsync(
+        new PaymentHistorySpecification(pageIndex, pageSize));
 
-            return _mapper.Map<IEnumerable<PaymentHistoryDto>>(payments);
-        }
+    var totalCount = await repo.CountAsync(
+        new PaymentHistoryCountSpecification());
+
+    return new PagedResult<PaymentHistoryDto>
+    {
+        Items     = _mapper.Map<IEnumerable<PaymentHistoryDto>>(payments),
+        TotalCount = totalCount,
+        PageIndex  = pageIndex,
+        PageSize   = pageSize,
+        TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+    };
+}
 
         // ============================================================
         // DASHBOARD
@@ -163,7 +228,10 @@ if (dto.PaidAmount != installment.Amount)
                 RemainingAmount = list.Sum(x =>
                     x.Installments
                         .Where(i => i.Status != InstallmentStatus.Paid)
-                        .Sum(i => i.Amount))
+                        .Sum(i => i.Amount)),
+        PendingInstallments = list.Sum(x =>
+                        x.Installments.Count(i =>
+                        i.Status == InstallmentStatus.Pending)),
             };
         }
 
@@ -198,5 +266,34 @@ if (dto.PaidAmount != installment.Amount)
                     .UpdateAssessmentPaymentStatusAsync(id);
             }
         }
+   
+   
+public async Task<IEnumerable<EmployeePerformanceDto>>
+GetEmployeesPerformanceAsync()
+{
+    var repo = _unitOfWork.GetRepository<Employee, int>();
+
+    var employees = await repo.GetAllAsync();
+
+    var random = new Random();
+
+    return employees
+        .Select(e => new EmployeePerformanceDto
+        {
+            EmployeeId = e.Id,
+
+            EmployeeName = e.FullName,
+
+            Department = e.Department,
+
+            TasksDone = random.Next(1, 31),
+
+            Score = random.Next(60, 101),
+
+            IsActive = e.IsActive
+        })
+        .ToList();
+}
     }
 }
+

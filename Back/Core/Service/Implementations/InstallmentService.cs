@@ -64,10 +64,8 @@ public async Task GenerateInstallmentsAsync(int assessmentId)
     var assessmentRepo = _unitOfWork.GetRepository<TaxAssessment, int>();
     var installmentRepo = _unitOfWork.GetRepository<Installment, int>();
 
-    // جلب التقييم بكل البيانات اللازمة
-    var assessmentSpec = new TaxAssessmentByIdForPaymentSpec(assessmentId);
-
-    var assessment = await assessmentRepo.FirstOrDefaultAsync(assessmentSpec);
+    var assessment = await assessmentRepo.FirstOrDefaultAsync(
+        new TaxAssessmentByIdForPaymentSpec(assessmentId));
 
     if (assessment == null)
         throw new Exception("التقييم الضريبي غير موجود.");
@@ -75,37 +73,25 @@ public async Task GenerateInstallmentsAsync(int assessmentId)
     if (assessment.Status != TaxStatus.Approved)
         throw new Exception("لا يمكن إنشاء الأقساط قبل اعتماد التقييم.");
 
-    // منع إنشاء الأقساط أكثر من مرة
     if (await HasInstallmentsAsync(assessmentId))
-    return;
+        return;
 
     var year = assessment.TaxYear;
 
-    // ============================
-    // الدفع الكامل
-    // ============================
     if (assessment.PaymentPlan == PaymentPlan.Full)
     {
-        var installment = new Installment
+        await installmentRepo.AddAsync(new Installment
         {
             TaxAssessmentId = assessment.Id,
             InstallmentNumber = 1,
             Amount = assessment.TotalDue,
             DueDate = new DateTime(year, 6, 30),
             Status = InstallmentStatus.Pending
-        };
-
-        await installmentRepo.AddAsync(installment);
+        });
     }
-
-    // ============================
-    // الدفع على قسطين
-    // ============================
     else if (assessment.PaymentPlan == PaymentPlan.Installment_2)
     {
-        // لتفادى مشاكل الكسور العشرية
         var firstAmount = Math.Round(assessment.TotalDue / 2m, 2);
-
         var secondAmount = assessment.TotalDue - firstAmount;
 
         await installmentRepo.AddAsync(new Installment
@@ -127,10 +113,10 @@ public async Task GenerateInstallmentsAsync(int assessmentId)
         });
     }
 
+    // ← هنا SaveChanges ضرورية لأن المستدعي (ApproveCalculationAsync)
+    // حفظ بالفعل ثم استدعانا — نحن مسؤولون عن حفظ الأقساط
     await _unitOfWork.SaveChangesAsync();
 }
-  
-  
   public async Task UpdateAssessmentPaymentStatusAsync(int assessmentId)
 {
     var assessmentRepo = _unitOfWork.GetRepository<TaxAssessment, int>();

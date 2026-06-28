@@ -10,8 +10,9 @@ namespace Core.Service.Specifications
     {
         public TaxAssessmentSearchSpec(string search)
             : base(t =>
-                t.Status == TaxStatus.Approved &&
-                t.Owner != null &&
+                 t.Status == TaxStatus.Approved
+                && t.IsAvailableForCollection&&
+                 t.Owner != null &&
                 (
                     t.Owner.FullName.Contains(search) ||
                     t.Owner.NationalId.Contains(search)
@@ -20,8 +21,8 @@ namespace Core.Service.Specifications
             AddInclude("Owner");
             AddInclude("Unit");
             AddInclude("Unit.Property");
-            AddInclude("Installments");
-            AddInclude("Installments.Payments");
+AddInclude("Installments");
+AddInclude("Installments.Payments");            AddInclude("Installments.Payments");
         }
     }
 
@@ -34,8 +35,8 @@ namespace Core.Service.Specifications
         {
             AddInclude("Owner");
             AddInclude("Unit");
-            AddInclude("Installments");
-            AddInclude("Installments.Payments");
+AddInclude("Installments");
+AddInclude("Installments.Payments");            AddInclude("Installments.Payments");
         }
     }
 
@@ -74,7 +75,8 @@ namespace Core.Service.Specifications
                 p.PaymentDate >= from &&
                 p.PaymentDate <= to)
         {
-            AddInclude("Installment");
+AddInclude("Installments");
+AddInclude("Installments.Payments");
             AddInclude("Installment.TaxAssessment");
             AddInclude("Installment.TaxAssessment.Owner");
         }
@@ -98,99 +100,85 @@ namespace Core.Service.Specifications
     public TaxAssessmentWithInstallmentsSpec(int assessmentId)
         : base(t => t.Id == assessmentId)
     {
-        AddInclude("Installments");
-    }
+AddInclude("Installments");
+AddInclude("Installments.Payments");    }
 }
 
 
-   public class FinanceSearchSpecification
-        : BaseSpecifications<TaxAssessment, int>
+  
+          public class InstallmentsForPaymentSpecification
+    : BaseSpecifications<Installment, int>
+{
+    public InstallmentsForPaymentSpecification(IEnumerable<int> installmentIds)
+        : base(i => installmentIds.Contains(i.Id))
     {
-        public FinanceSearchSpecification(string search)
-            : base(x =>
+        AddInclude("Payments");
 
-                x.Status == TaxStatus.Approved &&
+        AddInclude("TaxAssessment");
 
-                (
+        AddInclude("TaxAssessment.Owner");
 
-                    x.Owner!.NationalId.Contains(search)
+        AddInclude("TaxAssessment.Unit");
 
-                    ||
+        AddInclude("TaxAssessment.Unit.Property");
 
-                    x.Owner.FullName.Contains(search)
+        AddInclude("TaxAssessment.Unit.Property.Governorate");
 
-                ))
-        {AddOrderByDescending(x => x.TaxYear);
-            AddInclude("Owner");
+        AddInclude("TaxAssessment.Unit.Property.Neighborhood");
 
-            AddInclude("Unit");
-
-            AddInclude("Unit.Property");
-
-            AddInclude("Unit.Property.Governorate");
-
-            AddInclude("Unit.Property.Neighborhood");
-
-            AddInclude("Installments");
-        }
+        AddInclude("TaxAssessment.Unit.Property.Neighborhood.Center");
     }
-
-
-     public class InstallmentForPaymentSpecification
-        : BaseSpecifications<Installment, int>
-    {
-        public InstallmentForPaymentSpecification(int installmentId)
-            : base(i => i.Id == installmentId)
-        {
-            AddInclude("Payments");
-
-            AddInclude("TaxAssessment");
-
-            AddInclude("TaxAssessment.Owner");
-
-            AddInclude("TaxAssessment.Unit");
-
-            AddInclude("TaxAssessment.Unit.Property");
-
-            AddInclude("TaxAssessment.Unit.Property.Governorate");
-
-            AddInclude("TaxAssessment.Unit.Property.Neighborhood");
-        }
-    }
-
+}
     public class PaymentHistorySpecification
         : BaseSpecifications<Payment, int>
     {
-        public PaymentHistorySpecification()
-        {
-            AddInclude("Installment");
+        public PaymentHistorySpecification(int pageIndex = 1, int pageSize = 8)
+    {
+        AddOrderByDescending(x => x.PaymentDate);
 
-            AddInclude("Installment.TaxAssessment");
+        ApplyPagination(pageSize, pageIndex);
+AddInclude("Installment");
 
-            AddInclude("Installment.TaxAssessment.Owner");
+AddInclude("Installment.TaxAssessment");
 
-            AddInclude("Installment.TaxAssessment.Unit");
+AddInclude("Installment.TaxAssessment.Owner");
+
+AddInclude("Installment.TaxAssessment.Unit");
+
+AddInclude("Installment.TaxAssessment.Unit.Property");
+
+AddInclude("Installment.TaxAssessment.Unit.Property.Governorate");
+
+AddInclude("Installment.TaxAssessment.Unit.Property.Neighborhood");
+
+AddInclude("Installment.TaxAssessment.Unit.Property.Neighborhood.Center");
         }
     }
+    public class PaymentHistoryCountSpecification
+    : BaseSpecifications<Payment, int>
+{
+    public PaymentHistoryCountSpecification() { }
+}
 
     public class DashboardAssessmentSpecification
         : BaseSpecifications<TaxAssessment, int>
     {
         public DashboardAssessmentSpecification()
         {
-            AddInclude("Installments");
-        }
+AddInclude("Installments");
+AddInclude("Installments.Payments");        }
     }
 
      public class OverdueInstallmentsSpecification
         : BaseSpecifications<Installment, int>
     {
         public OverdueInstallmentsSpecification()
-            : base(i =>
+           : base(i =>
 
-               i.Status == InstallmentStatus.Pending
+   i.Status == InstallmentStatus.Pending
 && i.DueDate.Date < DateTime.UtcNow.Date
-&& i.TaxAssessment.Status == TaxStatus.Approved)
+&& i.TaxAssessment.Status == TaxStatus.Approved
+&& i.TaxAssessment.IsAvailableForCollection)
         {
 AddInclude("TaxAssessment");
         }
@@ -202,8 +190,8 @@ AddInclude("TaxAssessment");
         public PaymentReceiptSpecification(int paymentId)
             : base(p => p.Id == paymentId)
         {
-            AddInclude("Installment");
-
+AddInclude("Installments");
+AddInclude("Installments.Payments");
             AddInclude("Installment.TaxAssessment");
 
             AddInclude("Installment.TaxAssessment.Owner");
@@ -228,4 +216,30 @@ AddInclude("TaxAssessment");
 
         }
     }
+
+  public class FinanceSearchSpecification
+    : BaseSpecifications<TaxAssessment, int>
+{
+    public FinanceSearchSpecification(string search)
+        : base(x =>
+            x.Status == TaxStatus.Approved
+            &&
+            (
+                x.Owner!.NationalId.Contains(search) ||
+                x.Owner.FullName.Contains(search)
+            ))
+    {
+        AddOrderByDescending(x => x.TaxYear);
+
+        AddInclude("Owner");
+        AddInclude("Unit");
+        AddInclude("Unit.Property");
+        AddInclude("Unit.Property.Governorate");
+        AddInclude("Unit.Property.Neighborhood");
+        AddInclude("Unit.Property.Neighborhood.Center");
+        AddInclude("Installments");
+        AddInclude("Installments.Payments");
+    }
+}
+ 
 }

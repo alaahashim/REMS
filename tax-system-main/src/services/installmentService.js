@@ -1,41 +1,31 @@
 // src/services/installmentService.js
-
-const API_BASE = '/api/installments';
+import api from "./apiClient";
 
 // ============================================================
 // جلب كل الأقساط لتقييم معين
+// GET /installments/{assessmentId}
+// Returns: InstallmentDto[]
 // ============================================================
 export const getInstallmentsByAssessment = async (assessmentId) => {
-  const response = await fetch(`${API_BASE}/${assessmentId}`);
-
-  if (!response.ok) throw new Error('فشل جلب الأقساط');
-
-  return response.json(); // InstallmentDto[]
+  const { data } = await api.get(`/installments/${assessmentId}`);
+  return data;
 };
 
 // ============================================================
-// جلب الأقساط غير المدفوعة فقط
+// جلب الأقساط غير المدفوعة فقط (Pending / Overdue)
+// GET /installments/{assessmentId}/pending
+// Returns: InstallmentDto[]
 // ============================================================
 export const getPendingInstallments = async (assessmentId) => {
-  const response = await fetch(`${API_BASE}/${assessmentId}/pending`);
-
-  if (!response.ok) throw new Error('فشل جلب الأقساط المستحقة');
-
-  return response.json(); // InstallmentDto[]
+  const { data } = await api.get(`/installments/${assessmentId}/pending`);
+  return data;
 };
 
 // ============================================================
 // توليد الأقساط (يُستدعى بعد اعتماد التقييم)
+// POST /installments/{assessmentId}/generate
 // ============================================================
 export const generateInstallments = async (assessmentId) => {
-  const response = await fetch(`${API_BASE}/${assessmentId}/generate`, {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.message || 'فشل توليد الأقساط');
-  }
-
-  return response.json();
+  const { data } = await api.post(`/installments/${assessmentId}/generate`);
+  return data;
 };

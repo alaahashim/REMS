@@ -46,7 +46,8 @@ namespace Core.Service.Implementations
                 _lazyExemptionService.Value,
                 _lazyInstallmentService.Value));
 
-            _lazyAppealService = new(() => new AppealService(unitOfWork, mapper));
+            _lazyAppealService = new(() => new AppealService(unitOfWork, mapper,
+            _lazyInstallmentService.Value));
         }
 
         // Exposing the services through properties
