@@ -3,9 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Table, Button, Spinner, Badge } from 'react-bootstrap';
 import { getEnrichedUnits } from '../../services/propertyService';
 import { getFinancialStats } from '../../services/financeService';
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const FinanceHome = () => {
   const navigate = useNavigate();
+  const { lang } = useLanguage(); 
+
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalCollected: 0, totalDue: 0 });
   const [paidUnits, setPaidUnits] = useState([]);
@@ -36,8 +46,9 @@ const FinanceHome = () => {
     <Container fluid className="mt-4">
       <Row className="mb-4">
         <Col>
-          <h3 className="text-success fw-bold">التحصيل المالي (Finance Collection)</h3>
-          <p className="text-muted mb-0">لوحة متابعة المدفوعات والمستحقات</p>
+          {/* تم استخدام كلمات موجودة مسبقاً في phraseTranslations لتتم ترجمتها أوتوماتيكياً */}
+          <h3 className="text-success fw-bold">التحصيل والسداد</h3>
+          <p className="text-muted mb-0">آخر عمليات التحصيل</p>
         </Col>
       </Row>
 
@@ -47,8 +58,8 @@ const FinanceHome = () => {
           <Card className="border-0 shadow-sm border-start border-4 border-success">
             <Card.Body className="d-flex justify-content-between align-items-center">
               <div>
-                <h6 className="text-muted text-uppercase mb-1">إجمالي المحصل (Total Collected)</h6>
-                <h3 className="fw-bold mb-0 text-success">{loading ? '...' : Math.round(stats.totalCollected).toLocaleString()} ج.م</h3>
+                <h6 className="text-muted text-uppercase mb-1">إجمالي التحصيل</h6>
+                <h3 className="fw-bold mb-0 text-success">{loading ? '...' : Math.round(stats.totalCollected).toLocaleString('ar-EG')} ج.م</h3>
               </div>
               <div className="text-success opacity-25 fs-1"><i className="fa-solid fa-coins"></i></div>
             </Card.Body>
@@ -59,8 +70,8 @@ const FinanceHome = () => {
           <Card className="border-0 shadow-sm border-start border-4 border-warning">
             <Card.Body className="d-flex justify-content-between align-items-center">
               <div>
-                <h6 className="text-muted text-uppercase mb-1">إجمالي المستحقات (Pending)</h6>
-                <h3 className="fw-bold mb-0 text-warning">{loading ? '...' : Math.round(stats.totalDue).toLocaleString()} ج.م</h3>
+                <h6 className="text-muted text-uppercase mb-1">إجمالي المستحق</h6>
+                <h3 className="fw-bold mb-0 text-warning">{loading ? '...' : Math.round(stats.totalDue).toLocaleString('ar-EG')} ج.م</h3>
               </div>
               <div className="text-warning opacity-25 fs-1"><i className="fa-solid fa-file-invoice-dollar"></i></div>
             </Card.Body>
@@ -72,7 +83,7 @@ const FinanceHome = () => {
       <Row className="mb-4">
           <Col className="text-end">
               <Button variant="success" size="lg" onClick={() => navigate('/finance/collect')}>
-                  <i className="fa-solid fa-plus-circle me-2"></i> تسجيل سداد جديد
+                  <i className="fa-solid fa-plus-circle me-2"></i> تسجيل دفع جديد
               </Button>
           </Col>
       </Row>
@@ -81,12 +92,12 @@ const FinanceHome = () => {
       <Row>
         <Col>
           <Card className="shadow-sm border-0">
-            <Card.Header className="bg-white fw-bold">سجل المدفوعات (Payment History)</Card.Header>
+            <Card.Header className="bg-white fw-bold">آخر عمليات التحصيل</Card.Header>
             <Card.Body>
               {loading ? (
                 <div className="text-center p-5"><Spinner animation="border" /></div>
               ) : paidUnits.length === 0 ? (
-                <div className="text-center py-5 text-muted">لا توجد مدفوعات مسجلة بعد.</div>
+                <div className="text-center py-5 text-muted">لا توجد مدفوعات مسجلة بعد</div>
               ) : (
                 <Table hover responsive className="mb-0">
                   <thead className="table-light">
@@ -94,9 +105,9 @@ const FinanceHome = () => {
                       <th>#</th>
                       <th>رقم الوحدة</th>
                       <th>المالك</th>
-                      <th>مبلغ الضريبة</th>
+                      <th>المبلغ</th>
                       <th>طريقة الدفع</th>
-                      <th>رقم الإيصال</th>
+                      <th>الإيصال</th>
                       <th>تاريخ السداد</th>
                       <th>الحالة</th>
                     </tr>
@@ -105,11 +116,11 @@ const FinanceHome = () => {
                     {paidUnits.map((prop, index) => (
                       <tr key={prop.id}>
                         <td>{index + 1}</td>
-                        <td className="fw-bold text-primary">Unit #{prop.id}</td>
-                        <td>{prop.ownerName}</td>
-                        <td className="fw-bold">{Math.round(prop.tax || prop.paidAmount || 0).toLocaleString()} ج.م</td>
+                        <td className="fw-bold text-primary">وحدة #{prop.id}</td>
+                        <td><DynText text={prop.ownerName} lang={lang} /></td>
+                        <td className="fw-bold">{Math.round(prop.tax || prop.paidAmount || 0).toLocaleString('ar-EG')} ج.م</td>
                         <td>
-                            <Badge bg="secondary">{prop.paymentMethod || '-'}</Badge>
+                            <Badge bg="secondary"><DynText text={prop.paymentMethod} lang={lang} /></Badge>
                         </td>
                         <td>{prop.receiptNo}</td>
                         <td>{new Date(prop.paymentDate).toLocaleDateString('ar-EG')}</td>

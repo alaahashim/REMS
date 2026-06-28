@@ -5,24 +5,27 @@ import { registerPayment } from '../../services/financeService';
 import { getEnrichedUnits } from '../../services/propertyService'; 
 import { getUnitInstallments } from '../../services/installmentService';
 import { printDocument } from '../../utils/printDocument';
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const Collection = () => {
   const navigate = useNavigate();
-  
-  // الحالات الأساسية
+  const { lang } = useLanguage(); 
+
   const [loading, setLoading] = useState(false);
   const [unit, setUnit] = useState(null); 
   const [errorMsg, setErrorMsg] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  
-  // البحث السريع (نفس أسلوب صفحة التقدير)
   const [searchTerm, setSearchTerm] = useState('');
-
-  // حالات الأقساط
   const [pendingInstallments, setPendingInstallments] = useState([]);
   const [selectedInstallment, setSelectedInstallment] = useState(null);
 
-  // بيانات الدفع
   const [paymentData, setPaymentData] = useState({
     receiptNo: '',
     amount: 0,
@@ -34,7 +37,6 @@ const Collection = () => {
 
   const handlePrintReceipt = () => {
     if (!receiptData) return;
-
     const receiptNo = receiptData.payment.receiptNo || '-';
     const paidAmount = Math.round(Number(receiptData.payment.amount) || 0).toLocaleString('ar-EG');
     const paymentDate = new Date(receiptData.payment.paymentDate).toLocaleDateString('ar-EG');
@@ -54,7 +56,6 @@ const Collection = () => {
               <strong>${receiptNo}</strong>
             </div>
           </header>
-
           <section class="print-grid">
             <div class="print-field">
               <span class="print-label">رقم الوحدة</span>
@@ -85,7 +86,6 @@ const Collection = () => {
               <span class="print-value">${receiptData.installment.id}</span>
             </div>
           </section>
-
           <footer class="print-footer">
             <div class="signature-box">توقيع الموظف المختص</div>
             <div class="signature-box">ختم المأمورية</div>
@@ -95,27 +95,18 @@ const Collection = () => {
       `,
       `
         .receipt-page { border: 2px solid #0f766e; padding: 18px; }
-        .receipt-number {
-          min-width: 150px;
-          border: 1px solid #99f6e4;
-          background: #ecfdf5;
-          border-radius: 8px;
-          padding: 10px 12px;
-          text-align: center;
-        }
+        .receipt-number { min-width: 150px; border: 1px solid #99f6e4; background: #ecfdf5; border-radius: 8px; padding: 10px 12px; text-align: center; }
         .receipt-number span { display: block; color: #667085; font-size: 12px; }
         .receipt-number strong { display: block; color: #0f766e; font-size: 20px; margin-top: 4px; }
       `
     );
   };
 
-  // ✅ دالة البحث (تم تعديلها لتناسب الضغط على Enter من غير Form)
   const handleQuickSearch = async () => {
-    if(!searchTerm) return;
-
+    if (!searchTerm) return;
     setLoading(true);
     setErrorMsg('');
-    setUnit(null); // مسح الوحدة القديمة أثناء البحث
+    setUnit(null); 
     setPendingInstallments([]);
     setSelectedInstallment(null);
     setPaymentSuccess(false);
@@ -129,15 +120,14 @@ const Collection = () => {
           setErrorMsg('هذه الوحدة لم توافق عليها الإدارة بعد ولا يمكن تسجيل سداد أو طباعة فاتورة.');
           return;
         }
-
         setUnit(found);
         const installments = await getUnitInstallments(found.id);
         const pending = installments.filter(i => i.status === 'Pending');
         setPendingInstallments(pending);
         
-        if(pending.length > 0) {
-            setSelectedInstallment(pending[0]);
-            setPaymentData(prev => ({...prev, amount: pending[0].amount}));
+        if (pending.length > 0) {
+          setSelectedInstallment(pending[0]);
+          setPaymentData(prev => ({ ...prev, amount: pending[0].amount }));
         }
       } else {
         setErrorMsg('وحدة غير موجودة برقم: ' + searchTerm);
@@ -150,19 +140,17 @@ const Collection = () => {
     }
   };
 
-  // ✅ دالة الضغط على Enter (نفس صفحة التقدير)
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleQuickSearch();
     }
   };
 
-  // دالة الدفع
   const handlePay = async () => {
     if (!selectedInstallment) {
-        alert("الرجاء اختيار القسط المراد دفعه أولاً من الجدول");
-        return;
+      alert("الرجاء اختيار القسط المراد دفعه أولاً من الجدول");
+      return;
     }
     
     if (!window.confirm(`هل أنت متأكد من تسجيل مبلغ ${Math.round(paymentData.amount)} ج.م؟`)) return;
@@ -178,11 +166,7 @@ const Collection = () => {
       });
       
       setPaymentSuccess(true);
-      setReceiptData({
-        unit,
-        installment: selectedInstallment,
-        payment: paymentData
-      });
+      setReceiptData({ unit, installment: selectedInstallment, payment: paymentData });
       setPendingInstallments(prev => prev.filter(i => i.id !== selectedInstallment.id));
       setSelectedInstallment(null);
       alert('تم تسجيل السداد بنجاح. يمكنك طباعة الإيصال الآن.');
@@ -197,13 +181,12 @@ const Collection = () => {
 
   return (
     <Container fluid className="mt-4">
-      {/* ========================================== */}
-      {/* 1. البحث السريع في أعلى الصفحة (نفس التقدير) */}
-      {/* ========================================== */}
       <Row className="mb-3">
         <Col>
           <InputGroup>
-            <InputGroup.Text><i className="fa-solid fa-money-check-dollar text-success"></i></InputGroup.Text>
+            <InputGroup.Text>
+              <i className="fa-solid fa-money-check-dollar text-success"></i>
+            </InputGroup.Text>
             <Form.Control 
               placeholder="أدخل رقم الوحدة للبحث السريع واضغط Enter..." 
               value={searchTerm}
@@ -214,23 +197,20 @@ const Collection = () => {
         </Col>
       </Row>
 
-      {/* رسالة الخطأ (تظهر تحت الشريط مباشرة) */}
       {errorMsg && (
         <Row className="justify-content-center mb-3">
-            <Col md={11} lg={10}><Alert variant="danger">{errorMsg}</Alert></Col>
+          <Col md={11} lg={10}>
+            <Alert variant="danger">{errorMsg}</Alert>
+          </Col>
         </Row>
       )}
 
-      {/* ========================================== */}
-      {/* 2. الكارت الأساسي (ظاهر دايماً ومحتواه يتغير) */}
-      {/* ========================================== */}
       <Row className="justify-content-center">
-        <Col md={11} lg={10}>
+        <div className="w-100" style={{ maxWidth: '95%' }}>
           <Card className="shadow-sm border-0 border-top border-5 border-success">
             <Card.Header className="bg-white d-flex justify-content-between align-items-center pt-3">
               <div>
                 <small className="text-muted">تسجيل سداد (Receipt Registration)</small>
-                {/* العنوان يتغير حسب وجود وحدة */}
                 <Card.Title className="mb-0 fs-4 fw-bold">
                   {unit ? `وحدة رقم: ${unit.id}` : 'تسجيل سداد ضريبي'}
                 </Card.Title>
@@ -241,12 +221,14 @@ const Collection = () => {
                 </Badge>
               )}
             </Card.Header>
+            
             <Card.Body>
-              
-              {/* حالة 1: جاري البحث */}
-              {loading && <div className="text-center my-5"><Spinner animation="border" variant="success" /> جاري البحث عن الوحدة...</div>}
+              {loading && (
+                <div className="text-center my-5">
+                  <Spinner animation="border" variant="success" /> جاري البحث عن الوحدة...
+                </div>
+              )}
 
-              {/* حالة 2: لم يتم البحث بعد */}
               {!loading && !unit && !errorMsg && (
                 <div className="text-center py-5 text-muted">
                   <i className="fa-solid fa-arrow-up fa-2x mb-3"></i>
@@ -255,177 +237,172 @@ const Collection = () => {
                 </div>
               )}
 
-              {/* حالة 3: تم العثور على الوحدة */}
               {!loading && unit && (
-                <>
-                  {isFullyPaid ? (
-                    <Alert variant="success" className="text-center">
-                        <i className="fa-solid fa-check-circle fa-2x mb-2"></i>
-                        <h4>جميع الأقساط المسجلة لهذه الوحدة تم دفعها</h4>
-                        <Button variant="outline-secondary" className="mt-3" onClick={() => navigate('/finance/home')}>عودة</Button>
+                isFullyPaid ? (
+                  <Alert variant="success" className="text-center">
+                    <i className="fa-solid fa-check-circle fa-2x mb-2"></i>
+                    <h4>جميع الأقساط المسجلة لهذه الوحدة تم دفعها</h4>
+                    <Button variant="outline-secondary" className="mt-3" onClick={() => navigate('/finance/home')}>
+                      رجوع
+                    </Button>
+                  </Alert>
+                ) : (
+                  <>
+                    <Alert variant="secondary">
+                      <h6 className="fw-bold border-bottom pb-2">بيانات الوحدة والمالك</h6>
+                      <Row>
+                        <Col md={6}>
+                          <div><small>المالك:</small> <strong><DynText text={unit.ownerName} lang={lang} /></strong></div>
+                          <div><small>العنوان:</small> <DynText text={unit.propertyAddress} lang={lang} /></div>
+                          <div><small>نوع الوحدة:</small> <DynText text={unit.unitType} lang={lang} /> (الدور {unit.floor})</div>
+                        </Col>
+                        <Col md={6} className="text-end">
+                          <div className="small text-muted">إجمالي الضريبة السنوية</div>
+                          <div className="fw-bold text-primary fs-4">{Math.round(unit.tax || 0).toLocaleString()} ج.م</div>
+                        </Col>
+                      </Row>
                     </Alert>
-                  ) : (
-                    <>
-                        {/* معلومات الوحدة */}
-                        <Alert variant="secondary">
-                            <h6 className="fw-bold border-bottom pb-2">بيانات الوحدة والمالك</h6>
-                            <Row>
-                                <Col md={6}>
-                                    <div><small>المالك:</small> <strong>{unit.ownerName}</strong></div>
-                                    <div><small>العنوان:</small> {unit.propertyAddress}</div>
-                                    <div><small>نوع الوحدة:</small> {unit.unitType} (الدور {unit.floor})</div>
-                                </Col>
-                                <Col md={6} className="text-end">
-                                    <div className="small text-muted">إجمالي الضريبة السنوية</div>
-                                    <div className="fw-bold text-primary fs-4">{Math.round(unit.tax || 0).toLocaleString()} ج.م</div>
-                                </Col>
-                            </Row>
-                        </Alert>
 
-                        {/* جدول الأقساط المستحقة */}
-                        {pendingInstallments.length > 0 ? (
-                            <Card className="mb-3 border-info bg-light">
-                                <Card.Header className="bg-info text-white fw-bold py-2">
-                                    الأقساط المستحقة (الرجاء اختيار قسط للدفع)
-                                </Card.Header>
-                                <Card.Body className="p-0">
-                                    <Table hover size="sm" className="mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th>تاريخ الاستحقاق</th>
-                                                <th className="text-end">المبلغ (ج.م)</th>
-                                                <th className="text-center">اختيار</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {pendingInstallments.map((inst) => (
-                                                <tr 
-                                                    key={inst.id} 
-                                                    style={{cursor: 'pointer', backgroundColor: selectedInstallment?.id === inst.id ? '#e8f0fe' : 'white'}}
-                                                    onClick={() => {
-                                                        setSelectedInstallment(inst);
-                                                        setPaymentData(prev => ({...prev, amount: inst.amount}));
-                                                    }}
-                                                >
-                                                    <td>{new Date(inst.dueDate).toLocaleDateString('ar-EG')}</td>
-                                                    <td className="text-end fw-bold">{Math.round(inst.amount).toLocaleString()}</td>
-                                                    <td className="text-center">
-                                                        <Form.Check 
-                                                            type="radio" 
-                                                            checked={selectedInstallment?.id === inst.id}
-                                                            readOnly 
-                                                        />
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </Table>
-                                </Card.Body>
-                            </Card>
-                        ) : (
-                            <Alert variant="warning">لا توجد أقساط مستحقة حالياً (قد يكون النظام لم يولدها بعد).</Alert>
-                        )}
-
-                        {/* نموذج الدفع */}
-                        <Form>
-                            <Row>
-                                <Col md={6}>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>رقم الإيصال (Receipt No) <span className="text-danger">*</span></Form.Label>
-                                        <Form.Control 
-                                            type="text" 
-                                            placeholder="اكتب رقم الكاشير..."
-                                            value={paymentData.receiptNo}
-                                            onChange={(e) => setPaymentData({...paymentData, receiptNo: e.target.value})}
-                                            required
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col md={6}>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>طريقة الدفع</Form.Label>
-                                        <Form.Select
-                                            value={paymentData.method}
-                                            onChange={(e) => setPaymentData({...paymentData, method: e.target.value})}
-                                        >
-                                            <option value="Cash">نقدي (Cash)</option>
-                                            <option value="Fawry">فوري (Fawry)</option>
-                                            <option value="Bank">تحويل بنكي</option>
-                                            <option value="InstaPay">إنستا باي</option>
-                                        </Form.Select>
-                                    </Form.Group>
-                                </Col>
-                            </Row>
-                            <Row>
-                                <Col md={6}>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>مبلغ الدفع (ج.م)</Form.Label>
-                                        <Form.Control 
-                                            type="number" 
-                                            className="fw-bold text-primary fs-5"
-                                            value={paymentData.amount}
-                                            onChange={(e) => setPaymentData({...paymentData, amount: Number(e.target.value)})}
-                                            required
-                                            readOnly
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col md={6}>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>تاريخ السداد</Form.Label>
-                                        <Form.Control 
-                                            type="date" 
-                                            value={paymentData.paymentDate}
-                                            onChange={(e) => setPaymentData({...paymentData, paymentDate: e.target.value})}
-                                            required
-                                        />
-                                    </Form.Group>
-                                </Col>
-                            </Row>
-
-                            <div className="d-flex justify-content-between gap-3 mt-5">
-                                <Button variant="secondary" onClick={() => navigate('/finance/home')}>إلغاء</Button>
-                                <Button 
-                                    variant="success" 
-                                    onClick={handlePay} 
-                                    size="lg" 
-                                    disabled={!selectedInstallment || isSaving}
-                                    className="px-5"
+                    {pendingInstallments.length > 0 ? (
+                      <Card className="mb-3 border-info bg-light">
+                        <Card.Header className="bg-info text-white fw-bold py-2">
+                          الأقساط المستحقة (الرجاء اختيار قسط للدفع)
+                        </Card.Header>
+                        <Card.Body className="p-0">
+                          <Table hover size="sm" className="mb-0">
+                            <thead>
+                              <tr>
+                                <th>تاريخ الاستحقاق</th>
+                                <th className="text-end">المبلغ (ج.م)</th>
+                                <th className="text-center">اختيار</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {pendingInstallments.map((inst) => (
+                                <tr 
+                                  key={inst.id} 
+                                  style={{ cursor: 'pointer', backgroundColor: selectedInstallment?.id === inst.id ? '#e8f0fe' : 'white' }}
+                                  onClick={() => {
+                                    setSelectedInstallment(inst);
+                                    setPaymentData(prev => ({ ...prev, amount: inst.amount }));
+                                  }}
                                 >
-                                    {isSaving ? <Spinner size="sm" animation="border" /> : `تأكيد دفع القسط (${selectedInstallment ? Math.round(selectedInstallment.amount) : 0})`}
-                                </Button>
-                            </div>
-                        </Form>
+                                  <td>{new Date(inst.dueDate).toLocaleDateString('ar-EG')}</td>
+                                  <td className="text-end fw-bold">{Math.round(inst.amount).toLocaleString()}</td>
+                                  <td className="text-center">
+                                    <Form.Check type="radio" checked={selectedInstallment?.id === inst.id} readOnly />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </Table>
+                        </Card.Body>
+                      </Card>
+                    ) : (
+                      <Alert variant="warning">لا توجد أقساط مستحقة حالياً (قد يكون النظام لم يولدها بعد).</Alert>
+                    )}
 
-                        {/* إيصال السداد بعد النجاح */}
-                        {paymentSuccess && receiptData && (
-                            <Card className="mt-4 border-primary receipt-box" id="receipt-print-section">
-                                <Card.Header className="bg-primary text-white fw-bold">
-                                    إيصال سداد الضريبة
-                                </Card.Header>
-                                <Card.Body>
-                                    <div className="mb-2"><strong>رقم الإيصال:</strong> {receiptData.payment.receiptNo}</div>
-                                    <div className="mb-2"><strong>رقم الوحدة:</strong> {receiptData.unit.id}</div>
-                                    <div className="mb-2"><strong>اسم المالك:</strong> {receiptData.unit.ownerName}</div>
-                                    <div className="mb-2"><strong>العنوان:</strong> {receiptData.unit.propertyAddress}</div>
-                                    <div className="mb-2"><strong>المبلغ المدفوع:</strong> {Math.round(receiptData.payment.amount).toLocaleString()} ج.م</div>
-                                    <div className="mb-2"><strong>طريقة الدفع:</strong> {receiptData.payment.method}</div>
-                                    <div className="mb-2"><strong>تاريخ السداد:</strong> {new Date(receiptData.payment.paymentDate).toLocaleDateString('ar-EG')}</div>
-                                    <div className="mb-2"><strong>القسط:</strong> {receiptData.installment.id}</div>
-                                    <div className="d-flex justify-content-end gap-2 mt-3 no-print">
-                                        <Button variant="outline-primary" onClick={handlePrintReceipt}>طباعة الإيصال</Button>
-                                        <Button variant="outline-secondary" onClick={() => navigate('/finance/home')}>العودة للرئيسية</Button>
-                                    </div>
-                                </Card.Body>
-                            </Card>
-                        )}
-                    </>
-                  )}
-                </>
-              )}
+                    <Form>
+                      <Row>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>رقم الإيصال (Receipt No) <span className="text-danger">*</span></Form.Label>
+                            <Form.Control 
+                              type="text" 
+                              placeholder="اكتب رقم الكاشير..."
+                              value={paymentData.receiptNo}
+                              onChange={(e) => setPaymentData({ ...paymentData, receiptNo: e.target.value })}
+                              required
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>طريقة الدفع</Form.Label>
+                            <Form.Select
+                              value={paymentData.method}
+                              onChange={(e) => setPaymentData({ ...paymentData, method: e.target.value })}
+                            >
+                              <option value="Cash">نقدي (Cash)</option>
+                              <option value="Fawry">فوري (Fawry)</option>
+                              <option value="Bank">تحويل بنكي</option>
+                              <option value="InstaPay">إنستا باي</option>
+                            </Form.Select>
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                      <Row>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>مبلغ الدفع (ج.م)</Form.Label>
+                            <Form.Control 
+                              type="number" 
+                              className="fw-bold text-primary fs-5"
+                              value={paymentData.amount}
+                              onChange={(e) => setPaymentData({ ...paymentData, amount: Number(e.target.value) })}
+                              required 
+                              readOnly
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>تاريخ السداد</Form.Label>
+                            <Form.Control 
+                              type="date" 
+                              value={paymentData.paymentDate}
+                              onChange={(e) => setPaymentData({ ...paymentData, paymentDate: e.target.value })}
+                              required
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+
+                      <div className="d-flex justify-content-between gap-3 mt-5">
+                        <Button variant="secondary" onClick={() => navigate('/finance/home')}>إلغاء</Button>
+                        <Button 
+                          variant="success" 
+                          onClick={handlePay} 
+                          size="lg" 
+                          disabled={!selectedInstallment || isSaving}
+                          className="px-5"
+                        >
+                          {isSaving ? (
+                            <Spinner size="sm" animation="border" />
+                          ) : (
+                            `تأكيد دفع القسط (${selectedInstallment ? Math.round(selectedInstallment.amount) : 0})`
+                          )}
+                        </Button>
+                      </div>
+                    </Form>
+
+                    {paymentSuccess && receiptData && (
+                      <Card className="mt-4 border-primary receipt-box" id="receipt-print-section">
+                        <Card.Header className="bg-primary text-white fw-bold">
+                          إيصال سداد الضريبة
+                        </Card.Header>
+                        <Card.Body>
+                          <div className="mb-2"><strong>رقم الإيصال:</strong> {receiptData.payment.receiptNo}</div>
+                          <div className="mb-2"><strong>رقم الوحدة:</strong> {receiptData.unit.id}</div>
+                          <div className="mb-2"><strong>اسم المالك:</strong> <DynText text={receiptData.unit.ownerName} lang={lang} /></div>
+                          <div className="mb-2"><strong>العنوان:</strong> <DynText text={receiptData.unit.propertyAddress} lang={lang} /></div>
+                          <div className="mb-2"><strong>المبلغ المدفوع:</strong> {Math.round(receiptData.payment.amount).toLocaleString()} ج.م</div>
+                          <div className="mb-2"><strong>طريقة الدفع:</strong> <DynText text={receiptData.payment.method} lang={lang} /></div>
+                          <div className="mb-2"><strong>تاريخ السداد:</strong> {new Date(receiptData.payment.paymentDate).toLocaleDateString('ar-EG')}</div>
+                          <div className="mb-2"><strong>القسط:</strong> {receiptData.installment.id}</div>
+                          <div className="d-flex justify-content-end gap-2 mt-3 no-print">
+                            <Button variant="outline-primary" onClick={handlePrintReceipt}>طباعة الإيصال</Button>
+                            <Button variant="outline-secondary" onClick={() => navigate('/finance/home')}>العودة للرئيسية</Button>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    )}
+                  </>
+             )
+            )}
             </Card.Body>
           </Card>
-        </Col>
+        </div>
       </Row>
     </Container>
   );

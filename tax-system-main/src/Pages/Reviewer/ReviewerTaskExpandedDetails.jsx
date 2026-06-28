@@ -1,6 +1,13 @@
-// src/components/reviewer/ReviewerTaskExpandedDetails.jsx
 import React from "react";
 import { Badge, Col, Row, Table } from "react-bootstrap";
+import { useLanguage } from "../../context/LanguageContext"; 
+import { useDynamicTranslation } from "../../utils/useDynamicTranslation"; 
+
+// ── مكون مساعد لترجمة الداتا الديناميكياً ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 /** حقل معلوماتي صغير: عنوان + قيمة */
 const InfoField = ({ label, children }) => (
@@ -17,6 +24,8 @@ const InfoField = ({ label, children }) => (
 const getPersonName = (p) => p?.fullName || p?.ownerName || p?.name || "-";
 
 const ReviewerTaskExpandedDetails = ({ details }) => {
+  const { lang } = useLanguage(); 
+
   if (!details) return null;
 
   const owners  = Array.isArray(details.owners)  ? details.owners  : [];
@@ -38,7 +47,10 @@ const ReviewerTaskExpandedDetails = ({ details }) => {
           <InfoField label="رقم الوحدة">{details.unitNumber}</InfoField>
         </Col>
         <Col xs={6} sm={3}>
-          <InfoField label="نوع الوحدة">{details.unitType}</InfoField>
+          <InfoField label="نوع الوحدة">
+            {/* ★ داتا ديناميكية */}
+            <DynText text={details.unitType} lang={lang} />
+          </InfoField>
         </Col>
         <Col xs={6} sm={3}>
           <InfoField label="الدور">{details.floor}</InfoField>
@@ -49,11 +61,17 @@ const ReviewerTaskExpandedDetails = ({ details }) => {
           </InfoField>
         </Col>
         <Col xs={12} sm={6}>
-          <InfoField label="العنوان">{details.propertyAddress}</InfoField>
+          <InfoField label="العنوان">
+            {/* ★ داتا ديناميكية */}
+            <DynText text={details.propertyAddress} lang={lang} />
+          </InfoField>
         </Col>
         <Col xs={6} sm={3}>
           <InfoField label="الاستخدام">
-            <Badge bg="secondary" className="fw-normal">{details.usage || "-"}</Badge>
+            <Badge bg="secondary" className="fw-normal">
+              {/* ★ داتا ديناميكية */}
+              <DynText text={details.usage} lang={lang} />
+            </Badge>
           </InfoField>
         </Col>
         <Col xs={6} sm={3}>
@@ -86,7 +104,10 @@ const ReviewerTaskExpandedDetails = ({ details }) => {
               <tbody>
                 {owners.map((o, i) => (
                   <tr key={`${o.ownerId ?? "o"}-${i}`}>
-                    <td className="fw-semibold">{getPersonName(o)}</td>
+                    <td className="fw-semibold">
+                      {/* ★ داتا ديناميكية (اسم المالك) */}
+                      <DynText text={getPersonName(o)} lang={lang} />
+                    </td>
                     <td>{o.sharePercentage != null ? `${o.sharePercentage}%` : "-"}</td>
                   </tr>
                 ))}
@@ -114,9 +135,18 @@ const ReviewerTaskExpandedDetails = ({ details }) => {
               <tbody>
                 {tenants.map((t, i) => (
                   <tr key={`${t.ownerId ?? "t"}-${i}`}>
-                    <td className="fw-semibold">{getPersonName(t)}</td>
-                    <td className="text-muted small">{t.roleType || "Tenant"}</td>
-                    <td className="text-muted small">{t.shareType || "-"}</td>
+                    <td className="fw-semibold">
+                      {/* ★ داتا ديناميكية (اسم المستأجر) */}
+                      <DynText text={getPersonName(t)} lang={lang} />
+                    </td>
+                    <td className="text-muted small">
+                      {/* ★ داتا ديناميكية */}
+                      <DynText text={t.roleType} lang={lang} />
+                    </td>
+                    <td className="text-muted small">
+                      {/* ★ داتا ديناميكية */}
+                      <DynText text={t.shareType} lang={lang} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

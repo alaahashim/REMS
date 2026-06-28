@@ -6,6 +6,9 @@ import {
   Form, InputGroup, Row, Spinner, Table,
 } from "react-bootstrap";
 
+import { useLanguage } from "../../context/LanguageContext"; 
+import { useDynamicTranslation } from "../../utils/useDynamicTranslation"; 
+
 import {
   getReviewerTaskDetails,
   getReviewerTaxTasks,
@@ -15,6 +18,12 @@ import {
 } from "../../services/taxService";
 import PaginationBar from "./PaginationBar";
 import ReviewerTaskExpandedDetails from "./ReviewerTaskExpandedDetails";
+
+// ── مكون مساعد لترجمة الداتا الديناميكياً ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const PAGE_SIZE = 10;
 
@@ -28,7 +37,7 @@ const STATUS_TABS = [
   },
   {
     key: "approved",
-    label: "معتمدة",
+    label: "معتمد",
     apiValue: "Approved",
     variant: "success",
     icon: "fa-circle-check",
@@ -44,6 +53,7 @@ const TaxStatusBadge = ({ status }) =>
 
 const ReviewerHome = () => {
   const navigate = useNavigate();
+  const { lang } = useLanguage(); 
 
   const [activeTab,        setActiveTab]        = useState("pending");
   const [loading,          setLoading]          = useState(true);
@@ -409,7 +419,8 @@ const ReviewerHome = () => {
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <i className="fa-solid fa-user" style={{ color: "#6c757d", fontSize: "0.75rem" }} />
-                            <span style={{ fontSize: "0.88rem", fontWeight: 500 }}>{s.ownerName}</span>
+                            {/* ★ داتا ديناميكية من الداتا بيز */}
+                            <span style={{ fontSize: "0.88rem", fontWeight: 500 }}><DynText text={s.ownerName} lang={lang} /></span>
                           </div>
                           <Badge
                             bg={approved ? "success" : "warning"}
@@ -495,7 +506,8 @@ const ReviewerHome = () => {
                         </td>
 
                         <td>
-                          <div className="fw-semibold">{task.propertyAddress || "-"}</div>
+                          {/* ★ داتا ديناميكية من الداتا بيز */}
+                          <div className="fw-semibold"><DynText text={task.propertyAddress} lang={lang} /></div>
                           {task.unitNumber && (
                             <div className="text-muted" style={{ fontSize: "0.75rem" }}>
                               كود: {task.unitNumber}
@@ -503,11 +515,15 @@ const ReviewerHome = () => {
                           )}
                         </td>
 
-                        <td className="fw-semibold">{task.ownerName || "-"}</td>
+                        <td className="fw-semibold">
+                          {/* ★ داتا ديناميكية من الداتا بيز */}
+                          <DynText text={task.ownerName} lang={lang} />
+                        </td>
 
                         <td>
                           <Badge bg="light" text="dark" className="border fw-normal small">
-                            {task.usage || "-"}
+                            {/* ★ داتا ديناميكية من الداتا بيز */}
+                            <DynText text={task.usage} lang={lang} />
                           </Badge>
                         </td>
 
