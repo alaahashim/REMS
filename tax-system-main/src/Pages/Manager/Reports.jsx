@@ -4,6 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { getEnrichedUnits } from '../../services/propertyService';
 import { getEmployeesPerformance } from '../../utils/performance';
 import { printDocument } from '../../utils/printDocument';
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const readStorage = (key) => {
   try {
@@ -17,10 +25,12 @@ const money = (value) => `${Math.round(Number(value) || 0).toLocaleString('ar-EG
 
 const ManagerReports = () => {
   const navigate = useNavigate();
+  const { lang } = useLanguage(); 
+
   const [loading, setLoading] = useState(true);
   const [units, setUnits] = useState([]);
-  const [payments, setPayments] = useState([]);         // localStorage – لا يوجد API بعد
-  const [installments, setInstallments] = useState([]); // localStorage – لا يوجد API بعد
+  const [payments, setPayments] = useState([]);         
+  const [installments, setInstallments] = useState([]); 
   const [employeesStats, setEmployeesStats] = useState([]);
 
   useEffect(() => {
@@ -29,7 +39,6 @@ const ManagerReports = () => {
         const enrichedUnits = await getEnrichedUnits();
         setUnits(enrichedUnits);
 
-        // بيانات مؤقتة من localStorage حتى يتوفر API خاص بها
         setPayments(readStorage('tax_payments'));
         setInstallments(readStorage('tax_installments'));
         setEmployeesStats(getEmployeesPerformance());
@@ -235,7 +244,7 @@ const ManagerReports = () => {
                     return (
                       <div className="mb-4" key={type}>
                         <div className="d-flex justify-content-between mb-1">
-                          <span className="fw-bold text-dark">{type}</span>
+                          <span className="fw-bold text-dark"><DynText text={type} lang={lang} /></span>
                           <span className="text-muted">
                             {money(value)} ({percent}%)
                           </span>
@@ -262,7 +271,7 @@ const ManagerReports = () => {
             <i className="fa-solid fa-users-gear me-2 text-primary"></i>أداء الموظفين
           </span>
           <Button size="sm" variant="outline-dark" onClick={exportEmployeeReport}>
-            <i className="fa-solid fa-file-pdf me-2"></i>تصدير PDF
+            <i className="fa-solid fa-file-pdf me-2"></i>تصدير التقرير PDF
           </Button>
         </Card.Header>
         <Card.Body className="p-0">
@@ -290,10 +299,10 @@ const ManagerReports = () => {
                     <td className="text-center text-muted">{index + 1}</td>
                     <td>
                       <Badge bg="light" text="dark" className="border">
-                        {employee.role}
+                        <DynText text={employee.role} lang={lang} />
                       </Badge>
                     </td>
-                    <td className="fw-bold">{employee.name}</td>
+                    <td className="fw-bold"><DynText text={employee.name} lang={lang} /></td>
                     <td className="text-center">{employee.tasksDone}</td>
                     <td>
                       <div className="d-flex align-items-center gap-2">

@@ -19,8 +19,16 @@ import {
   managerAppealDecision,
   managerExemptionDecision,
 } from '../../services/managerService';
-import { openExemptionAttachment }
-from "../../services/exemptionService";
+import { openExemptionAttachment } from "../../services/exemptionService";
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
+
 // ─── helpers ────────────────────────────────────────────────────────────────
 const money = (value) =>
   `${Math.round(Number(value) || 0).toLocaleString('ar-EG')} ج.م`;
@@ -40,9 +48,24 @@ const statusBadge = (status) => {
   );
 };
 
+const getExemptionTypeArabic = (type) => {
+  switch (type) {
+    case 'PrimaryResidence':
+      return 'سكن أساسي';
+    case 'Disability':
+      return 'إعاقة';
+    case 'Charity':
+      return 'جمعيات';
+    default:
+      return type || '-';
+  }
+};
+
 // ─── component ───────────────────────────────────────────────────────────────
 const ManagerVerdict = () => {
   const navigate = useNavigate();
+  const { lang } = useLanguage(); 
+
   const [activeTab, setActiveTab] = useState('appeals');
   const [loading, setLoading] = useState(true);
   const [appeals, setAppeals] = useState([]);
@@ -87,21 +110,7 @@ const ManagerVerdict = () => {
   };
 
   const closeModal = () => setModal({ show: false, type: null, item: null });
-const getExemptionTypeArabic = (type) => {
-  switch (type) {
-    case 'PrimaryResidence':
-      return 'سكن أساسي';
 
-    case 'Disability':
-      return 'إعاقة';
-
-    case 'Charity':
-      return 'جمعية خيرية';
-
-    default:
-      return type || '-';
-  }
-};
   // ── submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -194,10 +203,10 @@ const getExemptionTypeArabic = (type) => {
               <thead className="table-light">
                 <tr>
                   <th className="text-center">#</th>
-                  <th>كو الوحده</th>
+                  <th>كود الوحدة</th>
                   <th>سبب الطعن</th>
                   <th className="text-end">الضريبة الأصلية</th>
-                   <th className="text-end">ضريبة اللجنة</th>
+                  <th className="text-end">ضريبة اللجنة</th>
                   <th className="text-center">الحالة</th>
                   <th className="text-center">إجراء</th>
                 </tr>
@@ -205,7 +214,7 @@ const getExemptionTypeArabic = (type) => {
               <tbody>
                 {appeals.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center text-muted py-5">
+                    <td colSpan={7} className="text-center text-muted py-5">
                       <i className="fa-solid fa-inbox fa-3x mb-3 d-block"></i>
                       لا توجد طعون
                     </td>
@@ -214,20 +223,14 @@ const getExemptionTypeArabic = (type) => {
                   appeals.map((appeal, index) => (
                     <tr key={appeal.id}>
                       <td className="text-center fw-bold text-primary">{index + 1}</td>
-                      <td className="fw-bold"> {appeal.unitNumber || appeal.taxAssessment?.unitId || '-'}</td>
-                      <td className="text-muted">{appeal.appealReason || '-'}</td>
-                      <td className="text-end fw-bold text-success">
-{money(appeal.originalTax)}                      </td>
-                        <td className="text-end fw-bold text-success">
-{money(appeal.proposedTax ?? 0)}                      </td>
+                      <td className="fw-bold">{appeal.unitNumber || appeal.taxAssessment?.unitId || '-'}</td>
+                      <td className="text-muted"><DynText text={appeal.appealReason} lang={lang} /></td>
+                      <td className="text-end fw-bold text-success">{money(appeal.originalTax)}</td>
+                      <td className="text-end fw-bold text-success">{money(appeal.proposedTax ?? 0)}</td>
                       <td className="text-center">{statusBadge(appeal.status)}</td>
                       <td className="text-center">
                         {appeal.status === 'PendingManager' ? (
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() => openModal('appeal', appeal)}
-                          >
+                          <Button size="sm" variant="primary" onClick={() => openModal('appeal', appeal)}>
                             <i className="fa-solid fa-gavel me-1"></i>قرار
                           </Button>
                         ) : (
@@ -249,96 +252,48 @@ const getExemptionTypeArabic = (type) => {
                   <th className="text-center">#</th>
                   <th>المالك</th>
                   <th>سبب الإعفاء</th>
-                    <th>المرفق</th>
+                  <th>المرفق</th>
                   <th className="text-center">الحالة</th>
                   <th className="text-center">إجراء</th>
                 </tr>
               </thead>
               <tbody>
-{
-    exemptions.length === 0 ?
-    (
-        <tr>
-            <td colSpan={6} className="text-center text-muted py-5">
-                <i className="fa-solid fa-inbox fa-3x mb-3 d-block"></i>
-                لا توجد إعفاءات
-            </td>
-        </tr>
-    )
-    :
-    exemptions.map((exemption,index)=>
-    (
-        <tr key={exemption.id}>
-
-            <td className="text-center fw-bold text-primary">
-                {index + 1}
-            </td>
-
-            <td className="fw-bold">
-                {exemption.personName}
-            </td>
-
-            <td>
-                {getExemptionTypeArabic(exemption.exemptionType)}
-            </td>
-
-            <td>
-                {
-                    exemption.fileName
-                    ?
-                    (
-                        <Button
-                            size="sm"
-                            variant="outline-primary"
-                            onClick={() =>
-                                openExemptionAttachment(exemption.id)
-                            }
-                        >
+                {exemptions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center text-muted py-5">
+                      <i className="fa-solid fa-inbox fa-3x mb-3 d-block"></i>
+                      لا توجد إعفاءات
+                    </td>
+                  </tr>
+                ) : (
+                  exemptions.map((exemption, index) => (
+                    <tr key={exemption.id}>
+                      <td className="text-center fw-bold text-primary">{index + 1}</td>
+                      <td className="fw-bold"><DynText text={exemption.personName} lang={lang} /></td>
+                      <td><DynText text={getExemptionTypeArabic(exemption.exemptionType)} lang={lang} /></td>
+                      <td>
+                        {exemption.fileName ? (
+                          <Button size="sm" variant="outline-primary" onClick={() => openExemptionAttachment(exemption.id)}>
                             فتح الملف
-                        </Button>
-                    )
-                    :
-                    (
-                        <span className="text-muted">
-                            لا يوجد
-                        </span>
-                    )
-                }
-            </td>
-
-            <td className="text-center">
-                {statusBadge(exemption.status)}
-            </td>
-
-            <td className="text-center">
-                {
-                    exemption.status === "PendingManager"
-                    ?
-                    (
-                        <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() =>
-                                openModal("exemption", exemption)
-                            }
-                        >
-                            <i className="fa-solid fa-gavel me-1"></i>
-                            قرار
-                        </Button>
-                    )
-                    :
-                    (
-                        <span className="text-muted small">
-                            تم البت
-                        </span>
-                    )
-                }
-            </td>
-
-        </tr>
-    ))
-}
-</tbody>
+                          </Button>
+                        ) : (
+                          <span className="text-muted">لا يوجد</span>
+                        )}
+                      </td>
+                      <td className="text-center">{statusBadge(exemption.status)}</td>
+                      <td className="text-center">
+                        {exemption.status === "PendingManager" ? (
+                          <Button size="sm" variant="primary" onClick={() => openModal("exemption", exemption)}>
+                            <i className="fa-solid fa-gavel me-1"></i>قرار
+                          </Button>
+                        ) : (
+                          <span className="text-muted small">تم البت</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
             </Table>
           )}
         </Card.Body>

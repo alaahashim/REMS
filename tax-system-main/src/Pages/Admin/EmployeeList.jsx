@@ -3,6 +3,13 @@ import { Table, Button, Form, Badge, Card, Container, Row, Col } from 'react-boo
 import { useNavigate } from 'react-router-dom';
 import { toggleEmployeeStatus } from '../../services/adminService';
 import { useDataContext } from '../../context/DataContext';
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
+
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const getEmployeeRole = (employee) => {
   if (!employee) return '-';
@@ -22,6 +29,8 @@ const getEmployeeRole = (employee) => {
 const EmployeeList = () => {
   const navigate = useNavigate();
   const { employees, refreshEmployees, refreshAuditLogs } = useDataContext();
+  const { lang } = useLanguage(); 
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
@@ -29,7 +38,6 @@ const EmployeeList = () => {
     const timeoutId = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery.trim());
     }, 300);
-
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
@@ -88,14 +96,13 @@ const EmployeeList = () => {
               {employees && employees.length > 0 ? (
                 employees.map((emp) => {
                   const isEmpActive = emp.isActive !== undefined ? emp.isActive : emp.IsActive;
-
                   return (
                     <tr key={emp.id || emp.employeeCode || emp.EmployeeCode}>
                       <td><strong>{emp.employeeCode || emp.EmployeeCode || '-'}</strong></td>
                       <td>{emp.nationalId || emp.NationalId || emp.nationalID || emp.NationalID || '-'}</td>
-                      <td>{emp.fullName || emp.FullName || '-'}</td>
-                      <td>{emp.jobTitle || emp.JobTitle || '-'}</td>
-                      <td>{getEmployeeRole(emp)}</td>
+                      <td><DynText text={emp.fullName || emp.FullName} lang={lang} /></td>
+                      <td><DynText text={emp.jobTitle || emp.JobTitle} lang={lang} /></td>
+                      <td><DynText text={getEmployeeRole(emp)} lang={lang} /></td>
                       <td>{emp.username || emp.Username || '-'}</td>
                       <td>
                         <Badge bg={isEmpActive ? 'success' : 'danger'}>

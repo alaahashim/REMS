@@ -12,6 +12,14 @@ import {
   Col,
 } from 'react-bootstrap';
 import { useDataContext } from '../../context/DataContext';
+import { useLanguage } from '../../context/LanguageContext'; 
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; 
+
+// ── مكون مساعد لترجمة البيانات اللي جاية من الداتا بيز ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 // ─── خريطة تصفية الإجراءات ───────────────────────────────────────────────────
 const ACTION_MAP_FILTER = {
@@ -61,6 +69,7 @@ const entityLabel = (entity) => {
 // ─── المكوّن الرئيسي ──────────────────────────────────────────────────────────
 const AuditLogs = () => {
   const { auditLogs, employees, refreshAuditLogs, refreshEmployees } = useDataContext();
+  const { lang } = useLanguage(); 
   const logs = auditLogs ?? [];
 
   const [loading,       setLoading]       = useState(true);
@@ -119,10 +128,6 @@ const AuditLogs = () => {
     return log.user || 'مدير النظام';
   };
 
-  /**
-   * يبحث عن بيانات الموظف أولاً في القائمة الحية،
-   * ثم يعود إلى تفاصيل السجلات التاريخية (للموظفين المحذوفين).
-   */
   const findEmployeeDataGlobally = (targetId) => {
     if (!targetId) return { name: null, nationalId: null, empCode: null };
 
@@ -164,7 +169,6 @@ const AuditLogs = () => {
     let empCode    = extractField(detailsStr, 'EmployeeCode');
     const keyVal   = extractField(detailsStr, 'Key') || extractField(detailsStr, 'Id');
 
-    // تكملة الخانات الفارغة من المصادر الأخرى
     if ((!name || !nationalId || !empCode) && keyVal) {
       const global = findEmployeeDataGlobally(keyVal);
       if (!name)       name       = global.name;
@@ -172,16 +176,22 @@ const AuditLogs = () => {
       if (!empCode)    empCode    = global.empCode;
     }
 
+    // تم عزل النصوص بـ <span> لضمان ترجمتها أوتوماتيكياً دون التباس بالمسافات
     const EmployeeIdentity = () => (
       <>
-        <strong className="text-dark">{name || 'غير معروف'}</strong>
-        {nationalId && <> - الرقم القومي: <strong>{nationalId}</strong></>}
-        {empCode    && ` (كود: ${empCode})`}
+        <strong className="text-dark"><DynText text={name || 'غير معروف'} lang={lang} /></strong>
+        {nationalId && (
+          <>
+            <span> - </span><span>الرقم القومي:</span>{' '}
+            <strong><DynText text={nationalId} lang={lang} /></strong>
+          </>
+        )}
+        {empCode && <span> (كود: {empCode})</span>}
       </>
     );
 
     if (action === 'CREATE' || action === 'INSERT') {
-      return <div>تم إنشاء حساب جديد للموظف: <EmployeeIdentity /></div>;
+      return <div><span>تم إنشاء حساب جديد للموظف:</span> <EmployeeIdentity /></div>;
     }
 
     if (action === 'UPDATE') {
@@ -194,24 +204,24 @@ const AuditLogs = () => {
       if (oldStatus || newStatus) {
         return (
           <div>
-            تعديل حالة حساب الموظف: <EmployeeIdentity />
+            <span>تعديل حالة حساب الموظف:</span> <EmployeeIdentity />
             {oldStatus && newStatus && (
               <span>
-                {' '}(من{' '}
+                {' '}(<span>من</span>{' '}
                 <Badge bg="secondary" className="mx-1">{mapStatus(oldStatus)}</Badge>
-                إلى{' '}
-                <Badge bg="success"   className="mx-1">{mapStatus(newStatus)}</Badge>)
+                {' '}<span>إلى</span>{' '}
+                <Badge bg="success" className="mx-1">{mapStatus(newStatus)}</Badge>)
               </span>
             )}
           </div>
         );
       }
 
-      return <div>تم تعديل بيانات الموظف: <EmployeeIdentity /></div>;
+      return <div><span>تم تعديل بيانات الموظف:</span> <EmployeeIdentity /></div>;
     }
 
     if (action === 'DELETE') {
-      return <div>تم حذف حساب الموظف: <EmployeeIdentity /></div>;
+      return <div><span>تم حذف حساب الموظف:</span> <EmployeeIdentity /></div>;
     }
 
     return <div className="text-break">{detailsStr}</div>;
@@ -353,10 +363,10 @@ const AuditLogs = () => {
             <Form.Group>
               <Form.Label className="mb-1">نوع الإجراء</Form.Label>
               <Form.Select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)}>
-                <option>كل الإجراءات</option>
-                <option>إضافة</option>
-                <option>تعديل</option>
-                <option>حذف</option>
+                <option value="كل الإجراءات">كل الإجراءات</option>
+                <option value="إضافة">إضافة</option>
+                <option value="تعديل">تعديل</option>
+                <option value="حذف">حذف</option>
               </Form.Select>
             </Form.Group>
           </Col>
@@ -445,7 +455,7 @@ const AuditLogs = () => {
                         )}
                       </td>
 
-                      <td><strong>{translateUser(log)}</strong></td>
+                      <td><strong><DynText text={translateUser(log)} lang={lang} /></strong></td>
 
                       <td>
                         <Badge
