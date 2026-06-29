@@ -46,7 +46,11 @@ const TopNavbar = ({ onToggleSidebar }) => {
     if (path.includes('/reports'))     return translations[lang].reports;
     return translations[lang].mainSystem;
   };
+const currentPageTitle = getPageTitle();
 
+const showBackButton =
+  location.pathname !== '/' &&
+  !location.pathname.endsWith('/home');
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="top-bar bg-white shadow-sm py-2 py-md-3 px-3 px-md-4 d-flex justify-content-between align-items-center">
@@ -62,83 +66,49 @@ const TopNavbar = ({ onToggleSidebar }) => {
           <i className="fa-solid fa-bars" />
         </button>
 
-        <h4
-          className="page-title m-0 fw-bold text-primary text-truncate"
-          style={{ fontSize: window.innerWidth < 768 ? '1rem' : '1.5rem' }}
-        >
-          {getPageTitle()}
+        {showBackButton && (
+          <button className="btn btn-outline-secondary btn-sm d-none d-md-flex align-items-center gap-1" onClick={() => navigate('/')} title={translations[lang].back}>
+            <i className={`fa-solid ${lang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'}`}></i>
+            <span>{translations[lang].back}</span>
+          </button>
+        )}
+        
+        {/* ✅ تصغير الخط وعمل Truncate على الموبايل */}
+        <h4 className="page-title m-0 fw-bold text-primary text-truncate">
+          {currentPageTitle}
         </h4>
       </div>
 
       {/* ── جانب الأدوات ── */}
       <div className="d-flex align-items-center gap-1 gap-md-3">
 
-        {/* زر تغيير اللغة */}
         <button
-          className="btn d-flex align-items-center justify-content-center text-primary p-1 p-md-2"
-          style={{
-            backgroundColor: '#f0f8ff',
-            borderRadius: '999px',
-            minWidth: window.innerWidth < 768 ? '38px' : 'auto',
-            height: '38px',
-          }}
+          className="btn d-flex align-items-center justify-content-center text-primary p-1 p-md-2 lang-toggle-btn"
           onClick={toggleLanguage}
           title={translations[lang].language}
+          style={{ gap: '4px' }}
         >
-          <i className="fa-solid fa-globe" />
-          <span className="d-none d-md-inline ms-1" style={{ fontWeight: 600 }}>
+          <i className="fa-solid fa-language fs-5"></i>
+          <span className="fw-bold" style={{ fontSize: '0.85rem' }}>
             {lang === 'ar' ? 'English' : 'العربية'}
           </span>
         </button>
 
-        {/* زر المساعد الذكي — مخفي على الموبايل الصغير */}
-        <button
-          className="btn p-1 p-md-2 text-primary d-none d-sm-block"
-          style={{ backgroundColor: '#f0f8ff', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => navigate('/chatbot')}
-          title={translations[lang].assistant}
-        >
-          <i className="fa-solid fa-robot fs-5" />
+        <button className="btn p-1 p-md-2 text-primary d-flex align-items-center justify-content-center" style={{ backgroundColor: '#f0f8ff', borderRadius: '50%', width: '38px', height: '38px' }} onClick={() => navigate('/chatbot')} title={translations[lang].assistant}>
+          <i className="fa-solid fa-robot fs-5"></i>
         </button>
 
-        {/* زر الإشعارات */}
-        <button
-          className="btn p-1 p-md-2 text-secondary position-relative"
-          style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => navigate('/notifications')}
-          title={translations[lang].notifications}
-        >
-          <i className="fa-solid fa-bell fs-5" />
-          {notificationCount > 0 && (
-            <span
-              className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-              style={{ fontSize: '0.6rem' }}
-            >
-              {notificationCount}
-            </span>
-          )}
+        <button className="btn p-1 p-md-2 text-secondary position-relative d-flex align-items-center justify-content-center" style={{ width: '38px', height: '38px' }} title={translations[lang].notifications} onClick={() => navigate('/notifications')}>
+          <i className="fa-solid fa-bell fs-5"></i>
+          {notificationCount > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{fontSize: '0.6rem'}}>{notificationCount}</span>}
         </button>
 
-        {/* زر الإعدادات — مخفي على الموبايل الصغير */}
-        <button
-          className="btn p-1 p-md-2 text-secondary d-none d-sm-block"
-          style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => navigate('/settings')}
-          title={translations[lang].settings}
-        >
-          <i className="fa-solid fa-gear fs-5" />
+        <button className="btn p-1 p-md-2 text-secondary d-flex align-items-center justify-content-center" style={{ width: '38px', height: '38px' }} title={translations[lang].settings} onClick={() => navigate('/settings')}>
+          <i className="fa-solid fa-gear fs-5"></i>
         </button>
 
-        {/* صورة الملف الشخصي */}
-        <button
-          className="btn p-0 rounded-circle overflow-hidden border border-2 border-primary"
-          style={{
-            width:  window.innerWidth < 768 ? '35px' : '45px',
-            height: window.innerWidth < 768 ? '35px' : '45px',
-          }}
-          onClick={() => navigate('/profile')}
-          title={translations[lang].profile}
-        >
+        {/* ✅ تصغير الصورة الشخصية شوية على الموبايل */}
+        <button className="btn p-0 rounded-circle overflow-hidden border border-2 border-primary profile-avatar-btn" title={translations[lang].profile} onClick={() => navigate('/profile')}>
           <img src={profileImage} alt="User" className="w-100 h-100 object-fit-cover" />
         </button>
       </div>

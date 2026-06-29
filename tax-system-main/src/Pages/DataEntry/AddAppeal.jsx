@@ -13,23 +13,32 @@ import {
   Table,
   InputGroup
 } from "react-bootstrap";
+import { useLanguage } from "../../context/LanguageContext";
+import { useDynamicTranslation } from "../../utils/useDynamicTranslation";
 import { createAppeal, searchAssessmentsForAppeal } from "../../services/appealService";
+
+// ── مكون مساعد لترجمة الداتا الديناميكية الراجعة من الداتابيز فقط ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const PAGE_SIZE = 8;
 
 const AddAppeal = () => {
   const navigate = useNavigate();
+  const { lang, t } = useLanguage();
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
 
   // --- Assessment lookup state ---
-  const [searchText, setSearchText]     = useState("");
-  const [taxYearFilter, setTaxYearFilter] = useState("");
-  const [assessments, setAssessments]   = useState([]);
-  const [totalCount, setTotalCount]     = useState(0);
-  const [currentPage, setCurrentPage]   = useState(1);
-  const [loadingSearch, setLoadingSearch] = useState(false);
+  const [searchText, setSearchText]         = useState("");
+  const [taxYearFilter, setTaxYearFilter]   = useState("");
+  const [assessments, setAssessments]       = useState([]);
+  const [totalCount, setTotalCount]         = useState(0);
+  const [currentPage, setCurrentPage]       = useState(1);
+  const [loadingSearch, setLoadingSearch]   = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false);
 
   // --- Selected assessment ---
@@ -44,7 +53,6 @@ const AddAppeal = () => {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  // -------------------------------------------------------
   const fetchAssessments = useCallback(async (page = 1) => {
     setLoadingSearch(true);
     setMessage({ text: "", type: "" });
@@ -81,24 +89,21 @@ const AddAppeal = () => {
     fetchAssessments(page);
   };
 
-  // -------------------------------------------------------
   const handleSelectAssessment = (item) => {
     setSelectedAssessment(item);
-    // Scroll down to form
     setTimeout(() => {
       document.getElementById("appeal-form-section")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   };
 
-  // -------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setMessage({ text: "", type: "" });
 
     try {
-      if (!selectedAssessment) throw new Error("يجب اختيار الربط الضريبي أولاً");
-      if (!formData.appealReason.trim()) throw new Error("سبب الطعن مطلوب");
+      if (!selectedAssessment) throw new Error("اختر ربطاً ضريبياً أولاً");
+      if (!formData.appealReason.trim()) throw new Error("الرجاء إدخال سبب الطعن");
 
       const payload = {
         taxAssessmentId: Number(selectedAssessment.taxAssessmentId ?? selectedAssessment.id),
@@ -131,13 +136,13 @@ const AddAppeal = () => {
       <Row className="justify-content-center">
         <Col md={11} lg={10}>
 
-          {/* ===== Page Header ===== */}
+          {/* ══════════ كارت البحث ══════════ */}
           <Card className="shadow-sm border-0 border-top border-5 border-primary mb-4">
             <Card.Header className="bg-primary text-white py-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
                   <small className="text-white-50">تقديم طلب جديد</small>
-                  <Card.Title className="mb-0 fs-4 fw-bold">تسجيل طعن ضريبي</Card.Title>
+                  <Card.Title className="mb-0 fs-4 fw-bold">{t('addAppeal')}</Card.Title>
                 </div>
                 <Badge bg="success" className="fs-6">إضافة</Badge>
               </div>
@@ -148,7 +153,7 @@ const AddAppeal = () => {
                 <Alert variant={message.type} className="mb-3">{message.text}</Alert>
               )}
 
-              {/* ===== STEP 1: Search ===== */}
+              {/* ══════════ الخطوة 1: البحث ══════════ */}
               <h6 className="text-primary fw-bold mb-3">
                 <span className="badge bg-primary me-2">1</span>
                 ابحث عن الربط الضريبي المراد الطعن عليه
@@ -191,7 +196,7 @@ const AddAppeal = () => {
                 </Col>
               </Row>
 
-              {/* ===== Search Results Table ===== */}
+              {/* ══════════ نتائج البحث ══════════ */}
               {searchPerformed && (
                 <>
                   {assessments.length === 0 ? (
@@ -207,14 +212,13 @@ const AddAppeal = () => {
                               <th>كود الوحدة</th>
                               <th>عنوان العقار</th>
                               <th>السنة الضريبية</th>
-                              <th>القيمة الإيجارية</th>
                               <th>الضريبة السنوية</th>
                               <th>اختيار</th>
                             </tr>
                           </thead>
                           <tbody className="text-center">
                             {assessments.map((item, idx) => {
-                              const itemId = item.taxAssessmentId ?? item.id;
+                              const itemId     = item.taxAssessmentId ?? item.id;
                               const selectedId = selectedAssessment?.taxAssessmentId ?? selectedAssessment?.id;
                               const isSelected = String(itemId) === String(selectedId);
                               return (
@@ -225,18 +229,33 @@ const AddAppeal = () => {
                                   onClick={() => handleSelectAssessment(item)}
                                 >
                                   <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
-                                  <td className="text-start">{item.ownerName || "-"}</td>
+
+                                  {/* ★ داتا ديناميكية من الداتابيز */}
+                                  <td className="text-start">
+                                    <DynText text={item.ownerName} lang={lang} />
+                                  </td>
+
                                   <td>{item.unitNumber || item.unitCode || "-"}</td>
-                                  <td className="text-start">{item.propertyAddress || "-"}</td>
+
+                                  {/* ★ داتا ديناميكية من الداتابيز */}
+                                  <td className="text-start">
+                                    <DynText text={item.propertyAddress} lang={lang} />
+                                  </td>
+
                                   <td>{item.taxYear || "-"}</td>
-                                  <td>{item.annualRentalValue != null ? `${item.annualRentalValue} ج.م` : "-"}</td>
                                   <td className="fw-bold text-danger">
                                     {item.annualTax != null ? `${item.annualTax} ج.م` : "-"}
                                   </td>
                                   <td>
                                     {isSelected
                                       ? <Badge bg="success">✓ مختار</Badge>
-                                      : <Button size="sm" variant="outline-primary" onClick={(e) => { e.stopPropagation(); handleSelectAssessment(item); }}>اختيار</Button>
+                                      : <Button
+                                          size="sm"
+                                          variant="outline-primary"
+                                          onClick={(e) => { e.stopPropagation(); handleSelectAssessment(item); }}
+                                        >
+                                          اختيار
+                                        </Button>
                                     }
                                   </td>
                                 </tr>
@@ -279,7 +298,7 @@ const AddAppeal = () => {
             </Card.Body>
           </Card>
 
-          {/* ===== STEP 2: Appeal Form ===== */}
+          {/* ══════════ كارت بيانات الطعن ══════════ */}
           <div id="appeal-form-section">
             <Card className={`shadow-sm border-0 border-top border-5 ${selectedAssessment ? "border-success" : "border-secondary"}`}>
               <Card.Header className={`${selectedAssessment ? "bg-success" : "bg-secondary"} text-white py-3`}>
@@ -291,7 +310,7 @@ const AddAppeal = () => {
               </Card.Header>
 
               <Card.Body>
-                {/* Selected assessment summary */}
+                {/* ملخص الربط المختار */}
                 {selectedAssessment && (
                   <Card className="mb-4 bg-light border-success border-2">
                     <Card.Body>
@@ -304,7 +323,8 @@ const AddAppeal = () => {
                       <Row>
                         <Col md={3} sm={6} className="mb-2">
                           <div className="text-secondary small fw-bold mb-1">اسم المالك</div>
-                          <div className="fw-bold">{selectedAssessment.ownerName || "-"}</div>
+                          {/* ★ داتا ديناميكية */}
+                          <div className="fw-bold"><DynText text={selectedAssessment.ownerName} lang={lang} /></div>
                         </Col>
                         <Col md={3} sm={6} className="mb-2">
                           <div className="text-secondary small fw-bold mb-1">كود الوحدة</div>
@@ -316,12 +336,15 @@ const AddAppeal = () => {
                         </Col>
                         <Col md={3} sm={6} className="mb-2">
                           <div className="text-secondary small fw-bold mb-1">الضريبة السنوية</div>
-                          <div className="fw-bold text-danger fs-5">{selectedAssessment.annualTax != null ? `${selectedAssessment.annualTax} ج.م` : "-"}</div>
+                          <div className="fw-bold text-danger fs-5">
+                            {selectedAssessment.annualTax != null ? `${selectedAssessment.annualTax} ج.م` : "-"}
+                          </div>
                         </Col>
                         {selectedAssessment.propertyAddress && (
                           <Col md={12} className="mt-1">
                             <div className="text-secondary small fw-bold mb-1">عنوان العقار</div>
-                            <div className="fw-bold">{selectedAssessment.propertyAddress}</div>
+                            {/* ★ داتا ديناميكية */}
+                            <div className="fw-bold"><DynText text={selectedAssessment.propertyAddress} lang={lang} /></div>
                           </Col>
                         )}
                         {selectedAssessment.annualRentalValue != null && (
@@ -339,9 +362,7 @@ const AddAppeal = () => {
                   <Row className="mt-2">
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="text-primary fw-bold">
-                          تاريخ تقديم الطعن
-                        </Form.Label>
+                        <Form.Label className="text-primary fw-bold">تاريخ تقديم الطعن</Form.Label>
                         <Form.Control
                           type="date"
                           value={formData.appealDate}
@@ -353,9 +374,7 @@ const AddAppeal = () => {
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="text-primary fw-bold">
-                          رفع المستندات الداعمة
-                        </Form.Label>
+                        <Form.Label className="text-primary fw-bold">رفع المستندات الداعمة</Form.Label>
                         <Form.Control
                           type="file"
                           onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
@@ -373,7 +392,11 @@ const AddAppeal = () => {
                     <Form.Control
                       as="textarea"
                       rows={4}
-                      placeholder={selectedAssessment ? "اكتب هنا أسباب الاعتراض على القيمة الضريبية المحسوبة..." : "اختر الربط الضريبي أولاً"}
+                      placeholder={
+                        selectedAssessment
+                          ? "اكتب هنا أسباب الاعتراض على القيمة الضريبية المحسوبة..."
+                          : "اختر الربط الضريبي أولاً"
+                      }
                       value={formData.appealReason}
                       onChange={(e) => setFormData({ ...formData, appealReason: e.target.value })}
                       required
@@ -392,11 +415,10 @@ const AddAppeal = () => {
                       size="lg"
                       className="fw-bold px-5"
                     >
-                      {submitting ? (
-                        <><Spinner size="sm" animation="border" className="me-2" />جاري التسجيل...</>
-                      ) : (
-                        "تسجيل الطعن"
-                      )}
+                      {submitting
+                        ? <><Spinner size="sm" animation="border" className="me-2" />جاري التسجيل...</>
+                        : "تسجيل الطعن"
+                      }
                     </Button>
                   </div>
                 </Form>

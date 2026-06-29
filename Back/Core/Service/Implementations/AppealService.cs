@@ -9,7 +9,7 @@ using Shared.DTOS;
 namespace Core.Service.Implementations
 {
     public class AppealService : IAppealService
-    {
+    {   private readonly IInstallmentService _installmentService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
@@ -17,10 +17,13 @@ namespace Core.Service.Implementations
 
         public AppealService(
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+             IInstallmentService installmentService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _installmentService = installmentService;
+
         }
 
         #region Search Tax Assessments For Appeal
@@ -230,7 +233,7 @@ namespace Core.Service.Implementations
 
                     await attachmentRepo.AddAsync(attachment);
                 }
-            }
+            }            assessment.IsAvailableForCollection = false;
 
             await _unitOfWork.SaveChangesAsync();
 
@@ -447,8 +450,8 @@ public async Task CommitteeDecisionAsync(
                 "New Tax Amount required"
             });
 
-        appeal.TaxAssessment.AnnualTax =
-            dto.NewTaxAmount.Value;
+           appeal.TaxAssessment.CommitteeProposedTax = dto.NewTaxAmount.Value;
+
     }
 
     appeal.Status = AppealStatus.PendingManager;
@@ -475,109 +478,114 @@ GetManagerAppealsAsync()
 
     return _mapper.Map<IEnumerable<ManagerAppealDto>>(appeals);
 }
-public async Task ManagerDecisionAsync(
-    int appealId,
-    ManagerDecisionDto dto,
-    int managerUserId)
+public async Task ManagerDecisionAsync(int appealId, ManagerDecisionDto dto, int managerUserId)
 {
-    var repo =
-        _unitOfWork.GetRepository<Appeal, int>();
+    var repo = _unitOfWork.GetRepository<Appeal, int>();
+    var assessmentRepo = _unitOfWork.GetRepository<TaxAssessment, int>();
+    var installmentRepo = _unitOfWork.GetRepository<Installment, int>();
 
-    var appeal =
-        await repo.GetByIdAsync(
-            new AppealWithTaxAssessmentSpec(appealId));
+    var appeal = await repo.GetByIdAsync(new AppealWithTaxAssessmentSpec(appealId));
 
     if (appeal == null)
         throw new NotFoundException("الطعن غير موجود.");
 
-    //--------------------------------------------------
-    // لا يجوز اتخاذ القرار مرتين
-    //--------------------------------------------------
-
     if (appeal.Status != AppealStatus.PendingManager)
-        throw new BusinessException(
-            "هذا الطعن ليس في انتظار قرار المدير.");
+        throw new BusinessException("هذا الطعن ليس في انتظار قرار المدير.");
 
     var assessment = appeal.TaxAssessment;
 
     if (assessment == null)
-        throw new BusinessException(
-            "التقييم الضريبي غير موجود.");
-
-    //--------------------------------------------------
-    // بيانات المدير
-    //--------------------------------------------------
+        throw new BusinessException("التقييم الضريبي غير موجود.");
 
     appeal.ManagerUserId = managerUserId;
-
     appeal.ManagerDecisionDate = DateTime.UtcNow;
-
     appeal.ManagerNote = dto.Note;
-
-    //--------------------------------------------------
-    // القرار النهائي
-    //--------------------------------------------------
 
     switch (dto.Status)
     {
-        //----------------------------------------------
-        // موافقة المدير
-        //----------------------------------------------
-
         case AppealStatus.Approved:
 
             if (!dto.ManagerApprovedTax.HasValue)
-                throw new BusinessException(
-                    "يجب إدخال قيمة الضريبة النهائية.");
+                throw new BusinessException("يجب إدخال قيمة الضريبة النهائية.");
 
             if (dto.ManagerApprovedTax.Value < 0)
-                throw new BusinessException(
-                    "قيمة الضريبة غير صحيحة.");
+                throw new BusinessException("قيمة الضريبة غير صحيحة.");
 
-            assessment.ManagerApprovedTax =
-                dto.ManagerApprovedTax.Value;
+            var installments = assessment.Installments.ToList();
 
-            assessment.AnnualTax =
-                dto.ManagerApprovedTax.Value;
+            if (installments.Any(i => i.Payments.Any()))
+                throw new BusinessException("لا يمكن تعديل الضريبة بعد بدء السداد.");
 
-            assessment.TotalDue =
-                assessment.AnnualTax +
-                assessment.AppealFee;
+            // حذف الأقساط القديمة
+            foreach (var installment in installments)
+                installmentRepo.Remove(installment);
+
+            // تحديث قيم التقييم
+            assessment.ManagerApprovedTax = dto.ManagerApprovedTax.Value;
+            assessment.AnnualTax = dto.ManagerApprovedTax.Value;
+            assessment.TotalDue = assessment.AnnualTax + assessment.AppealFee;
+            assessment.PaymentStatus = PaymentStatus.Pending;
+            assessment.IsAvailableForCollection = true;
+
+            // إنشاء الأقساط الجديدة مباشرة بدون SaveChanges وسيطة
+            var year = assessment.TaxYear;
+
+            if (assessment.PaymentPlan == PaymentPlan.Full)
+            {
+                await installmentRepo.AddAsync(new Installment
+                {
+                    TaxAssessmentId = assessment.Id,
+                    InstallmentNumber = 1,
+                    Amount = assessment.TotalDue,
+                    DueDate = new DateTime(year, 6, 30),
+                    Status = InstallmentStatus.Pending
+                });
+            }
+            else if (assessment.PaymentPlan == PaymentPlan.Installment_2)
+            {
+                var firstAmount = Math.Round(assessment.TotalDue / 2m, 2);
+                var secondAmount = assessment.TotalDue - firstAmount;
+
+                await installmentRepo.AddAsync(new Installment
+                {
+                    TaxAssessmentId = assessment.Id,
+                    InstallmentNumber = 1,
+                    Amount = firstAmount,
+                    DueDate = new DateTime(year, 6, 30),
+                    Status = InstallmentStatus.Pending
+                });
+
+                await installmentRepo.AddAsync(new Installment
+                {
+                    TaxAssessmentId = assessment.Id,
+                    InstallmentNumber = 2,
+                    Amount = secondAmount,
+                    DueDate = new DateTime(year, 12, 31),
+                    Status = InstallmentStatus.Pending
+                });
+            }
 
             appeal.ManagerVerdict = "Approved";
-
             appeal.Status = AppealStatus.Approved;
 
             break;
 
-        //----------------------------------------------
-        // رفض المدير
-        //----------------------------------------------
-
         case AppealStatus.Rejected:
 
+            assessment.IsAvailableForCollection = true;
             appeal.ManagerVerdict = "Rejected";
-
             appeal.Status = AppealStatus.Rejected;
 
             break;
 
-        //----------------------------------------------
-        // أى قيمة أخرى مرفوضة
-        //----------------------------------------------
-
         default:
-
-            throw new BusinessException(
-                "قرار المدير غير صحيح.");
+            throw new BusinessException("قرار المدير غير صحيح.");
     }
 
     repo.Update(appeal);
+    assessmentRepo.Update(assessment);
 
-    _unitOfWork
-        .GetRepository<TaxAssessment, int>()
-        .Update(assessment);
-
+    // حفظ واحد يشمل كل العمليات (حذف الأقساط + إضافة الجديدة + تحديث الطعن والتقييم)
     await _unitOfWork.SaveChangesAsync();
 }
 #endregion

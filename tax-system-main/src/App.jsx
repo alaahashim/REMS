@@ -10,6 +10,7 @@ import TopNavbar from './components/Layout/Navbar';
 
 // Pages
 import Login from './pages/Auth/Login';
+import ForgotPassword from './pages/Auth/ForgotPassword';
 import { Unauthorized } from './pages/Unauthorized';
 import Dashboard from './pages/Shared/Dashboard'; 
 import ProfilePage from './pages/Shared/Profile';
@@ -40,7 +41,6 @@ import FinanceCollection from './pages/Finance/Collection';
 // Manager
 import ManagerHome from './pages/Manager/Home';
 import ManagerVerdict from './pages/Manager/Verdict';
-import ManagerReports from './pages/Manager/Reports';
 
 // Admin
 import AdminHome from './pages/Admin/Home';
@@ -92,6 +92,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         <Route path="/*" element={
@@ -135,7 +136,6 @@ function App() {
 
                     <Route path="/manager/home" element={<ManagerHome />} />
                     <Route path="/manager/verdict" element={<ManagerVerdict />} />
-                    <Route path="/manager/reports" element={<ManagerReports />} />
 
                     <Route path="/admin/home" element={<AdminHome />} />
                     <Route path="/admin/users" element={<UserManagement />} />

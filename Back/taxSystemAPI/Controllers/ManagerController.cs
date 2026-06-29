@@ -31,9 +31,8 @@ public class ManagerController : ControllerBase
     }
 
     [HttpPost("appeals/{id}/decision")]
-    public async Task<IActionResult> AppealDecision(
-        int id,
-        ManagerDecisionDto dto)
+  public async Task<IActionResult> AppealDecision(int id, [FromBody] ManagerDecisionDto dto)
+
     {
         var managerId = GetCurrentUserId();
 
@@ -64,9 +63,8 @@ public class ManagerController : ControllerBase
     }
 
     [HttpPost("exemptions/{id}/decision")]
-    public async Task<IActionResult> ExemptionDecision(
-        int id,
-        ManagerExemptionDecisionDto dto)
+   public async Task<IActionResult> ExemptionDecision(int id, [FromBody] ManagerExemptionDecisionDto dto)
+
     {
         var managerId = GetCurrentUserId();
 

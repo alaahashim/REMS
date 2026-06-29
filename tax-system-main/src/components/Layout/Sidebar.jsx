@@ -135,20 +135,33 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <Nav.Link onClick={() => handleNavigate('/manager/verdict')} style={linkStyle('/manager/verdict')} active={isActivePath('/manager/verdict')}>
                   <i className="fa-solid fa-stamp me-2" /> الاعتمادات النهائية
                 </Nav.Link>
-                <Nav.Link onClick={() => handleNavigate('/manager/reports')} style={linkStyle('/manager/reports')} active={isActivePath('/manager/reports')}>
-                  <i className="fa-solid fa-file-pdf me-2" /> التقارير المالية
-                </Nav.Link>
+                
               </>
             )}
 
             {/* ── لجنة الطعون ── */}
-            {role === 'Committee' && (
-              <>
-                <Nav.Link onClick={() => handleNavigate('/committee/home')} style={linkStyle('/committee/home')} active={isActivePath('/committee/home')}>
-                  <i className="fa-solid fa-gavel me-2" /> لجنة الطعون
-                </Nav.Link>
-              </>
-            )}
+           {/* ── لجنة الطعون والإعفاءات ── */}
+{role === 'Committee' && (
+  <>
+    <Nav.Link
+      onClick={() => handleNavigate('/committee/appeals')}
+      style={linkStyle('/committee/appeals')}
+      active={isActivePath('/committee/appeals')}
+    >
+      <i className="fa-solid fa-gavel me-2" />
+      لجنة الطعون
+    </Nav.Link>
+
+    <Nav.Link
+      onClick={() => handleNavigate('/committee/exemptions')}
+      style={linkStyle('/committee/exemptions')}
+      active={isActivePath('/committee/exemptions')}
+    >
+      <i className="fa-solid fa-shield-halved me-2" />
+      لجنة الإعفاءات
+    </Nav.Link>
+  </>
+)}
 
             {/* ── الأدمن ── */}
             {role === 'Admin' && (

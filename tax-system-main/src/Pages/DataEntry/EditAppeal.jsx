@@ -11,16 +11,25 @@ import {
   Spinner,
   Badge
 } from "react-bootstrap";
+import { useLanguage } from "../../context/LanguageContext";
+import { useDynamicTranslation } from "../../utils/useDynamicTranslation";
 import { getAppealById, updateAppeal } from "../../services/appealService";
+
+// ── مكون مساعد لترجمة الداتا ديناميكياً ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const EditAppeal = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { lang } = useLanguage();
 
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading]       = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage]     = useState({ text: "", type: "" });
-  const [appeal, setAppeal]       = useState(null);
+  const [message, setMessage]       = useState({ text: "", type: "" });
+  const [appeal, setAppeal]         = useState(null);
 
   const [formData, setFormData] = useState({
     appealDate: "",
@@ -72,7 +81,6 @@ const EditAppeal = () => {
     }
   };
 
-  // -------------------------------------------------------
   if (loading) {
     return (
       <div className="text-center mt-5">
@@ -115,7 +123,7 @@ const EditAppeal = () => {
 
               <Form onSubmit={handleSubmit}>
 
-                {/* ===== Assessment Details (read-only) ===== */}
+                {/* ===== بيانات الربط الضريبي (قراءة فقط) ===== */}
                 <Card className="mb-4 bg-light border-secondary">
                   <Card.Body>
                     <Card.Title className="text-muted mb-3 h6">
@@ -124,12 +132,10 @@ const EditAppeal = () => {
                     <Row>
                       <Col md={4} sm={6} className="mb-3">
                         <Form.Label className="text-secondary fw-bold small">اسم المالك</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={appeal.ownerName || "-"}
-                          readOnly plaintext
-                          className="fw-bold fs-5"
-                        />
+                        {/* داتا ديناميكية — DynText للترجمة */}
+                        <div className="form-control-plaintext fw-bold fs-5">
+                          <DynText text={appeal.ownerName} lang={lang} />
+                        </div>
                       </Col>
                       <Col md={4} sm={6} className="mb-3">
                         <Form.Label className="text-secondary fw-bold small">كود الوحدة</Form.Label>
@@ -172,19 +178,17 @@ const EditAppeal = () => {
                       {appeal.propertyAddress && (
                         <Col md={8} className="mb-3">
                           <Form.Label className="text-secondary fw-bold small">عنوان العقار</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={appeal.propertyAddress}
-                            readOnly plaintext
-                            className="fw-bold"
-                          />
+                          {/* داتا ديناميكية — DynText للترجمة */}
+                          <div className="form-control-plaintext fw-bold">
+                            <DynText text={appeal.propertyAddress} lang={lang} />
+                          </div>
                         </Col>
                       )}
                     </Row>
                   </Card.Body>
                 </Card>
 
-                {/* ===== Editable Fields ===== */}
+                {/* ===== الحقول القابلة للتعديل ===== */}
                 <Row className="mt-3">
                   <Col md={6}>
                     <Form.Group className="mb-3">

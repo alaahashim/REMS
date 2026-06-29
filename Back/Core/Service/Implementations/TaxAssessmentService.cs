@@ -12,8 +12,7 @@ namespace Core.Service.Implementations
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IServiceManager _serviceManager;
-
+private readonly IExemptionService _exemptionService;
         // =========================
         // Constants
         // =========================
@@ -22,17 +21,18 @@ namespace Core.Service.Implementations
         private const decimal FallbackResidentialDiscount = 0.30m;
         private const decimal FallbackNonResidentialDiscount = 0.32m;
         private const decimal AppealFeeAmount = 50m;
-
-        public TaxAssessmentService(
-            IUnitOfWork unitOfWork,
-            IMapper mapper,
-            IServiceManager serviceManager)
-        {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
-            _serviceManager = serviceManager;
-        }
-
+private readonly IInstallmentService _installmentService;
+       public TaxAssessmentService(
+    IUnitOfWork unitOfWork,
+    IMapper mapper,
+    IExemptionService exemptionService,
+    IInstallmentService installmentService)
+{
+    _unitOfWork = unitOfWork;
+    _mapper = mapper;
+    _exemptionService = exemptionService;
+    _installmentService = installmentService;
+}
         #region Reviewer Tasks
 
         public async Task<PagedResultDto<ReviewerTaxTaskListItemDto>> GetReviewerTasksAsync(ReviewerTaxTasksQueryDto query)
@@ -153,66 +153,70 @@ namespace Core.Service.Implementations
         }
 
         public async Task<int> ApproveCalculationAsync(ApproveTaxAssessmentDto dto)
-        {
-            ValidateApproveRequest(dto);
+{
+    ValidateApproveRequest(dto);
 
-            var previewRequest = new TaxCalculationRequestDto
-            {
-                UnitId = dto.UnitId,
-                TaxYear = dto.TaxYear,
-                AnnualRentOverride = dto.AnnualRentOverride,
-                PayerType = dto.PayerType,
-                PaymentPlan = dto.PaymentPlan,
-            };
+    var previewRequest = new TaxCalculationRequestDto
+    {
+        UnitId = dto.UnitId,
+        TaxYear = dto.TaxYear,
+        AnnualRentOverride = dto.AnnualRentOverride,
+        PayerType = dto.PayerType,
+        PaymentPlan = dto.PaymentPlan,
+    };
 
-            var preview = await PreviewCalculationAsync(previewRequest);
+    var preview = await PreviewCalculationAsync(previewRequest);
 
-            var assessmentRepo = _unitOfWork.GetRepository<TaxAssessment, int>();
-            var unitRepo = _unitOfWork.GetRepository<Unit, int>();
+    var assessmentRepo = _unitOfWork.GetRepository<TaxAssessment, int>();
+    var unitRepo = _unitOfWork.GetRepository<Unit, int>();
 
-            var existing = (await assessmentRepo.GetAllAsync(
-                    new TaxAssessmentByUnitYearSpec(dto.UnitId, dto.TaxYear)))
-                .FirstOrDefault();
+    var existing = (await assessmentRepo.GetAllAsync(
+            new TaxAssessmentByUnitYearSpec(dto.UnitId, dto.TaxYear)))
+        .FirstOrDefault();
 
-            int savedId;
+    int savedId;
 
-            if (existing is not null)
-            {
-                _mapper.Map(preview, existing);
+    if (existing is not null)
+{
+    _mapper.Map(preview, existing);
+    existing.Status = TaxStatus.Approved;
+    existing.CalculationDate = DateTime.UtcNow;
+    existing.IsAvailableForCollection = true; // ← أضف هذا
+    existing.Notes = preview.IsFromManualAnnualRent
+        ? "تم تجاوز القيمة الإيجارية يدوياً"
+        : null;
 
-                existing.Status = TaxStatus.Approved;
-                existing.CalculationDate = DateTime.UtcNow;
-                existing.Notes = preview.IsFromManualAnnualRent
-                    ? "تم تجاوز القيمة الإيجارية يدوياً"
-                    : null;
+    assessmentRepo.Update(existing);
+    savedId = existing.Id;
+}
+else
+{
+    var entity = _mapper.Map<TaxAssessment>(preview);
+    entity.Status = TaxStatus.Approved;
+    entity.CalculationDate = DateTime.UtcNow;
+    entity.IsAvailableForCollection = true; // ← وهذا
+    entity.Notes = preview.IsFromManualAnnualRent
+        ? "تم تجاوز القيمة الإيجارية يدوياً"
+        : null;
 
-                assessmentRepo.Update(existing);
-                savedId = existing.Id;
-            }
-            else
-            {
-                var entity = _mapper.Map<TaxAssessment>(preview);
+    await assessmentRepo.AddAsync(entity);
+    savedId = entity.Id;
+}
+    var unit = await unitRepo.GetByIdAsync(dto.UnitId);
+    if (unit is null)
+        throw new NotFoundException($"الوحدة رقم {dto.UnitId} غير موجودة");
 
-                entity.Status = TaxStatus.Approved;
-                entity.CalculationDate = DateTime.UtcNow;
-                entity.Notes = preview.IsFromManualAnnualRent
-                    ? "تم تجاوز القيمة الإيجارية يدوياً"
-                    : null;
+    unit.Status = TaxStatus.Approved.ToString();
+    unitRepo.Update(unit);
 
-                await assessmentRepo.AddAsync(entity);
-                savedId = entity.Id;
-            }
+    // ← حفظ التقييم أولاً حتى يكون له ID في قاعدة البيانات
+    await _unitOfWork.SaveChangesAsync();
 
-            var unit = await unitRepo.GetByIdAsync(dto.UnitId);
-            if (unit is null)
-                throw new NotFoundException($"الوحدة رقم {dto.UnitId} غير موجودة");
+    // ← توليد الأقساط بعد الحفظ مباشرة
+    await _installmentService.GenerateInstallmentsAsync(savedId);
 
-            unit.Status = TaxStatus.Approved.ToString();
-            unitRepo.Update(unit);
-
-            await _unitOfWork.SaveChangesAsync();
-            return savedId;
-        }
+    return savedId;
+}
 
         public async Task<TaxAssessmentDto?> GetAssessmentByUnitYearAsync(int unitId, int taxYear)
         {
@@ -230,14 +234,10 @@ namespace Core.Service.Implementations
 
         #region Compute
 
-        private async Task<TaxCalculationResultDto> ComputeAsync(
-            TaxCalculationRequestDto dto,
-            Unit unit,
-            IEnumerable<TaxRule> rules)
+        private async Task<TaxCalculationResultDto> ComputeAsync(   TaxCalculationRequestDto dto, Unit unit, IEnumerable<TaxRule> rules)
         {
             var primaryOwner = GetPrimaryOwner(unit)?.Owner;
             var isResidential = IsResidential(unit.UsageType);
-
             var annualRent = dto.AnnualRentOverride is > 0
                 ? dto.AnnualRentOverride.Value
                 : EstimateAnnualRent(unit);
@@ -258,7 +258,7 @@ namespace Core.Service.Implementations
 
             if (primaryOwner is not null && isResidential && netAnnualRentalValue <= EgyptianTaxExemptionThreshold)
             {
-                exemption = await _serviceManager.ExemptionService.CheckTaxExemptionAsync(
+                exemption = await _exemptionService.CheckTaxExemptionAsync(
                     primaryOwner.Id,
                     unit.Id,
                     dto.TaxYear,

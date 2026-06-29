@@ -82,6 +82,7 @@ namespace Core.Service.MappingProfiles
 
             CreateMap<Exemption, RequestHomeDto>()
                 .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName))
+                .ForMember(d => d.NationalId, o => o.MapFrom(s => s.Owner.NationalId))  // ← أضف هذا
                 .ForMember(d => d.UnitNumber, o => o.MapFrom(s => s.UnitNumber))
                 .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
                 .ForMember(d => d.RequestDate, o => o.MapFrom(s => s.ExemptionDate))
@@ -264,13 +265,11 @@ o => o.MapFrom(s => s.TaxAssessment.AnnualTax));
         d => d.AppealReason,
         o => o.MapFrom(s => s.AppealReason))
 
-    .ForMember(
-        d => d.OriginalTax,
+    .ForMember(d => d.OriginalTax,
         o => o.MapFrom(s => s.TaxAssessment.AnnualTax))
 
-    .ForMember(
-        d => d.ProposedTax,
-        o => o.MapFrom(s => s.TaxAssessment.ManagerApprovedTax))
+    .ForMember(d => d.ProposedTax,
+        o => o.MapFrom(s => s.TaxAssessment.CommitteeProposedTax))
 
     .ForMember(
         d => d.CommitteeVerdict,
@@ -300,6 +299,87 @@ o => o.MapFrom(s => s.TaxAssessment.AnnualTax));
     .ForMember(d => d.Status,
         o => o.MapFrom(s => s.Status.ToString()));
         #endregion
+      
+      
+      #region Finance
+      // ============================================================
+
+
+            // ============================================================
+            // Payment -> PaymentHistoryDto
+            // ============================================================
+            CreateMap<Payment, PaymentHistoryDto>()
+                .ForMember(d => d.PaymentId,
+                    o => o.MapFrom(s => s.Id))
+
+                .ForMember(d => d.UnitId,
+                    o => o.MapFrom(s => s.Installment.TaxAssessment.UnitId))
+
+                .ForMember(d => d.OwnerName,
+                    o => o.MapFrom(s =>
+                        s.Installment.TaxAssessment.Owner != null
+                        ? s.Installment.TaxAssessment.Owner.FullName
+                        : string.Empty))
+
+                .ForMember(d => d.PaidAmount,
+                    o => o.MapFrom(s => s.PaidAmount))
+
+                .ForMember(d => d.Method,
+                    o => o.MapFrom(s => s.Method))
+               .ForMember(d => d.AssessmentId,
+                    o => o.MapFrom(s =>
+                    s.Installment.TaxAssessmentId))
+
+                .ForMember(d => d.ReceiptNo,
+                    o => o.MapFrom(s => s.ReceiptNo))
+
+                .ForMember(d => d.PaymentDate,
+                    o => o.MapFrom(s => s.PaymentDate))
+
+                .ForMember(d => d.Status,
+                    o => o.MapFrom(s => s.Installment.Status));
+
+
+        
+            // ============================================================
+            // TaxAssessment -> FinanceSearchResponseDto
+            // ============================================================
+            CreateMap<TaxAssessment, FinanceSearchResponseDto>()
+    .ForMember(d => d.AssessmentId,
+        o => o.MapFrom(s => s.Id))
+    .ForMember(d => d.UnitId,
+        o => o.MapFrom(s => s.UnitId))
+    .ForMember(d => d.OwnerName,
+        o => o.MapFrom(s =>
+            s.Owner != null ? s.Owner.FullName : string.Empty))
+    .ForMember(d => d.NationalId,
+        o => o.MapFrom(s =>
+            s.Owner != null ? s.Owner.NationalId : string.Empty))
+    .ForMember(d => d.Address,
+        o => o.MapFrom(s =>
+            s.Unit != null && s.Unit.Property != null
+            ? $"{s.Unit.Property.Governorate.Name} - {s.Unit.Property.Neighborhood.Name} - {s.Unit.Property.Neighborhood.Center.Name}"
+            : string.Empty))
+    .ForMember(d => d.AnnualTax,
+        o => o.MapFrom(s => s.AnnualTax))
+    .ForMember(d => d.AppealFee,                          // ← كان ناقصاً
+        o => o.MapFrom(s => s.AppealFee))
+    .ForMember(d => d.TotalDue,
+        o => o.MapFrom(s => s.TotalDue))
+    .ForMember(d => d.PaymentPlan,
+        o => o.MapFrom(s => s.PaymentPlan.ToString()))    // ← ToString() مهم
+    .ForMember(d => d.PaymentStatus,
+        o => o.MapFrom(s => s.PaymentStatus.ToString())) // ← ToString() مهم
+    .ForMember(d => d.IsAvailableForCollection,           // ← كان ناقصاً
+        o => o.MapFrom(s => s.IsAvailableForCollection))
+    .ForMember(d => d.Installments,
+        o => o.MapFrom(s => s.Installments));
+
+CreateMap<Installment, InstallmentDto>()
+    .ForMember(d => d.Status,
+        o => o.MapFrom(s => s.Status.ToString()));        // ← ToString() مهم
+          
+                    #endregion
         }
     
     }}

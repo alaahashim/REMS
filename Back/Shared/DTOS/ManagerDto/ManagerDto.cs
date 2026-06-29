@@ -35,10 +35,7 @@ public class ManagerAppealDto
 
     public string? CommitteeNote { get; set; }
 
-    /// <summary>
-    /// الضريبة التى أوصت بها اللجنة
-    /// </summary>
-  // الضريبة الأصلية
+ 
     public decimal OriginalTax { get; set; }
 
     // الضريبة التى أوصت بها اللجنة

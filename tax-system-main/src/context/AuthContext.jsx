@@ -11,7 +11,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (!localStorage.getItem('token')) return;
-
     getCurrentProfile()
       .then((profile) => {
         if (profile) setUser(profile);
@@ -35,18 +34,17 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('tax_current_user');
+    localStorage.removeItem('refreshToken');
   };
 
   const updateCurrentUser = useCallback((updates) => {
     setUser((currentUser) => {
       if (!currentUser) return currentUser;
-
       const nextUser = {
         ...currentUser,
         ...updates,
         name: updates.name || currentUser.name || currentUser.username,
       };
-
       localStorage.setItem('tax_current_user', JSON.stringify(nextUser));
       return nextUser;
     });

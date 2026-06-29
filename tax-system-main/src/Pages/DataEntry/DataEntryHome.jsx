@@ -14,6 +14,9 @@ import {
   Tab
 } from 'react-bootstrap';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation';
+
 import {
   getProperties,
   deleteProperty,
@@ -27,9 +30,19 @@ import {
 import { getOwners } from '../../services/assignmentService';
 import { getAppeals, deleteAppeal } from '../../services/appealService';
 
+// ════════════════════════════════════════════════════════════════
+// مكون مساعد صغير لترجمة البيانات اللي جاية من الداتا بيز
+// بنستخدمه جوا الجداول عشان نتجنب مشاكل الـ Hooks في الـ map
+// ════════════════════════════════════════════════════════════════
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
+
 const DataEntryHome = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { lang } = useLanguage();
 
   // ── الطلبات والعقارات ──
   const [allRequests, setAllRequests] = useState([]);
@@ -63,8 +76,8 @@ const DataEntryHome = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const props         = await getProperties();
-      const exemptions    = await getExemptionsForHome();
+      const props          = await getProperties();
+      const exemptions     = await getExemptionsForHome();
       const propsWithUnits = await getPropertiesWithUnits();
 
       // ── جلب الطعون ومعالجتها لتتوافق مع شكل الطلبات ──
@@ -102,11 +115,8 @@ const DataEntryHome = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
+  useEffect(() => { fetchAllData(); }, []);
 
-  // ── إغلاق القوائم عند الضغط خارجها ──
   useEffect(() => {
     const handler = (e) => {
       if (reqSearchRef.current && !reqSearchRef.current.contains(e.target))
@@ -135,12 +145,7 @@ const DataEntryHome = () => {
     const val = e.target.value;
     setRequestSearch(val);
     setSelectedRequest(null);
-
-    if (!val.trim()) {
-      setRequestSuggestions([]);
-      setShowReqDropdown(false);
-      return;
-    }
+    if (!val.trim()) { setRequestSuggestions([]); setShowReqDropdown(false); return; }
 
     const q = val.toLowerCase();
     const pending = allRequests.filter(r =>
@@ -161,7 +166,6 @@ const DataEntryHome = () => {
         suggestions.push({ label: r.ownerName || r.nationalId, nationalId: r.nationalId });
       }
     }
-
     setRequestSuggestions(suggestions);
     setShowReqDropdown(suggestions.length > 0);
   };
@@ -173,25 +177,18 @@ const DataEntryHome = () => {
   };
 
   const getPendingRows = () => {
-  const pending = allRequests.filter(
-    r => r.status === "PendingCommittee"
-  );
+    const pending = allRequests.filter(r => r.status === "PendingCommittee");
 
-  if (selectedRequest) {
-    const q = selectedRequest.toLowerCase();
+    if (selectedRequest) {
+      const q = selectedRequest.toLowerCase();
+      return pending.filter(r =>
+        (r.ownerName  && r.ownerName.toLowerCase().includes(q)) ||
+        (r.nationalId && r.nationalId.toLowerCase().includes(q))
+      );
+    }
 
-    return pending.filter(r =>
-      (r.ownerName && r.ownerName.toLowerCase().includes(q)) ||
-      (r.nationalId && r.nationalId.toLowerCase().includes(q))
-    );
-  }
-
-  return [...pending]
-    .sort((a, b) => b.id - a.id)
-    .slice(0, 5);
-};
-
-    
+    return [...pending].sort((a, b) => b.id - a.id).slice(0, 5);
+  };
 
   // ════════════════════════════════════════
   // بحث الملاك
@@ -199,13 +196,7 @@ const DataEntryHome = () => {
   const handleOwnerSearchChange = async (e) => {
     const val = e.target.value;
     setOwnerSearch(val);
-
-    if (!val.trim()) {
-      setOwnerSuggestions([]);
-      setShowOwnerDropdown(false);
-      return;
-    }
-
+    if (!val.trim()) { setOwnerSuggestions([]); setShowOwnerDropdown(false); return; }
     try {
       const results = await getOwners(val);
       setOwnerSuggestions((results || []).slice(0, 8));
@@ -225,10 +216,10 @@ const DataEntryHome = () => {
   // الأرشيف
   // ════════════════════════════════════════
   const getDecidedRows = () =>
-  allRequests.filter(r =>
-    r.status === "Approved" ||
-    r.status === "Rejected"
-  );
+    allRequests.filter(r =>
+      r.status === "Approved" || r.status === "Rejected"
+    );
+
   // ════════════════════════════════════════
   // الوحدات من العقارات
   // ════════════════════════════════════════
@@ -249,12 +240,7 @@ const DataEntryHome = () => {
     const val = e.target.value;
     setUnitSearch(val);
     setSelectedUnit(null);
-
-    if (!val.trim()) {
-      setUnitSuggestions([]);
-      setShowUnitDropdown(false);
-      return;
-    }
+    if (!val.trim()) { setUnitSuggestions([]); setShowUnitDropdown(false); return; }
 
     const q = val.toLowerCase();
     const matched = allUnits.filter(u =>
@@ -290,10 +276,8 @@ const DataEntryHome = () => {
     return allUnits;
   };
 
-  // ── حذف الطلب ──
   const handleDeleteRequest = async (id) => {
     if (!window.confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
-
     try {
       const target = allRequests.find(r => r.id === id);
       if (!target) return;
@@ -312,10 +296,8 @@ const DataEntryHome = () => {
     }
   };
 
-  // ── حذف العقار ──
   const handleDeleteProperty = async (id) => {
     if (!window.confirm('هل أنت متأكد من حذف بيانات هذا العقار؟')) return;
-
     try {
       await deleteProperty(id);
       setProperties(prev => prev.filter(p => p.id !== id));
@@ -327,10 +309,8 @@ const DataEntryHome = () => {
     }
   };
 
-  // ── حذف الوحدة ──
   const handleDeleteUnit = async (unitId) => {
     if (!window.confirm('هل أنت متأكد من حذف هذه الوحدة؟')) return;
-
     try {
       await deleteUnit(unitId);
       setPropertiesWithUnits(prev =>
@@ -352,67 +332,31 @@ const DataEntryHome = () => {
   };
 
   const handleEditRequest = (req) => {
-    if (req.type === 'طعن') {
-      navigate(`/data-entry/edit-appeal/${req.id}`);
-    } else if (req.type === 'إعفاء') {
-      navigate(`/data-entry/edit-exemption/${req.id}`);
+    if (req.type === 'طعن') navigate(`/data-entry/edit-appeal/${req.id}`);
+    else if (req.type === 'إعفاء') navigate(`/data-entry/edit-exemption/${req.id}`);
+  };
+
+  const handleEditProperty = (id) => { navigate(`/data-entry/edit-property/${id}`); };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "PendingCommittee":
+        return <Badge bg="warning" text="dark">في انتظار اللجنة</Badge>;
+      case "PendingManager":
+        return <Badge bg="info">في انتظار المدير</Badge>;
+      case "Approved":
+        return <Badge bg="success">مقبول</Badge>;
+      case "Rejected":
+        return <Badge bg="danger">مرفوض</Badge>;
+      default:
+        return <Badge bg="secondary">{status}</Badge>;
     }
   };
 
-  const handleEditProperty = (id) => {
-    navigate(`/data-entry/edit-property/${id}`);
-  };
-
-  // ── Badges ──
-  const getStatusBadge = (status) => {
-  switch (status) {
-    case "PendingCommittee":
-      return (
-        <Badge bg="warning" text="dark">
-          في انتظار اللجنة
-        </Badge>
-      );
-
-    case "PendingManager":
-      return (
-        <Badge bg="info">
-          في انتظار المدير
-        </Badge>
-      );
-
-    case "Approved":
-      return (
-        <Badge bg="success">
-          مقبول
-        </Badge>
-      );
-
-    case "Rejected":
-      return (
-        <Badge bg="danger">
-          مرفوض
-        </Badge>
-      );
-
-    default:
-      return (
-        <Badge bg="secondary">
-          {status}
-        </Badge>
-      );
-  }
-};
-
   const getTypeBadge = (type) =>
-    type === 'طعن' ? (
-      <Badge bg="primary" className="rounded-pill">
-        <i className="fa-solid fa-gavel me-1"></i> طعن
-      </Badge>
-    ) : (
-      <Badge bg="secondary" className="rounded-pill">
-        <i className="fa-solid fa-shield-halved me-1"></i> إعفاء
-      </Badge>
-    );
+    type === 'طعن'
+      ? (<Badge bg="primary" className="rounded-pill"><i className="fa-solid fa-gavel me-1"></i> طعن</Badge>)
+      : (<Badge bg="secondary" className="rounded-pill"><i className="fa-solid fa-shield-halved me-1"></i> إعفاء</Badge>);
 
   const getUnitStatusBadge = (status) => {
     switch (status) {
@@ -430,96 +374,27 @@ const DataEntryHome = () => {
     }
   };
 
-  // ════════════════════════════════════════
-  // Render
-  // ════════════════════════════════════════
   return (
     <Container fluid className="mt-4">
-
-      {/* ── التاريخ ── */}
       <Row className="mb-3 justify-content-end">
         <Col xs="auto">
           <div className="bg-light p-2 rounded border border-light d-flex align-items-center gap-2 px-3">
             <i className="fa-regular fa-calendar-days text-primary fs-5"></i>
-            <span className="fw-bold text-dark" style={{ fontSize: '0.95rem' }}>
-              {getCurrentDate()}
-            </span>
+            <span className="fw-bold text-dark" style={{ fontSize: '0.95rem' }}>{getCurrentDate()}</span>
           </div>
         </Col>
       </Row>
 
-      {/* ── كروت الاختصارات ── */}
       <Row className="g-3 mb-4">
-        <Col md={3}>
-          <Link to="/data-entry/add" className="text-decoration-none">
-            <Card className="h-100 shadow-sm border-0 border-top border-4 border-primary hover-lift">
-              <Card.Body className="d-flex align-items-center p-3">
-                <div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
-                  <i className="fa-solid fa-building text-primary fs-4"></i>
-                </div>
-                <div>
-                  <h6 className="fw-bold mb-0 text-dark">إضافة عقار جديد</h6>
-                  <small className="text-muted">تسجيل عقار + ربط المالك تلقائياً</small>
-                </div>
-              </Card.Body>
-            </Card>
-          </Link>
-        </Col>
-
-        <Col md={3}>
-          <Link to="/data-entry/link" className="text-decoration-none">
-            <Card className="h-100 shadow-sm border-0 border-top border-4 border-info">
-              <Card.Body className="d-flex align-items-center p-3">
-                <div className="bg-info bg-opacity-10 p-3 rounded-circle me-3">
-                  <i className="fa-solid fa-user-plus text-info fs-4"></i>
-                </div>
-                <div>
-                  <h6 className="fw-bold mb-0 text-dark">ربط مالك إضافي</h6>
-                  <small className="text-muted">إضافة شريك ملكية أو تحديث المالك</small>
-                </div>
-              </Card.Body>
-            </Card>
-          </Link>
-        </Col>
-
-        <Col md={3}>
-          <Link to="/data-entry/appeal" className="text-decoration-none">
-            <Card className="h-100 shadow-sm border-0 border-top border-4 border-warning">
-              <Card.Body className="d-flex align-items-center p-3">
-                <div className="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
-                  <i className="fa-solid fa-gavel text-warning fs-4"></i>
-                </div>
-                <div>
-                  <h6 className="fw-bold mb-0 text-dark">تقديم طعن ضريبي</h6>
-                  <small className="text-muted">اعتراض على القيمة أو تقدير الضرائب</small>
-                </div>
-              </Card.Body>
-            </Card>
-          </Link>
-        </Col>
-
-        <Col md={3}>
-          <Link to="/data-entry/exemption" className="text-decoration-none">
-            <Card className="h-100 shadow-sm border-0 border-top border-4 border-secondary">
-              <Card.Body className="d-flex align-items-center p-3">
-                <div className="bg-secondary bg-opacity-10 p-3 rounded-circle me-3">
-                  <i className="fa-solid fa-shield-halved text-secondary fs-4"></i>
-                </div>
-                <div>
-                  <h6 className="fw-bold mb-0 text-dark">طلب إعفاء ضريبي</h6>
-                  <small className="text-muted">وحدات سكنية أساسية / ذوي إعاقة</small>
-                </div>
-              </Card.Body>
-            </Card>
-          </Link>
-        </Col>
+        <Col md={3}><Link to="/data-entry/add" className="text-decoration-none"><Card className="h-100 shadow-sm border-0 border-top border-4 border-primary hover-lift"><Card.Body className="d-flex align-items-center p-3"><div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3"><i className="fa-solid fa-building text-primary fs-4"></i></div><div><h6 className="fw-bold mb-0 text-dark">إضافة عقار جديد</h6><small className="text-muted">تسجيل عقار + ربط المالك تلقائياً</small></div></Card.Body></Card></Link></Col>
+        <Col md={3}><Link to="/data-entry/link" className="text-decoration-none"><Card className="h-100 shadow-sm border-0 border-top border-4 border-info"><Card.Body className="d-flex align-items-center p-3"><div className="bg-info bg-opacity-10 p-3 rounded-circle me-3"><i className="fa-solid fa-user-plus text-info fs-4"></i></div><div><h6 className="fw-bold mb-0 text-dark">ربط مالك إضافي</h6><small className="text-muted">إضافة شريك ملكية أو تحديث المالك</small></div></Card.Body></Card></Link></Col>
+        <Col md={3}><Link to="/data-entry/appeal" className="text-decoration-none"><Card className="h-100 shadow-sm border-0 border-top border-4 border-warning"><Card.Body className="d-flex align-items-center p-3"><div className="bg-warning bg-opacity-10 p-3 rounded-circle me-3"><i className="fa-solid fa-gavel text-warning fs-4"></i></div><div><h6 className="fw-bold mb-0 text-dark">تقديم طعن ضريبي</h6><small className="text-muted">اعتراض على القيمة أو تقدير الضرائب</small></div></Card.Body></Card></Link></Col>
+        <Col md={3}><Link to="/data-entry/exemption" className="text-decoration-none"><Card className="h-100 shadow-sm border-0 border-top border-4 border-secondary"><Card.Body className="d-flex align-items-center p-3"><div className="bg-secondary bg-opacity-10 p-3 rounded-circle me-3"><i className="fa-solid fa-shield-halved text-secondary fs-4"></i></div><div><h6 className="fw-bold mb-0 text-dark">طلب إعفاء ضريبي</h6><small className="text-muted">وحدات سكنية أساسية / ذوي إعاقة</small></div></Card.Body></Card></Link></Col>
       </Row>
 
-      {/* ── الجدول الرئيسي ── */}
       <Card className="shadow-sm border-0">
         <Card.Body>
           <Tab.Container id="main-tabs" defaultActiveKey="pending">
-
             <Nav variant="pills" className="bg-light rounded p-1 mb-3">
               <Nav.Item>
                 <Nav.Link eventKey="pending" className="rounded-pill px-4">
@@ -538,8 +413,7 @@ const DataEntryHome = () => {
               </Nav.Item>
               <Nav.Item>
                 <Nav.Link eventKey="properties" className="rounded-pill px-4">
-                  <i className="fa-solid fa-building-circle-check me-1"></i>
-                  العقارات والوحدات
+                  <i className="fa-solid fa-building-circle-check me-1"></i> العقارات والوحدات
                 </Nav.Link>
               </Nav.Item>
             </Nav>
@@ -563,9 +437,7 @@ const DataEntryHome = () => {
                       size="sm"
                       value={requestSearch}
                       onChange={handleRequestSearchChange}
-                      onFocus={() =>
-                        requestSuggestions.length > 0 && setShowReqDropdown(true)
-                      }
+                      onFocus={() => requestSuggestions.length > 0 && setShowReqDropdown(true)}
                     />
 
                     {showReqDropdown && (
@@ -628,14 +500,16 @@ const DataEntryHome = () => {
                       getPendingRows().map(req => (
                         <tr key={`${req.type}-${req.id}`}>
                           <td>{getTypeBadge(req.type)}</td>
-                          <td>{req.unitNumber || 'YYY-8888'}</td>
-                          <td className="fw-medium">{req.ownerName || '-'}</td>
+                          <td>{req.unitNumber || '-'}</td>
+                          {/* ترجمة اسم المالك من الداتا بيز */}
+                          <td className="fw-medium"><DynText text={req.ownerName} lang={lang} /></td>
                           <td className="small">
                             {req.requestDate
                               ? new Date(req.requestDate).toLocaleDateString('ar-EG')
                               : '-'}
                           </td>
-                          <td>{req.legalReference || '-'}</td>
+                          {/* ترجمة السند القانوني */}
+                          <td><DynText text={req.legalReference} lang={lang} /></td>
                           <td>{getStatusBadge(req.status)}</td>
                           <td className="text-end pe-4">
                             <div className="d-flex justify-content-end gap-1">
@@ -662,9 +536,7 @@ const DataEntryHome = () => {
                     ) : (
                       <tr>
                         <td colSpan="7" className="text-center py-4 text-muted">
-                          {requestSearch
-                            ? 'لا توجد نتائج مطابقة للبحث'
-                            : 'لا توجد طلبات معلقة حالياً'}
+                          {requestSearch ? 'لا توجد نتائج مطابقة للبحث' : 'لا توجد طلبات معلقة حالياً'}
                         </td>
                       </tr>
                     )}
@@ -700,13 +572,13 @@ const DataEntryHome = () => {
                         <tr key={`${req.type}-${req.id}`}>
                           <td>{getTypeBadge(req.type)}</td>
                           <td>{req.nationalId || '-'}</td>
-                          <td>{req.ownerName || '-'}</td>
+                          <td><DynText text={req.ownerName} lang={lang} /></td>
                           <td className="small">
                             {req.requestDate
                               ? new Date(req.requestDate).toLocaleDateString('ar-EG')
                               : '-'}
                           </td>
-                          <td>{req.legalReference || '-'}</td>
+                          <td><DynText text={req.legalReference} lang={lang} /></td>
                           <td>{getStatusBadge(req.status)}</td>
                         </tr>
                       ))
@@ -738,9 +610,7 @@ const DataEntryHome = () => {
                       size="sm"
                       value={ownerSearch}
                       onChange={handleOwnerSearchChange}
-                      onFocus={() =>
-                        ownerSuggestions.length > 0 && setShowOwnerDropdown(true)
-                      }
+                      onFocus={() => ownerSuggestions.length > 0 && setShowOwnerDropdown(true)}
                     />
 
                     {showOwnerDropdown && (
@@ -773,7 +643,8 @@ const DataEntryHome = () => {
                             </div>
                             <div className="flex-grow-1 overflow-hidden">
                               <div className="fw-semibold text-truncate" style={{ fontSize: '0.88rem' }}>
-                                {owner.fullName}
+                                {/* ترجمة اسم المالك في dropdown */}
+                                <DynText text={owner.fullName} lang={lang} />
                               </div>
                               <div className="text-muted font-monospace" style={{ fontSize: '0.75rem' }}>
                                 {owner.nationalId}
@@ -811,9 +682,7 @@ const DataEntryHome = () => {
                       size="sm"
                       value={unitSearch}
                       onChange={handleUnitSearchChange}
-                      onFocus={() =>
-                        unitSuggestions.length > 0 && setShowUnitDropdown(true)
-                      }
+                      onFocus={() => unitSuggestions.length > 0 && setShowUnitDropdown(true)}
                     />
 
                     {showUnitDropdown && (
@@ -864,13 +733,11 @@ const DataEntryHome = () => {
                   <thead className="table-light">
                     <tr>
                       <th>رقم العقار</th>
-                      <th>رقم المبنى</th>
                       <th>كود الوحدة</th>
                       <th>نوع الوحدة</th>
                       <th>الدور</th>
                       <th>المساحة</th>
                       <th>الاستخدام</th>
-                      <th>التشطيب</th>
                       <th>الحالة</th>
                       <th className="text-end pe-4">إجراءات</th>
                     </tr>
@@ -887,13 +754,13 @@ const DataEntryHome = () => {
                       getDisplayedUnits().map(unit => (
                         <tr key={unit.id}>
                           <td className="fw-bold text-primary">{unit.propertyId}</td>
-                          <td>{unit.propertyBuildingNo || '-'}</td>
                           <td className="fw-semibold">{unit.unitNumber || '-'}</td>
-                          <td>{unit.unitType || '-'}</td>
+                          {/* ترجمة نوع الوحدة من الداتا بيز */}
+                          <td><DynText text={unit.unitType} lang={lang} /></td>
                           <td>{unit.floor ?? '-'}</td>
                           <td>{unit.area ?? '-'}</td>
                           <td>{getUsageLabel(unit.usageType)}</td>
-                          <td>{unit.finishingType || '-'}</td>
+                          {/* ترجمة نوع التشطيب من الداتا بيز */}
                           <td>{getUnitStatusBadge(unit.status)}</td>
                           <td className="text-end pe-4">
                             <Button

@@ -192,16 +192,17 @@ const getExemptionTypeArabic = (type) => {
           {activeTab === 'appeals' && (
             <Table hover responsive className="mb-0 align-middle">
               <thead className="table-light">
-                <tr>
-                  <th className="text-center">#</th>
-                  <th>كو الوحده</th>
-                  <th>سبب الطعن</th>
-                  <th className="text-end">الضريبة الأصلية</th>
-                   <th className="text-end">ضريبة اللجنة</th>
-                  <th className="text-center">الحالة</th>
-                  <th className="text-center">إجراء</th>
-                </tr>
-              </thead>
+  <tr>
+    <th className="text-center">#</th>
+    <th>كود الوحدة</th>
+    <th>اسم المواطن</th>  {/* ← أضف هذا */}
+    <th>سبب الطعن</th>
+    <th className="text-end">ضريبة اللجنة</th>
+        <th className="text-end">الضريبة الأصلية</th>
+    <th className="text-center">الحالة</th>
+    <th className="text-center">إجراء</th>
+  </tr>
+</thead>
               <tbody>
                 {appeals.length === 0 ? (
                   <tr>
@@ -212,29 +213,35 @@ const getExemptionTypeArabic = (type) => {
                   </tr>
                 ) : (
                   appeals.map((appeal, index) => (
-                    <tr key={appeal.id}>
-                      <td className="text-center fw-bold text-primary">{index + 1}</td>
-                      <td className="fw-bold"> {appeal.unitNumber || appeal.taxAssessment?.unitId || '-'}</td>
-                      <td className="text-muted">{appeal.appealReason || '-'}</td>
-                      <td className="text-end fw-bold text-success">
-{money(appeal.originalTax)}                      </td>
-                        <td className="text-end fw-bold text-success">
-{money(appeal.proposedTax ?? 0)}                      </td>
-                      <td className="text-center">{statusBadge(appeal.status)}</td>
-                      <td className="text-center">
-                        {appeal.status === 'PendingManager' ? (
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() => openModal('appeal', appeal)}
-                          >
-                            <i className="fa-solid fa-gavel me-1"></i>قرار
-                          </Button>
-                        ) : (
-                          <span className="text-muted small">تم البت</span>
-                        )}
-                      </td>
-                    </tr>
+                   <tr key={appeal.id}>
+  <td className="text-center fw-bold text-primary">{index + 1}</td>
+  <td className="fw-bold">{appeal.unitNumber || '-'}</td>
+  <td className="fw-bold">{appeal.personName || '-'}</td>
+  <td className="text-muted">{appeal.appealReason || '-'}</td>
+  <td className="text-end fw-bold text-success">
+    {money(appeal.originalTax)}
+  </td>
+  <td className="text-end fw-bold text-info">
+    {appeal.proposedTax != null
+      ? money(appeal.proposedTax)
+      : <span className="text-muted small">لم تحدد بعد</span>
+    }
+  </td>
+  <td className="text-center">{statusBadge(appeal.status)}</td>
+  <td className="text-center">
+    {appeal.status === 'PendingManager' ? (
+      <Button
+        size="sm"
+        variant="primary"
+        onClick={() => openModal('appeal', appeal)}
+      >
+        <i className="fa-solid fa-gavel me-1"></i>قرار
+      </Button>
+    ) : (
+      <span className="text-muted small">تم البت</span>
+    )}
+  </td>
+</tr>
                   ))
                 )}
               </tbody>

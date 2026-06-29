@@ -40,7 +40,6 @@ const normalizeBackendError = (error) => {
       if (Array.isArray(messages)) {
         return messages.map((message) => `${field}: ${message}`);
       }
-
       return messages ? [`${field}: ${messages}`] : [];
     });
 
@@ -76,7 +75,31 @@ const normalizeBackendError = (error) => {
   return normalized;
 };
 
-const handleResponseError = (error) => {
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+const clearSessionAndRedirect = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("tax_current_user");
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+};
+
+const handleResponseError = async (error) => {
+  const originalRequest = error.config;
   const normalizedError = normalizeBackendError(error);
 
   console.group("API ERROR");
@@ -89,12 +112,55 @@ const handleResponseError = (error) => {
   console.error("Raw Response:", normalizedError.raw);
   console.groupEnd();
 
-  if (normalizedError.status === 401) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("tax_current_user");
+  if (normalizedError.status === 401 && !originalRequest._retry) {
+    const refreshToken = localStorage.getItem("refreshToken");
 
-    if (window.location.pathname !== "/login") {
-      window.location.href = "/login";
+    if (!refreshToken) {
+      clearSessionAndRedirect();
+      return Promise.reject(normalizedError);
+    }
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      })
+        .then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        })
+        .catch((err) => Promise.reject(err));
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/refresh`,
+        { refreshToken },
+        { timeout: 5000 }
+      );
+
+      const newToken = response.data.token || response.data.accessToken;
+      const newRefreshToken = response.data.refreshToken;
+
+      if (!newToken) throw new Error("No token returned from refresh endpoint");
+
+      localStorage.setItem("token", newToken);
+      if (newRefreshToken) localStorage.setItem("refreshToken", newRefreshToken);
+
+      api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+      processQueue(null, newToken);
+      isRefreshing = false;
+
+      return api(originalRequest);
+    } catch (refreshErr) {
+      processQueue(refreshErr, null);
+      isRefreshing = false;
+      clearSessionAndRedirect();
+      return Promise.reject(refreshErr);
     }
   }
 
@@ -102,10 +168,7 @@ const handleResponseError = (error) => {
 };
 
 api.interceptors.request.use(attachToken);
-axios.interceptors.request.use(attachToken);
-
 api.interceptors.response.use((response) => response, handleResponseError);
-axios.interceptors.response.use((response) => response, handleResponseError);
 
 export { API_BASE_URL };
 export default api;

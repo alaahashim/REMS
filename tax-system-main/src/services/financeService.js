@@ -1,109 +1,100 @@
 // src/services/financeService.js
+import api from "./apiClient";
 
-// تسجيل دفع جديد (يربط بالقسط والوحدة)
-export const registerPayment = (installmentId, paymentData) => {
-  return new Promise((resolve, reject) => {
-    try {
-      // 1. تحديث القسط (Installment)
-      const installments = JSON.parse(localStorage.getItem('tax_installments')) || [];
-      const installmentIndex = installments.findIndex(i => i.id == installmentId);
-
-      if (installmentIndex === -1) return reject({ message: 'القسط غير موجود' });
-
-      // نحفظ بيانات القسط الحالي للاستخدام لاحقاً
-      const currentInstallment = installments[installmentIndex];
-
-      installments[installmentIndex].status = 'Paid';
-      installments[installmentIndex].penaltyAmount = paymentData.penaltyAmount || 0;
-      
-      localStorage.setItem('tax_installments', JSON.stringify(installments));
-
-      // 2. إنشاء سجل دفع (Payment Table) - وفقاً للـ ERD
-      const payments = JSON.parse(localStorage.getItem('tax_payments')) || [];
-      const newPayment = {
-        id: Date.now(),
-        installmentId: parseInt(installmentId),
-        employeeId: paymentData.employeeId || 1, 
-        paymentDate: paymentData.paymentDate || new Date().toISOString(),
-        paidAmount: paymentData.amount,
-        paymentMethod: paymentData.method,
-        receiptNo: paymentData.receiptNo
-      };
-
-      payments.push(newPayment);
-      localStorage.setItem('tax_payments', JSON.stringify(payments));
-
-      // 3. التحقق هل جميع أقساط الوحدة تم دفعها؟ (تم تصحيح المنطق هنا)
-      // نبحث عن جميع الأقساط التي تخص نفس الوحدة (UnitID)
-      const allUnitInstallments = installments.filter(i => i.unitId == currentInstallment.unitId);
-      const allPaid = allUnitInstallments.every(i => i.status === 'Paid');
-
-      if (allPaid) {
-          // تحديث حالة الوحدة إلى "Paid" في جدول الوحدات
-          const units = JSON.parse(localStorage.getItem('tax_units')) || [];
-          const unitIndex = units.findIndex(u => u.id == currentInstallment.unitId);
-          if (unitIndex !== -1) {
-              units[unitIndex].status = 'Paid';
-              localStorage.setItem('tax_units', JSON.stringify(units));
-          }
-      }
-
-      resolve({ success: true, message: 'تم تسجيل السداد بنجاح' });
-
-    } catch (error) {
-      reject({ success: false, message: 'فشلت العملية' });
-    }
+// ============================================================
+// SEARCH — البحث بالاسم أو الرقم القومي
+// GET /finance/search?search=...
+// Returns: FinanceSearchResponseDto | null
+// ============================================================
+// src/services/financeService.js
+export const searchByNameOrId = async (searchTerm) => {
+  const { data } = await api.get("/finance/search", {
+    params: { search: searchTerm },
   });
+  // الباك اند يرجع object واحد أو null — لا تغيير في الفرونت
+  return data;
+};
+// ============================================================
+// REGISTER PAYMENT — تسجيل سداد قسط/أقساط
+// POST /finance/pay  →  CreatePaymentDto (body)
+//
+// CreatePaymentDto (Backend expects):
+// {
+//   installmentIds : number[],   ← مصفوفة وليس مفرداً
+//   receiptNo      : string,
+//   method         : 'Cash' | 'Fawry' | 'Bank' | 'InstaPay',
+//   paymentDate    : string,     ← ISO date "2025-06-30"
+//   employeeId     : number,
+//   notes?         : string
+// }
+
+// ============================================================
+export const registerPayment = async ({
+  installmentIds,  // number[] — مصفوفة دائماً
+  receiptNo,
+  method,
+  paymentDate,
+  employeeId,
+  notes = "",
+}) => {
+  const { data } = await api.post("/finance/pay", {
+    installmentIds,
+    receiptNo,
+    method,
+    paymentDate,
+    employeeId,
+    notes,
+  });
+  return data; // PaymentReceiptDto
 };
 
-// باقي الملف (getPaymentsHistory) كما هو بدون تغيير
-export const getPaymentsHistory = () => {
-  return new Promise((resolve) => {
-    const data = JSON.parse(localStorage.getItem('tax_payments')) || [];
-    const installments = JSON.parse(localStorage.getItem('tax_installments')) || [];
-    const units = JSON.parse(localStorage.getItem('tax_units')) || [];
+// ============================================================
+// PAYMENT HISTORY — سجل المدفوعات
+// GET /finance/history
+// Returns: PaymentHistoryDto[]
+// ============================================================
+//export const getPaymentHistory = async () => {
+ // const { data } = await api.get("/finance/history");
+  //return data;
+//};
 
-    const enriched = data.map(pay => {
-      const inst = installments.find(i => i.id == pay.installmentId) || {};
-      const unit = units.find(u => u.id == inst.unitId) || {};
-      return {
-        ...pay,
-        unitId: unit.id,
-        unitType: unit.unitType,
-        dueDate: inst.dueDate
-      };
-    });
-
-    setTimeout(() => resolve(enriched), 500);
-  });
+// ============================================================
+// DASHBOARD — إحصائيات لوحة التحكم المالية
+// GET /finance/dashboard
+// Returns: FinanceDashboardDto = {
+//   totalAssessments, paidAssessments, pendingAssessments,
+//   overdueInstallments, totalCollected, remainingAmount
+// }
+// ============================================================
+export const getFinanceDashboard = async () => {
+  const { data } = await api.get("/finance/dashboard");
+  return data;
 };
-// دالة جلب إحصائيات مالية (للداشبورد)
-export const getFinancialStats = () => {
-  return new Promise((resolve) => {
-    // جلب المدفوعات لمعرفة ما تم تحصيله
-    const payments = JSON.parse(localStorage.getItem('tax_payments')) || [];
-    
-    // جلب الأقساط لمعرفة ما هو مستحق (لم يدفع بعد)
-    const installments = JSON.parse(localStorage.getItem('tax_installments')) || [];
-    
-    let totalCollected = 0;
-    let totalDue = 0;
 
-    // 1. حساب الإجمالي المحصل من جدول المدفوعات (الأكثر دقة)
-    payments.forEach(p => {
-        totalCollected += Number(p.paidAmount || 0);
-    });
+// ============================================================
+// UPDATE OVERDUE — تحديث حالة الأقساط المتأخرة
+// POST /finance/update-overdue  (Admin / Cron)
+// ============================================================
+export const updateOverdueInstallments = async () => {
+  const { data } = await api.post("/finance/update-overdue");
+  return data;
+};
+// ============================================================
+// EMPLOYEES PERFORMANCE
+// GET /finance/manager/employees-performance
+// ============================================================
+export const getEmployeesPerformance = async () => {
+  const { data } = await api.get(
+    "/finance/manager/employees-performance"
+  );
 
-    // 2. حساب الإجمالي المستحق من الأقساط التي حالتها "Pending"
-    installments.forEach(inst => {
-        if (inst.status === 'Pending') {
-            totalDue += Number(inst.amount || 0);
-        }
-    });
-
-    setTimeout(() => resolve({
-        totalCollected,
-        totalDue
-    }), 500);
+  return data;
+};
+// GET /finance/history?pageIndex=1&pageSize=8
+// Returns: { items, totalCount, pageIndex, pageSize, totalPages }
+export const getPaymentHistory = async (pageIndex = 1, pageSize = 8) => {
+  const { data } = await api.get("/finance/history", {
+    params: { pageIndex, pageSize },
   });
+  return data; // PagedResult<PaymentHistoryDto>
 };

@@ -24,9 +24,7 @@ public class CommitteeController : ControllerBase
     }
 
   [HttpPut("appeals/{id}/decision")]
-public async Task<IActionResult> AppealDecision(
-    int id,
-    [FromBody] CommitteeDecisionDto dto)
+public async Task<IActionResult> AppealDecision(int id,[FromBody] CommitteeDecisionDto dto)
 {
     var committeeUserId = 1;
 

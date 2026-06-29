@@ -4,13 +4,21 @@ import {
   Container, Card, Row, Col, Table,
   Button, Badge, Spinner
 } from 'react-bootstrap';
+import { useLanguage } from '../../context/LanguageContext'; // <--- 1. استدعاء اللغة
+import { useDynamicTranslation } from '../../utils/useDynamicTranslation'; // <--- 2. استدعاء الأداة
 
-import { getOwnerById, getOwnerUnits, deleteOwner,deleteAssignment } from '../../services/assignmentService';
+import { getOwnerById, getOwnerUnits, deleteOwner, deleteAssignment } from '../../services/assignmentService';
 
+// ── مكون مساعد لترجمة الداتا ديناميكياً ──
+const DynText = ({ text, lang }) => {
+  const translated = useDynamicTranslation(text || '', lang);
+  return <>{translated || '-'}</>;
+};
 
 const OwnerDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { lang } = useLanguage(); // <--- 3. جلب اللغة الحالية
 
   const [owner,        setOwner]        = useState(null);
   const [units,        setUnits]        = useState([]);
@@ -45,31 +53,28 @@ const OwnerDetails = () => {
   }, [id]);
 
   const handleDeleteOwner = async () => {
-  if (!window.confirm('هل أنت متأكد من حذف هذا المالك؟ لا يمكن التراجع عن هذا الإجراء.')) 
-    return;
-  try {
-    await deleteOwner(owner.id);
-    alert('تم حذف المالك بنجاح');
-    navigate(-1);
-  } catch (error) {
-    console.error(error);
-    alert('فشل حذف المالك، حاول مرة أخرى');
-  }
-};
+    if (!window.confirm('هل أنت متأكد من حذف هذا المالك؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+    try {
+      await deleteOwner(owner.id);
+      alert('تم حذف المالك بنجاح');
+      navigate(-1);
+    } catch (error) {
+      console.error(error);
+      alert('فشل حذف المالك، حاول مرة أخرى');
+    }
+  };
+
   const handleDeleteUnit = async (assignmentId) => {
-  if (!window.confirm('هل أنت متأكد من حذف ربط هذه الوحدة بهذا المالك؟')) return;
-
-  try {
-    await deleteAssignment(assignmentId);
-
-    setUnits(prev => prev.filter(u => u.assignmentId !== assignmentId));
-
-    alert('تم حذف الربط بنجاح');
-  } catch (error) {
-    console.error(error);
-    alert(error?.message || 'فشل حذف الربط، حاول مرة أخرى');
-  }
-};
+    if (!window.confirm('هل أنت متأكد من حذف ربط هذه الوحدة بهذا المالك؟')) return;
+    try {
+      await deleteAssignment(assignmentId);
+      setUnits(prev => prev.filter(u => u.assignmentId !== assignmentId));
+      alert('تم حذف الربط بنجاح');
+    } catch (error) {
+      console.error(error);
+      alert(error?.message || 'فشل حذف الربط، حاول مرة أخرى');
+    }
+  };
 
   if (loadingOwner) {
     return (
@@ -106,37 +111,26 @@ const OwnerDetails = () => {
         <Card.Header className="bg-white border-bottom py-3">
           <div className="d-flex align-items-center gap-2">
             <div
-              className="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center
-                         justify-content-center"
+              className="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
               style={{ width: 42, height: 42 }}
             >
               <i className="fa-solid fa-user text-primary"></i>
             </div>
             <div>
-              <h5 className="mb-0 fw-bold">{owner.fullName}</h5>
+              {/* 4. ترجمة اسم المالك الجاي من الداتا بيز */}
+              <h5 className="mb-0 fw-bold"><DynText text={owner.fullName} lang={lang} /></h5>
               <small className="text-muted">بيانات المالك</small>
             </div>
             <div className="ms-auto d-flex gap-2">
               <Button
-                variant="light"
-                size="sm"
-                className="text-primary border"
-                title="تعديل بيانات المالك"
-onClick={() => navigate(`/data-entry/edit-owner/${owner.id}`)}
+                variant="light" size="sm" className="text-primary border" title="تعديل بيانات المالك"
+                onClick={() => navigate(`/data-entry/edit-owner/${owner.id}`)}
               >
-                <i className="fa-solid fa-pen-to-square me-1"></i>
-                تعديل
+                <i className="fa-solid fa-pen-to-square me-1"></i> تعديل
               </Button>
-             <Button
-  variant="light"
-  size="sm"
-  className="text-danger border"
-  title="حذف المالك"
-  onClick={handleDeleteOwner}   // ← بدل الكود القديم
->
-  <i className="fa-solid fa-trash me-1"></i>
-  حذف
-</Button>
+              <Button variant="light" size="sm" className="text-danger border" title="حذف المالك" onClick={handleDeleteOwner}>
+                <i className="fa-solid fa-trash me-1"></i> حذف
+              </Button>
             </div>
           </div>
         </Card.Header>
@@ -147,19 +141,22 @@ onClick={() => navigate(`/data-entry/edit-owner/${owner.id}`)}
               <div className="text-muted small mb-1">
                 <i className="fa-solid fa-id-card me-1"></i> الرقم القومي
               </div>
+              {/* الأرقام لا نترجمها */}
               <div className="fw-semibold font-monospace">{owner.nationalId || '-'}</div>
             </Col>
             <Col md={3}>
               <div className="text-muted small mb-1">
                 <i className="fa-solid fa-phone me-1"></i> رقم الهاتف
               </div>
+              {/* الأرقام لا نترجمها */}
               <div className="fw-semibold">{owner.phone || '-'}</div>
             </Col>
             <Col md={4}>
               <div className="text-muted small mb-1">
                 <i className="fa-solid fa-location-dot me-1"></i> العنوان
               </div>
-              <div className="fw-semibold">{owner.address || '-'}</div>
+              {/* 5. ترجمة العنوان لو هو نص عربي جاي من الداتا بيز */}
+              <div className="fw-semibold"><DynText text={owner.address} lang={lang} /></div>
             </Col>
             <Col md={2}>
               <div className="text-muted small mb-1">
@@ -191,9 +188,7 @@ onClick={() => navigate(`/data-entry/edit-owner/${owner.id}`)}
       <Card className="shadow-sm border-0">
         <Card.Body className="p-0">
           {loadingUnits ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" />
-            </div>
+            <div className="text-center py-5"><Spinner animation="border" /></div>
           ) : units.length > 0 ? (
             <Table hover responsive className="align-middle mb-0">
               <thead className="table-light">
@@ -206,30 +201,27 @@ onClick={() => navigate(`/data-entry/edit-owner/${owner.id}`)}
                 </tr>
               </thead>
               <tbody>
-  {units.map(unit => (
-    <tr key={unit.assignmentId ?? unit.unitId}>
-      <td className="fw-bold text-primary">{unit.unitNumber || '-'}</td>
-      <td className="text-muted">{unit.address || '-'}</td>
-      <td>{unit.area ?? '-'}</td>
-      <td className="small text-muted">
-        {unit.startDate
-          ? new Date(unit.startDate).toLocaleDateString('ar-EG')
-          : '-'}
-      </td>
-      <td className="text-end pe-4">
-        <Button
-          variant="light"
-          size="sm"
-          className="text-danger border"
-          title="حذف الربط"
-          onClick={() => handleDeleteUnit(unit.assignmentId)}
-        >
-          <i className="fa-solid fa-trash"></i>
-        </Button>
-      </td>
-    </tr>
-  ))}
-</tbody>
+                {units.map(unit => (
+                  <tr key={unit.assignmentId ?? unit.unitId}>
+                    <td className="fw-bold text-primary">{unit.unitNumber || '-'}</td>
+                    {/* 6. ترجمة عنوان الوحدة في الجدول */}
+                    <td className="text-muted"><DynText text={unit.address} lang={lang} /></td>
+                    <td>{unit.area ?? '-'}</td>
+                    <td className="small text-muted">
+                      {unit.startDate ? new Date(unit.startDate).toLocaleDateString('ar-EG') : '-'}
+                    </td>
+                    <td className="text-end pe-4">
+                      <Button
+                        variant="light" size="sm" className="text-danger border"
+                        title="حذف الربط"
+                        onClick={() => handleDeleteUnit(unit.assignmentId)}
+                      >
+                        <i className="fa-solid fa-trash"></i>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </Table>
           ) : (
             <div className="text-center py-5 text-muted">

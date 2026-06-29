@@ -5,9 +5,9 @@ namespace Core.ServiceAbstraction
         ILocationService LocationService { get; }
 
         IPropertyService PropertyService { get; }
-
+        IInstallmentService InstallmentService { get; }
         IAssignmentService AssignmentService { get; }
-
+        IFinanceService FinanceService { get; }
         IOwnerService OwnerService { get; }
 
         IEmployeeService EmployeeService { get; }
