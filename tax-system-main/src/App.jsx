@@ -41,7 +41,6 @@ import FinanceCollection from './pages/Finance/Collection';
 // Manager
 import ManagerHome from './pages/Manager/Home';
 import ManagerVerdict from './pages/Manager/Verdict';
-import ManagerReports from './pages/Manager/Reports';
 
 // Admin
 import AdminHome from './pages/Admin/Home';
@@ -136,7 +135,6 @@ function App() {
 
                     <Route path="/manager/home" element={<ManagerHome />} />
                     <Route path="/manager/verdict" element={<ManagerVerdict />} />
-                    <Route path="/manager/reports" element={<ManagerReports />} />
 
                     <Route path="/admin/home" element={<AdminHome />} />
                     <Route path="/admin/users" element={<UserManagement />} />

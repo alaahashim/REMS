@@ -57,7 +57,7 @@ const AddProperty = () => {
   const [streets, setStreets] = useState([]);
 
   const [units, setUnits] = useState([
-    { unitNumber: '', unitType: 'Apartment', floor: 1, area: 0, usage: 'Residential', status: 'Available' }
+    { unitNumber: '', unitType: 'شقة', floor: 1, area: 0, usage: 'مشغول', status: 'متوفر' }
   ]);
 
   const [isSingleOwner, setIsSingleOwner] = useState(false);
@@ -88,10 +88,28 @@ const AddProperty = () => {
     if (name === 'isSingleOwner') {
       setIsSingleOwner(checked);
       if (checked) {
-        setUnits([{ unitNumber: '1', unitType: 'Villa/House', floor: 1, area: 0, usage: 'Residential', status: 'Available' }]);
-      } else {
-        setUnits([{ unitNumber: '', unitType: 'Apartment', floor: 1, area: 0, usage: 'Residential', status: 'Available' }]);
-      }
+  setUnits([
+    {
+      unitNumber: '1',
+      unitType: 'فيلا / منزل',
+      floor: 1,
+      area: 0,
+      usage: 'سكني',
+      status: 'متاح'
+    }
+  ]);
+} else {
+  setUnits([
+    {
+      unitNumber: '',
+      unitType: 'شقة',
+      floor: 1,
+      area: 0,
+      usage: 'سكني',
+      status: 'متاح'
+    }
+  ]);
+}
     } else if (name === 'governorateId') {
       setPropertyData({ ...propertyData, [name]: value, centerId: '', neighborhoodId: '', streetId: '' });
     } else if (name === 'centerId') {
@@ -106,7 +124,7 @@ const AddProperty = () => {
   };
 
   const addUnitRow = () => {
-    setUnits([...units, { unitNumber: '', unitType: 'Apartment', floor: units.length + 1, area: 0, usage: 'Residential', status: 'Available' }]);
+    setUnits([...units, { unitNumber: '', unitType: 'شقة', floor: units.length + 1, area: 0, usage: 'مشغول', status: 'متوفر' }]);
   };
 
   const removeUnitRow = (index) => {
@@ -125,7 +143,7 @@ const AddProperty = () => {
       };
       let unitsToSave = [];
       if (isSingleOwner) {
-        unitsToSave = [{ unitNumber: units[0]?.unitNumber || '1', unitType: 'Villa/House', floor: 1, area: Number(totalArea), usage: units[0]?.usage || 'Residential', status: units[0]?.status || 'Available' }];
+        unitsToSave = [{ unitNumber: units[0]?.unitNumber || '1', unitType: 'فيلا/منزل', floor: 1, area: Number(totalArea), usage: units[0]?.usage || 'مشغول', status: units[0]?.status || 'متوفر' }];
       } else {
         unitsToSave = units.map(u => ({ unitNumber: u.unitNumber, unitType: u.unitType, floor: Number(u.floor), area: Number(u.area), usage: u.usage, status: u.status }));
       }
@@ -295,7 +313,7 @@ const AddProperty = () => {
                   </>
                 ) : (
                   <div className="border border-success p-3 rounded bg-light">
-                    <h6 className="text-success fw-bold">بيانات الوحدة الوحيدة (Villa/House)</h6>
+                    <h6 className="text-success fw-bold">بيانات الوحدة الوحيدة (فيلا/منزل)</h6>
                     <Row>
                       <Col md={4}>
                         <Form.Group className="mb-3">

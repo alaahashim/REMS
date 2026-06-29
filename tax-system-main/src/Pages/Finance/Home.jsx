@@ -75,7 +75,8 @@ const FinanceHome = () => {
       if (dash.status === "fulfilled") setDashboard(dash.value);
       else setError("فشل تحميل الإحصائيات.");
 
-      if (hist.status === "fulfilled") setHistory(hist.value);
+      if (hist.status === "fulfilled")   setHistory(hist.value?.items ?? []);
+
       else setError((prev) => prev + " فشل تحميل سجل المدفوعات.");
     } finally {
       setDashLoading(false);

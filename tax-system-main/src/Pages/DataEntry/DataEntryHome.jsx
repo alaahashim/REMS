@@ -738,7 +738,6 @@ const DataEntryHome = () => {
                       <th>الدور</th>
                       <th>المساحة</th>
                       <th>الاستخدام</th>
-                      <th>التشطيب</th>
                       <th>الحالة</th>
                       <th className="text-end pe-4">إجراءات</th>
                     </tr>
@@ -762,7 +761,6 @@ const DataEntryHome = () => {
                           <td>{unit.area ?? '-'}</td>
                           <td>{getUsageLabel(unit.usageType)}</td>
                           {/* ترجمة نوع التشطيب من الداتا بيز */}
-                          <td><DynText text={unit.finishingType} lang={lang} /></td>
                           <td>{getUnitStatusBadge(unit.status)}</td>
                           <td className="text-end pe-4">
                             <Button
