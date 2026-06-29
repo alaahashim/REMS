@@ -265,13 +265,11 @@ o => o.MapFrom(s => s.TaxAssessment.AnnualTax));
         d => d.AppealReason,
         o => o.MapFrom(s => s.AppealReason))
 
-    .ForMember(
-        d => d.OriginalTax,
+    .ForMember(d => d.OriginalTax,
         o => o.MapFrom(s => s.TaxAssessment.AnnualTax))
 
-    .ForMember(
-        d => d.ProposedTax,
-        o => o.MapFrom(s => s.TaxAssessment.ManagerApprovedTax))
+    .ForMember(d => d.ProposedTax,
+        o => o.MapFrom(s => s.TaxAssessment.CommitteeProposedTax))
 
     .ForMember(
         d => d.CommitteeVerdict,

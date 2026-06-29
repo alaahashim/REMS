@@ -450,8 +450,8 @@ public async Task CommitteeDecisionAsync(
                 "New Tax Amount required"
             });
 
-        appeal.TaxAssessment.AnnualTax =
-            dto.NewTaxAmount.Value;
+           appeal.TaxAssessment.CommitteeProposedTax = dto.NewTaxAmount.Value;
+
     }
 
     appeal.Status = AppealStatus.PendingManager;
