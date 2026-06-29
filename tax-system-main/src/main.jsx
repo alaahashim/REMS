@@ -4,6 +4,7 @@ import App from './App.jsx'
 
 import 'bootstrap/dist/css/bootstrap.rtl.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import './services/apiClient';
 import './index.css'; 
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext.jsx'; 

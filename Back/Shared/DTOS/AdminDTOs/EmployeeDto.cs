@@ -18,8 +18,24 @@ namespace Shared.DTOS.AdminDTOs
 
         public string Username { get; set; } = null!;
 
+        public string Email { get; set; } = null!;
+
+        public string Phone { get; set; } = null!;
+
+        public string? PicturePath { get; set; }
+
+        public string RoleNameArabic { get; set; } = null!;
+
         public bool IsActive { get; set; }
 
         public DateTime CreatedAt { get; set; }
+
+        public int CreatedBy { get; set; }
+
+        public string CreatedByName { get; set; } = null!;
+
+        public int UpdatedBy { get; set; }
+
+        public string UpdatedByName { get; set; } = null!;
     }
 }

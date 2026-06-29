@@ -28,5 +28,15 @@ namespace Shared.DTOS.AdminDTOs
 
         [Required]
         public string Password { get; set; } = null!;
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = null!;
+
+        [Required]
+        [RegularExpression(@"^\d{11}$", ErrorMessage = "Phone number must be exactly 11 digits")]
+        public string Phone { get; set; } = null!;
+
+        public string? PicturePath { get; set; }
     }
 }

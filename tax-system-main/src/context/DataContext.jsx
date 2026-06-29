@@ -58,6 +58,20 @@ export const DataProvider = ({ children }) => {
     return { employees, auditLogs };
   }, [refreshEmployees, refreshAuditLogs]);
 
+  const updateEmployeeInState = useCallback((employeeId, updater) => {
+    setData((prevData) => ({
+      ...prevData,
+      employees: prevData.employees.map((employee) => {
+        const currentId = employee.id ?? employee.Id;
+        if (String(currentId) !== String(employeeId)) return employee;
+
+        return typeof updater === 'function'
+          ? updater(employee)
+          : { ...employee, ...updater };
+      }),
+    }));
+  }, []);
+
   const fetchData = useCallback(async () => {
     try {
       const properties = JSON.parse(localStorage.getItem('tax_properties')) || [];
@@ -96,6 +110,7 @@ export const DataProvider = ({ children }) => {
       refreshEmployees,
       refreshAuditLogs,
       refreshAdminData,
+      updateEmployeeInState,
       saveData,
       getProperties,
       getAssignments,
