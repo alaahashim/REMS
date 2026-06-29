@@ -2,23 +2,36 @@ using Microsoft.AspNetCore.Mvc;
 using Core.ServiceAbstraction;
 using Shared.DTOS.AdminDTOs;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Presentation.Controllers
 {
+    public class ToggleEmployeeStatusAuditDto
+    {
+        public string? EmployeeName { get; set; }
+        public string? OldStatus { get; set; }
+        public string? NewStatus { get; set; }
+    }
+
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class AdminEmployeesController : ControllerBase
     {
         private readonly IServiceManager _serviceManager;
         private readonly IAuditLogService _auditLogService;
+        private readonly IWebHostEnvironment _environment;
         private const int FallbackAuditEmployeeId = 1;
+
 
         public AdminEmployeesController(
             IServiceManager serviceManager,
-            IAuditLogService auditLogService)
+            IAuditLogService auditLogService,
+            IWebHostEnvironment environment)
         {
             _serviceManager = serviceManager;
             _auditLogService = auditLogService;
+            _environment = environment;
         }
 
         private int GetCurrentEmployeeId()
@@ -63,13 +76,15 @@ namespace Presentation.Controllers
         /// Create a new employee
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateEmployee([FromForm] CreateEmployeeDto dto, [FromForm] IFormFile? profilePicture)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             try
             {
+                dto.PicturePath = await SaveProfilePictureAsync(profilePicture);
                 // 1. تنفيذ عملية الحفظ الأساسية للموظف أولاً
                 var result = await _serviceManager.EmployeeService.CreateEmployeeAsync(dto);
 
@@ -83,7 +98,7 @@ namespace Presentation.Controllers
                         keyValue: result.Id.ToString(),
                         actionType: "CREATE",
                         oldValues: null,
-                        newValues: $"تم إنشاء حساب جديد للموظف: {result.FullName} - الرقم القومي: {result.NationalId}",
+                        newValues: $"FullName: {result.FullName}, NationalId: {result.NationalId}, EmployeeCode: {result.EmployeeCode}",
                         employeeId: currentAdminId
                     );
                 }
@@ -101,11 +116,82 @@ namespace Presentation.Controllers
             }
         }
 
+        private async Task<string?> SaveProfilePictureAsync(IFormFile? profilePicture)
+        {
+            if (profilePicture == null || profilePicture.Length == 0)
+                return null;
+
+            var extension = Path.GetExtension(profilePicture.FileName);
+            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadsPath = Path.Combine(webRootPath, "uploads", "employees");
+
+            Directory.CreateDirectory(uploadsPath);
+
+            var fullPath = Path.Combine(uploadsPath, fileName);
+            await using var stream = new FileStream(fullPath, FileMode.Create);
+            await profilePicture.CopyToAsync(stream);
+
+            return $"/uploads/employees/{fileName}";
+        }
+
+        /// <summary>
+        /// Upload or replace an employee profile picture
+        /// </summary>
+        [HttpPut("{id}/profile-picture")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadProfilePicture(int id, [FromForm] IFormFile? profilePicture)
+        {
+            var employee = await _serviceManager.EmployeeService.GetEmployeeByIdAsync(id);
+
+            if (employee == null)
+                return NotFound(new { message = "Employee not found" });
+
+            var picturePath = await SaveProfilePictureAsync(profilePicture);
+
+            if (string.IsNullOrWhiteSpace(picturePath))
+                return BadRequest(new { message = "Profile picture is required" });
+
+            var updateResult = await _serviceManager.EmployeeService.UpdateEmployeeAsync(id, new UpdateEmployeeDto
+            {
+                FullName = employee.FullName,
+                NationalId = employee.NationalId,
+                JobTitle = employee.JobTitle,
+                Department = employee.Department,
+                OfficeId = employee.OfficeId,
+                Email = employee.Email,
+                Phone = employee.Phone,
+                PicturePath = picturePath
+            });
+
+            if (!updateResult)
+                return BadRequest(new { message = "Failed to update profile picture" });
+
+            try
+            {
+                await _auditLogService.LogActionAsync(
+                    tableName: "Employees",
+                    keyValue: id.ToString(),
+                    actionType: "UPDATE",
+                    oldValues: $"PicturePath: {employee.PicturePath}",
+                    newValues: $"PicturePath: {picturePath}",
+                    employeeId: GetCurrentEmployeeId()
+                );
+            }
+            catch (Exception logEx)
+            {
+                Console.WriteLine($"[AuditLog Error]: Failed to write log for UploadProfilePicture. Details: {logEx.Message}");
+            }
+
+            var updatedEmployee = await _serviceManager.EmployeeService.GetEmployeeByIdAsync(id);
+            return Ok(new { message = "Profile picture updated successfully", data = updatedEmployee });
+        }
+
         /// <summary>
         /// Toggle employee status (activate/deactivate)
         /// </summary>
         [HttpPut("toggle-status/{id}")]
-        public async Task<IActionResult> ToggleEmployeeStatus(int id)
+        public async Task<IActionResult> ToggleEmployeeStatus(int id, [FromBody] ToggleEmployeeStatusAuditDto? auditTrail = null)
         {
             var employee = await _serviceManager.EmployeeService.GetEmployeeByIdAsync(id);
 
@@ -121,12 +207,23 @@ namespace Presentation.Controllers
             // تأمين الـ Audit Log من التسبب في فشل الـ Request
             try
             {
+                var oldStatusLabel = string.IsNullOrWhiteSpace(auditTrail?.OldStatus)
+                    ? (oldStatus ? "نشط" : "معطل")
+                    : auditTrail.OldStatus;
+                var newStatusLabel = string.IsNullOrWhiteSpace(auditTrail?.NewStatus)
+                    ? (!oldStatus ? "نشط" : "معطل")
+                    : auditTrail.NewStatus;
+                var employeeName = string.IsNullOrWhiteSpace(auditTrail?.EmployeeName)
+                    ? employee.FullName
+                    : auditTrail.EmployeeName;
+                var statusChangeMessage = $"تغيير حالة الموظف {employeeName} من {oldStatusLabel} إلى {newStatusLabel}";
+
                 await _auditLogService.LogActionAsync(
                     tableName: "Employees",
                     keyValue: id.ToString(),
                     actionType: "UPDATE",
-                    oldValues: $"IsActive: {oldStatus}",
-                    newValues: $"IsActive: {!oldStatus}",
+                    oldValues: $"Status: {oldStatusLabel}",
+                    newValues: statusChangeMessage,
                     employeeId: GetCurrentEmployeeId()
                 );
             }
@@ -213,7 +310,7 @@ namespace Presentation.Controllers
                     tableName: "Employees",
                     keyValue: id.ToString(),
                     actionType: "DELETE",
-                    oldValues: $"EmployeeCode: {employee.EmployeeCode}, FullName: {employee.FullName}",
+                    oldValues: $"FullName: {employee.FullName}, NationalId: {employee.NationalId}, EmployeeCode: {employee.EmployeeCode}",
                     newValues: null,
                     employeeId: GetCurrentEmployeeId()
                 );

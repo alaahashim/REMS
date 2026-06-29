@@ -14,6 +14,8 @@ namespace Core.ServiceAbstraction
 
         IAuditLogService AuditLogService { get; }
 
+        IIdentityService IdentityService { get; }
+
         IExemptionService ExemptionService { get; }
 
         ITaxAssessmentService TaxAssessmentService { get; }

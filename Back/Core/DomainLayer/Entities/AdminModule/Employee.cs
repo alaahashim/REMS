@@ -20,6 +20,14 @@ namespace Core.DomainLayer.Entities.AdminModule
 
         public string PasswordHash { get; set; } = null!;
 
+        public string Email { get; set; } = null!;
+
+        public string Phone { get; set; } = null!;
+
+        public string? PicturePath { get; set; }
+
         public bool IsActive { get; set; } = true;
+
+        public DateTime? LastPasswordChangedAt { get; set; }
     }
 }

@@ -1,19 +1,21 @@
 using Core.DomainLayer.Contracts;
 using Core.DomainLayer.Entities.AdminModule;
+using Core.Service.Helpers;
 using Core.ServiceAbstraction;
+using Microsoft.AspNetCore.Http;
 using Shared.DTOS.AdminDTOs;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Core.Service.Implementations
 {
     public class EmployeeService : IEmployeeService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public EmployeeService(IUnitOfWork unitOfWork)
+        public EmployeeService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<IEnumerable<EmployeeDto>> GetAllEmployeesAsync(string? searchQuery = null)
@@ -29,7 +31,10 @@ namespace Core.Service.Implementations
                     e.NationalId.Contains(query, StringComparison.OrdinalIgnoreCase));
             }
 
-            return employees.Select(e => MapToDto(e));
+            var employeeList = employees.ToList();
+            var namesById = employeeList.ToDictionary(e => e.Id, e => e.FullName);
+
+            return employeeList.Select(e => MapToDto(e, namesById));
         }
 
         public async Task<EmployeeDto?> GetEmployeeByIdAsync(int id)
@@ -37,19 +42,24 @@ namespace Core.Service.Implementations
             var repo = _unitOfWork.GetRepository<Employee, int>();
             var employee = await repo.GetByIdAsync(id);
 
-            return employee != null ? MapToDto(employee) : null;
+            if (employee == null)
+                return null;
+
+            var namesById = (await repo.GetAllAsync()).ToDictionary(e => e.Id, e => e.FullName);
+            return MapToDto(employee, namesById);
         }
 
         public async Task<EmployeeDto> CreateEmployeeAsync(CreateEmployeeDto dto)
         {
             var repo = _unitOfWork.GetRepository<Employee, int>();
 
-            // Check if national ID already exists
             var existingEmployee = (await repo.GetAllAsync())
                 .FirstOrDefault(e => e.NationalId == dto.NationalId);
 
             if (existingEmployee != null)
-                throw new InvalidOperationException("الرقم القومي مسجل مسبقاً");
+                throw new InvalidOperationException("الرقم القومي مسجل مسبقا");
+
+            var currentEmployeeId = CurrentUserHelper.GetCurrentEmployeeId(_httpContextAccessor);
 
             var employee = new Employee
             {
@@ -60,14 +70,22 @@ namespace Core.Service.Implementations
                 Department = dto.Department,
                 OfficeId = dto.OfficeId,
                 Username = dto.Username,
-                PasswordHash = HashPassword(dto.Password),
-                IsActive = true
+                PasswordHash = PasswordHashHelper.HashPassword(dto.Password),
+                Email = dto.Email,
+                Phone = dto.Phone,
+                PicturePath = dto.PicturePath,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CreatedBy = currentEmployeeId,
+                UpdatedBy = currentEmployeeId
             };
 
             await repo.AddAsync(employee);
             await _unitOfWork.SaveChangesAsync();
 
-            return MapToDto(employee);
+            var namesById = (await repo.GetAllAsync()).ToDictionary(e => e.Id, e => e.FullName);
+            return MapToDto(employee, namesById);
         }
 
         public async Task<bool> ToggleEmployeeStatusAsync(int id)
@@ -79,6 +97,9 @@ namespace Core.Service.Implementations
                 return false;
 
             employee.IsActive = !employee.IsActive;
+            employee.UpdatedAt = DateTime.UtcNow;
+            employee.UpdatedBy = CurrentUserHelper.GetCurrentEmployeeId(_httpContextAccessor);
+
             repo.Update(employee);
             await _unitOfWork.SaveChangesAsync();
 
@@ -102,7 +123,7 @@ namespace Core.Service.Implementations
                     .FirstOrDefault(e => e.Id != id && e.NationalId == dto.NationalId);
 
                 if (existingEmployee != null)
-                    throw new InvalidOperationException("الرقم القومي مسجل مسبقاً");
+                    throw new InvalidOperationException("الرقم القومي مسجل مسبقا");
 
                 employee.NationalId = dto.NationalId;
             }
@@ -115,6 +136,18 @@ namespace Core.Service.Implementations
 
             if (!string.IsNullOrEmpty(dto.OfficeId))
                 employee.OfficeId = dto.OfficeId;
+
+            if (!string.IsNullOrEmpty(dto.Email))
+                employee.Email = dto.Email;
+
+            if (!string.IsNullOrEmpty(dto.Phone))
+                employee.Phone = dto.Phone;
+
+            if (dto.PicturePath != null)
+                employee.PicturePath = dto.PicturePath;
+
+            employee.UpdatedAt = DateTime.UtcNow;
+            employee.UpdatedBy = CurrentUserHelper.GetCurrentEmployeeId(_httpContextAccessor);
 
             repo.Update(employee);
             await _unitOfWork.SaveChangesAsync();
@@ -136,16 +169,7 @@ namespace Core.Service.Implementations
             return true;
         }
 
-        private static string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
-        }
-
-        private static EmployeeDto MapToDto(Employee employee)
+        private static EmployeeDto MapToDto(Employee employee, IReadOnlyDictionary<int, string> namesById)
         {
             return new EmployeeDto
             {
@@ -157,9 +181,29 @@ namespace Core.Service.Implementations
                 Department = employee.Department,
                 OfficeId = employee.OfficeId,
                 Username = employee.Username,
+                Email = employee.Email,
+                Phone = employee.Phone,
+                PicturePath = employee.PicturePath,
+                RoleNameArabic = EmployeeRoleHelper.ToArabicName(employee.Department),
                 IsActive = employee.IsActive,
-                CreatedAt = employee.CreatedAt
+                CreatedAt = employee.CreatedAt,
+                CreatedBy = employee.CreatedBy,
+                CreatedByName = ResolveUserName(employee.CreatedBy, namesById),
+                UpdatedBy = employee.UpdatedBy,
+                UpdatedByName = ResolveUserName(employee.UpdatedBy, namesById)
             };
+        }
+
+        private static string ResolveUserName(int employeeId, IReadOnlyDictionary<int, string> namesById)
+        {
+            if (employeeId > 0 &&
+                namesById.TryGetValue(employeeId, out var name) &&
+                !string.IsNullOrWhiteSpace(name))
+            {
+                return name;
+            }
+
+            return "Admin";
         }
     }
 }

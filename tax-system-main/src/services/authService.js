@@ -1,61 +1,136 @@
-// ===========================
-// 1. قاعدة البيانات الثابتة (Mock Static Data)
-// ===========================
-const STATIC_USERS_DB = {
-  '11111111111111': { id: '11111111111111', name: 'أحمد علي', role: 'Data Entry' },
-  '22222222222222': { id: '22222222222222', name: 'منى سعيد', role: 'Reviewer' },
-  '33333333333333': { id: '33333333333333', name: 'كمال محمد', role: 'Finance' },
-  '44444444444444': { id: '44444444444444', name: 'د. حسين', role: 'Manager' },
-  '99999999999999': { id: '99999999999999', name: 'المدير العام', role: 'Admin' },
-  '55555555555555': { id: '55555555555555', name: 'محمد القاضي', role: 'Committee Member' },
+import api from "./apiClient";
+
+export const getArabicRoleName = (role = "") => {
+  const value = String(role || "").trim().toLowerCase();
+
+  if (value.includes("admin") || value.includes("مدير النظام")) return "مدير النظام";
+  if ((value.includes("data") && value.includes("entry")) || value.includes("مدخل")) return "مدخل بيانات";
+  if (value.includes("review") || value.includes("مراجع")) return "مراجع";
+  if (value.includes("finance") || value.includes("مالي")) return "مالي";
+  if (value.includes("manager") || value.includes("مأمورية")) return "مدير مأمورية";
+  if (value.includes("committee") || value.includes("طعون")) return "لجنة الطعون";
+
+  return role || "موظف";
 };
 
-// ===========================
-// 2. خدمة تسجيل الدخول (Login Service)
-// ===========================
-export const loginUser = (nationalId, password) => {
-  return new Promise((resolve, reject) => {
-    // محاكاة تأخير الشبكة (Network Latency)
-    setTimeout(() => {
-      
-      // --- أ. التحقق من كلمة المرور ---
-      // ملاحظة: في نظام حقيقي، كلمة المرور ستكون مشفرة داخل كل كائن مستخدم
-      const DEFAULT_PASSWORD = '123';
-      if (password !== DEFAULT_PASSWORD) {
-        reject({ message: 'كلمة المرور خاطئة' });
-        return;
-      }
+const normalizeEmployee = (employee) => {
+  if (!employee) return null;
 
-      // --- ب. دمج المستخدمين الثابتين مع المستخدمين الديناميكين ---
-      // 1. جلب المستخدمين المضافين عبر لوحة التحكم (Admin Panel) من LocalStorage
-      let dynamicUsers = {};
-      try {
-        dynamicUsers = JSON.parse(localStorage.getItem('users')) || {};
-      } catch (e) {
-        console.warn("Error reading localStorage:", e);
-      }
+  const role = employee.department || employee.Department || employee.jobTitle || employee.JobTitle || "User";
+  const roleNameArabic =
+    employee.roleNameArabic ||
+    employee.RoleNameArabic ||
+    getArabicRoleName(role);
+  const fullName = employee.fullName || employee.FullName || employee.name || employee.username || employee.Username;
+  const picturePath = employee.picturePath || employee.PicturePath || "";
 
-      // 2. دمج القائمتين (المستخدمين في LocalStorage يغطون أي تطابق في Static DB)
-      const allUsers = { ...STATIC_USERS_DB, ...dynamicUsers };
+  return {
+    ...employee,
+    id: employee.id || employee.Id,
+    employeeCode: employee.employeeCode || employee.EmployeeCode || "",
+    name: fullName,
+    fullName,
+    nationalId: employee.nationalId || employee.NationalId || employee.nationalID || employee.NationalID || "",
+    jobTitle: employee.jobTitle || employee.JobTitle || "",
+    department: employee.department || employee.Department || "",
+    officeId: employee.officeId || employee.OfficeId || "",
+    username: employee.username || employee.Username,
+    email: employee.email || employee.Email || "",
+    phone: employee.phone || employee.Phone || "",
+    isActive: employee.isActive ?? employee.IsActive ?? true,
+    role,
+    roleNameArabic,
+    avatar: picturePath ? `http://localhost:5179${picturePath}` : "",
+    picturePath,
+    createdAt: employee.createdAt || employee.CreatedAt || "",
+    createdBy: employee.createdBy || employee.CreatedBy || "",
+    createdByName: employee.createdByName || employee.CreatedByName || "Admin",
+    updatedBy: employee.updatedBy || employee.UpdatedBy || "",
+    updatedByName: employee.updatedByName || employee.UpdatedByName || "Admin",
+  };
+};
 
-      // --- ج. البحث عن المستخدم ---
-      const user = allUsers[nationalId];
-
-      if (user) {
-        resolve(user);
-      } else {
-        reject({ message: 'رقم قومي غير مسجل في النظام' });
-      }
-
-    }, 800); // تأخير 800 مللي ثانية
+export const loginUser = async (usernameOrNationalId, password) => {
+  const response = await api.post("/Account/login", {
+    usernameOrNationalId,
+    password,
   });
+
+  const token = response.data?.token || response.data?.Token;
+  const employee = normalizeEmployee(response.data?.employee || response.data?.Employee);
+
+  if (!token || !employee) {
+    throw new Error("Login response did not include a token or employee data.");
+  }
+
+  localStorage.setItem("token", token);
+  localStorage.setItem("tax_current_user", JSON.stringify(employee));
+
+  return {
+    success: true,
+    token,
+    expiresAt: response.data?.expiresAt || response.data?.ExpiresAt,
+    user: employee,
+  };
 };
 
-// ===========================
-// 3. دالة مساعدة للحصول على المستخدم (اختياري للاستخدام المستقبلي)
-// ===========================
-export const getUserById = (id) => {
-  let dynamicUsers = JSON.parse(localStorage.getItem('users')) || {};
-  const allUsers = { ...STATIC_USERS_DB, ...dynamicUsers };
-  return allUsers[id];
+export const getCurrentProfile = async () => {
+  const response = await api.get("/Account/profile");
+  const employee = normalizeEmployee(response.data);
+
+  if (employee) {
+    localStorage.setItem("tax_current_user", JSON.stringify(employee));
+  }
+
+  return employee;
+};
+
+export const getUserById = async (id) => {
+  const response = await api.get(`/AdminEmployees/${id}`);
+  return normalizeEmployee(response.data);
+};
+
+export const updateUserById = async (id, profile) => {
+  const response = await api.put(`/AdminEmployees/${id}`, {
+    FullName: profile.name,
+    NationalId: profile.nationalId,
+    JobTitle: profile.jobTitle,
+    Department: profile.department || profile.role,
+    OfficeId: profile.officeId,
+    Email: profile.email,
+    Phone: profile.phone,
+    PicturePath: profile.picturePath,
+  });
+
+  return normalizeEmployee(response.data?.data || response.data?.Data || response.data);
+};
+
+export const uploadProfilePicture = async (id, file) => {
+  const payload = new FormData();
+  payload.append("profilePicture", file);
+
+  const response = await api.put(`/AdminEmployees/${id}/profile-picture`, payload);
+  return normalizeEmployee(response.data?.data || response.data?.Data || response.data);
+};
+
+export const forgotPassword = async (username) => {
+  const response = await api.post("/Account/forgot-password-request", { username });
+  return response.data;
+};
+
+export const verifyPasswordOtp = async (username, otp) => {
+  const response = await api.post("/Account/verify-otp", {
+    username,
+    otp,
+  });
+  return response.data;
+};
+
+export const resetPassword = async (username, otp, newPassword) => {
+  const response = await api.post("/Account/reset-password", {
+    username,
+    otp,
+    newPassword,
+  });
+  return response.data;
 };

@@ -28,6 +28,7 @@ namespace Persistence.Data
         // Admin Module
         public DbSet<Employee> Employees { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
 
         // Exemption Module
         public DbSet<Exemption> Exemptions { get; set; }

@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
 import {
   Form, Button, Card, Container, Row, Col,
   Alert, Spinner, Table, InputGroup, Pagination,
+  Modal, Badge,
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { addNewUser, toggleEmployeeStatus } from '../../services/adminService';
+import { addNewUser, deleteEmployee, getEmployeeById, toggleEmployeeStatus } from '../../services/adminService';
 import { useDataContext } from '../../context/DataContext';
 
 // ─── ثوابت ───────────────────────────────────────────────────────────────────
-const EMPLOYEES_API_URL = 'http://localhost:5179/api/AdminEmployees';
 const ROWS_PER_PAGE     = 5;
 
 const ROLE_OPTIONS = [
@@ -30,6 +29,9 @@ const INITIAL_FORM = {
   officeId:     '',
   username:     '',
   password:     '',
+  email:        '',
+  phone:        '',
+  profilePicture: null,
   role:         'Data Entry',
   isActive:     true,
 };
@@ -59,6 +61,28 @@ const isEmployeeActive = (employee) => {
   return Boolean(value);
 };
 
+const getStatusLabel = (active) => (active ? 'نشط' : 'معطل');
+
+const getEmployeeId = (employee) => employee?.id ?? employee?.Id;
+
+const getEmployeeName = (employee) => employee?.fullName || employee?.FullName || employee?.name || employee?.Name || '-';
+
+const getEmployeeField = (employee, ...keys) => {
+  for (const key of keys) {
+    const value = employee?.[key];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+
+  return '';
+};
+
+const formatDate = (value) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+
 /** كود الموظف كنص موحد */
 const normalizeCodeValue = (value) => String(value ?? '').toUpperCase();
 
@@ -71,7 +95,7 @@ const extractCodeNumber = (code) => {
 // ─── المكوّن الرئيسي ──────────────────────────────────────────────────────────
 const UserManagement = () => {
   const navigate = useNavigate();
-  const { employees, refreshEmployees, refreshAuditLogs } = useDataContext();
+  const { employees, refreshEmployees, refreshAuditLogs, updateEmployeeInState } = useDataContext();
 
   const [showForm,          setShowForm]          = useState(false);
   const [loading,           setLoading]           = useState(false);
@@ -81,6 +105,10 @@ const UserManagement = () => {
   const [showPassword,      setShowPassword]      = useState(false);
   const [showConfirmModal,  setShowConfirmModal]  = useState(false);
   const [targetEmployee,    setTargetEmployee]    = useState(null);
+  const [showQuickView,     setShowQuickView]     = useState(false);
+  const [quickViewEmployee, setQuickViewEmployee] = useState(null);
+  const [quickViewLoading,  setQuickViewLoading]  = useState(false);
+  const [quickViewError,    setQuickViewError]    = useState('');
   const [formData,          setFormData]          = useState(INITIAL_FORM);
   const [searchQuery,       setSearchQuery]       = useState('');
   const [jobTitleFilter,    setJobTitleFilter]    = useState('كل المسميات');
@@ -106,20 +134,92 @@ const UserManagement = () => {
   }, [currentPage]);
 
   // ─── إجراءات الموظفين ──────────────────────────────────────────────────────
-  const handleToggleStatus = (employeeId, currentStatus) => {
-    setTargetEmployee({ id: employeeId, isActive: currentStatus });
+  const handleToggleStatus = (employee) => {
+    const employeeId = getEmployeeId(employee);
+    if (!employeeId) {
+      setMessage({ text: 'تعذر تحديد رقم الموظف لتحديث الحالة.', type: 'danger' });
+      return;
+    }
+    setTargetEmployee({
+      id: employeeId,
+      isActive: isEmployeeActive(employee),
+      name: getEmployeeName(employee),
+    });
     setShowConfirmModal(true);
+  };
+
+  const handleQuickView = async (employeeId) => {
+    if (!employeeId) {
+      setMessage({ text: 'تعذر تحديد رقم الموظف لعرض التفاصيل.', type: 'danger' });
+      return;
+    }
+
+    setShowQuickView(true);
+    setQuickViewEmployee(null);
+    setQuickViewError('');
+    setQuickViewLoading(true);
+
+    try {
+      const employee = await getEmployeeById(employeeId);
+      const fetchedId = getEmployeeId(employee);
+
+      if (String(fetchedId) !== String(employeeId)) {
+        throw new Error('Employee details did not match the selected row.');
+      }
+
+      setQuickViewEmployee(employee);
+    } catch (error) {
+      console.error('Quick view failed', error);
+      setQuickViewError('تعذر جلب تفاصيل الموظف المحدد.');
+    } finally {
+      setQuickViewLoading(false);
+    }
   };
 
   const confirmToggleStatus = async () => {
     if (!targetEmployee) return;
+    const previousStatus = targetEmployee.isActive;
+    const nextStatus = !previousStatus;
+    const oldStatusLabel = getStatusLabel(previousStatus);
+    const newStatusLabel = getStatusLabel(nextStatus);
+    const previousEmployee = employees.find((employee) => String(getEmployeeId(employee)) === String(targetEmployee.id));
+
     setShowConfirmModal(false);
     setLoading(true);
+
+    updateEmployeeInState(targetEmployee.id, (employee) => ({
+      ...employee,
+      isActive: nextStatus,
+      IsActive: nextStatus,
+      status: nextStatus ? 'Active' : 'Disabled',
+    }));
+
     try {
-      await toggleEmployeeStatus(targetEmployee.id);
-      await Promise.all([refreshEmployees(), refreshAuditLogs()]);
+      const result = await toggleEmployeeStatus(targetEmployee.id, {
+        employeeName: targetEmployee.name,
+        oldStatus: oldStatusLabel,
+        newStatus: newStatusLabel,
+      });
+      const responseEmployee = result?.data || result?.Data || result?.employee || result?.Employee || result;
+      const updatedEmployee = responseEmployee && typeof responseEmployee === 'object' ? responseEmployee : null;
+
+      updateEmployeeInState(targetEmployee.id, (employee) => ({
+        ...employee,
+        ...(updatedEmployee || {}),
+        id: getEmployeeId(updatedEmployee) ?? getEmployeeId(employee),
+        isActive: nextStatus,
+        IsActive: nextStatus,
+        status: nextStatus ? 'Active' : 'Disabled',
+      }));
+
+      await refreshAuditLogs();
       setMessage({ text: 'تم تحديث حالة الموظف بنجاح.', type: 'success' });
     } catch (error) {
+      updateEmployeeInState(targetEmployee.id, previousEmployee || {
+        isActive: previousStatus,
+        IsActive: previousStatus,
+        status: previousStatus ? 'Active' : 'Disabled',
+      });
       console.error('Toggle status failed', error);
       setMessage({ text: 'تعذر تحديث حالة الموظف.', type: 'danger' });
     } finally {
@@ -132,7 +232,7 @@ const UserManagement = () => {
     if (!window.confirm('هل أنت متأكد من حذف هذا الموظف نهائياً؟')) return;
     setLoading(true);
     try {
-      await axios.delete(`${EMPLOYEES_API_URL}/${employeeId}`);
+      await deleteEmployee(employeeId);
       await Promise.all([refreshEmployees(), refreshAuditLogs()]);
       setMessage({ text: 'تم حذف الموظف بنجاح.', type: 'success' });
     } catch (error) {
@@ -145,9 +245,50 @@ const UserManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const normalizedFormData = {
+      ...formData,
+      name: formData.name.trim(),
+      employeeCode: formData.employeeCode.trim(),
+      nationalID: formData.nationalID.replace(/\D/g, '').slice(0, 14),
+      jobTitle: formData.jobTitle.trim(),
+      officeId: String(formData.officeId || '').trim(),
+      username: formData.username.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.replace(/\D/g, '').slice(0, 11),
+      profilePicture: formData.profilePicture instanceof File ? formData.profilePicture : null,
+      role: formData.role || 'Data Entry',
+      isActive: Boolean(formData.isActive),
+    };
+
+    if (!normalizedFormData.name || !normalizedFormData.employeeCode || !normalizedFormData.jobTitle || !normalizedFormData.username || !normalizedFormData.password) {
+      setMessage({ text: 'يرجى استكمال جميع الحقول المطلوبة.', type: 'danger' });
+      return;
+    }
+
+    if (!/^\d{14}$/.test(normalizedFormData.nationalID)) {
+      setMessage({ text: 'الرقم القومي يجب أن يتكون من 14 رقم.', type: 'danger' });
+      return;
+    }
+
+    if (!/^\d{11}$/.test(normalizedFormData.phone)) {
+      setMessage({ text: 'رقم الهاتف يجب أن يكون 11 رقمًا.', type: 'danger' });
+      return;
+    }
+
+    if (!normalizedFormData.officeId) {
+      setMessage({ text: 'يرجى اختيار المأمورية التابعة.', type: 'danger' });
+      return;
+    }
+
+    if (!normalizedFormData.email) {
+      setMessage({ text: 'يرجى إدخال البريد الإلكتروني.', type: 'danger' });
+      return;
+    }
+
     setLoading(true);
     try {
-      await addNewUser(formData);
+      await addNewUser(normalizedFormData);
       setMessage({ text: 'تم إضافة المستخدم بنجاح', type: 'success' });
       setShowForm(false);
       setFormData(INITIAL_FORM);
@@ -199,15 +340,19 @@ const UserManagement = () => {
     }
   }, [currentPage, totalPages]);
 
-  const handlePaginationKeyDown = (e) => {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
+  const goToTypedPage = () => {
     const pageNum = parseInt(typedPage, 10);
     if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
       setCurrentPage(pageNum);
     } else {
       setTypedPage(currentPage);
     }
+  };
+
+  const handlePaginationKeyDown = (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    e.currentTarget.blur();
   };
 
   const uniqueJobTitles = useMemo(() => {
@@ -217,6 +362,15 @@ const UserManagement = () => {
 
   // ─── مساعد تحديث نموذج الإضافة ───────────────────────────────────────────
   const setField = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+
+  const quickViewDetails = quickViewEmployee ? [
+    ['البريد الإلكتروني', getEmployeeField(quickViewEmployee, 'email', 'Email')],
+    ['الهاتف', getEmployeeField(quickViewEmployee, 'phone', 'Phone')],
+    ['تاريخ الانضمام', formatDate(getEmployeeField(quickViewEmployee, 'createdAt', 'CreatedAt'))],
+    ['المأمورية', getEmployeeField(quickViewEmployee, 'officeId', 'OfficeId')],
+    ['آخر تحديث بواسطة', getEmployeeField(quickViewEmployee, 'updatedByName', 'UpdatedByName')],
+    ['أنشئ بواسطة', getEmployeeField(quickViewEmployee, 'createdByName', 'CreatedByName')],
+  ] : [];
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -237,9 +391,11 @@ const UserManagement = () => {
                 <h5 className="mb-0">
                   <i className="fa-solid fa-users me-2" /> قائمة الموظفين
                 </h5>
-                <Button variant="primary" onClick={() => setShowForm(true)}>
-                  + إضافة موظف جديد
-                </Button>
+                <div className="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                  <Button variant="primary" onClick={() => setShowForm(true)}>
+                    + إضافة موظف جديد
+                  </Button>
+                </div>
               </Card.Header>
 
               <Card.Body>
@@ -301,33 +457,60 @@ const UserManagement = () => {
                   <tbody>
                     {currentRows.length > 0 ? currentRows.map((emp) => {
                       const active = isEmployeeActive(emp);
-                      const empId  = emp.id || emp.employeeCode || emp.EmployeeCode;
+                      const empId  = getEmployeeId(emp);
+                      const employeeName = getEmployeeName(emp);
                       return (
                         <tr key={empId}>
-                          <td>{emp.id}</td>
+                          <td>{empId}</td>
                           <td>{emp.employeeCode || emp.EmployeeCode || '-'}</td>
                           <td>{emp.nationalID   || emp.nationalId  || emp.NationalID || '-'}</td>
-                          <td>{emp.fullName      || emp.FullName   || '-'}</td>
+                          <td>
+                            <Button
+                              variant="link"
+                              className="p-0 fw-semibold text-decoration-none"
+                              onClick={() => empId && navigate(`/profile/${empId}`)}
+                              disabled={!empId}
+                            >
+                              {employeeName}
+                            </Button>
+                          </td>
                           <td>{emp.jobTitle      || emp.JobTitle   || '-'}</td>
                           <td>{emp.username      || emp.Username   || '-'}</td>
                           <td>{getNormalizedArabicRole(emp)}</td>
-                          <td>{active ? 'نشط' : 'معلق'}</td>
+                          <td>
+                            <Badge bg={active ? 'success' : 'secondary'} className="fw-normal">
+                              {getStatusLabel(active)}
+                            </Badge>
+                          </td>
                           <td className="text-nowrap">
-                            <Button
-                              size="sm"
-                              variant={active ? 'warning' : 'success'}
-                              className="me-2"
-                              onClick={() => handleToggleStatus(empId, active)}
-                            >
-                              {active ? 'تعطيل' : 'تفعيل'}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              onClick={() => handleDeleteEmployee(empId)}
-                            >
-                              حذف
-                            </Button>
+                            <div className="d-flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline-primary"
+                                title="عرض سريع"
+                                aria-label={`عرض تفاصيل ${employeeName}`}
+                                onClick={() => handleQuickView(empId)}
+                                disabled={!empId}
+                              >
+                                <i className="fa-solid fa-eye" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={active ? 'warning' : 'success'}
+                                onClick={() => handleToggleStatus(emp)}
+                                disabled={!empId}
+                              >
+                                {active ? 'تعطيل' : 'تفعيل'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={() => handleDeleteEmployee(empId)}
+                                disabled={!empId}
+                              >
+                                حذف
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -343,34 +526,39 @@ const UserManagement = () => {
 
                 {/* ترقيم الصفحات */}
                 {sortedEmployees.length > 0 && (
-                  <div className="d-flex justify-content-center mt-3">
-                    <Pagination className="mb-0">
-                      <Pagination.Prev
-                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  <div className="d-flex justify-content-between align-items-center gap-3 mt-3 flex-wrap">
+                    <div className="text-muted small">
+                      الصفحة {currentPage} من {totalPages}
+                    </div>
+                    <Pagination className="mb-0 align-items-center gap-2">
+                      <Pagination.Item
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
                         disabled={currentPage === 1}
                       >
-                        الصفحة السابقة
-                      </Pagination.Prev>
+                        السابقة
+                      </Pagination.Item>
 
-                      <span className="d-flex align-items-center mx-3" style={{ gap: '8px' }}>
-                        <label className="mb-0" style={{ whiteSpace: 'nowrap' }}>صفحة</label>
-                        <input
-                          type="text"
-                          value={typedPage}
-                          onChange={(e) => setTypedPage(e.target.value)}
-                          onKeyDown={handlePaginationKeyDown}
-                          className="form-control form-control-sm"
-                          style={{ width: '45px', textAlign: 'center', height: '28px', margin: '0 5px', padding: '4px' }}
-                        />
-                        <label className="mb-0" style={{ whiteSpace: 'nowrap' }}>من {totalPages}</label>
-                      </span>
+                      <Form.Control
+                        type="number"
+                        min="1"
+                        max={totalPages}
+                        value={typedPage}
+                        onChange={(e) => setTypedPage(e.target.value)}
+                        onKeyDown={handlePaginationKeyDown}
+                        onBlur={goToTypedPage}
+                        className="text-center fw-semibold"
+                        aria-label="رقم الصفحة"
+                        style={{ width: '72px' }}
+                      />
 
-                      <Pagination.Next
-                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                      <Pagination.Item
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
                         disabled={currentPage === totalPages}
                       >
-                        الصفحة التالية
-                      </Pagination.Next>
+                        التالية
+                      </Pagination.Item>
                     </Pagination>
                   </div>
                 )}
@@ -429,6 +617,45 @@ const UserManagement = () => {
                           required
                           value={formData.nationalID}
                           onChange={(e) => setField('nationalID', e.target.value.replace(/\D/g, '').slice(0, 14))}
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>البريد الإلكتروني (Email) <span className="text-danger">*</span></Form.Label>
+                        <Form.Control
+                          type="email"
+                          required
+                          value={formData.email}
+                          onChange={(e) => setField('email', e.target.value)}
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>رقم الهاتف (Phone) <span className="text-danger">*</span></Form.Label>
+                        <Form.Control
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]{11}"
+                          maxLength={11}
+                          placeholder="11 رقم"
+                          required
+                          value={formData.phone}
+                          onChange={(e) => setField('phone', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>صورة الملف الشخصي</Form.Label>
+                        <Form.Control
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setField('profilePicture', e.target.files?.[0] || null)}
                         />
                       </Form.Group>
                     </Col>
@@ -532,6 +759,62 @@ const UserManagement = () => {
           )}
         </Col>
       </Row>
+
+      <Modal
+        show={showQuickView}
+        onHide={() => setShowQuickView(false)}
+        centered
+        size="lg"
+        dir="rtl"
+      >
+        <Modal.Header closeButton className="bg-dark text-white">
+          <Modal.Title className="fw-bold">
+            <i className="fa-solid fa-eye me-2" /> عرض سريع للموظف
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {quickViewLoading ? (
+            <div className="text-center py-4">
+              <Spinner animation="border" />
+            </div>
+          ) : quickViewError ? (
+            <Alert variant="danger" className="mb-0">{quickViewError}</Alert>
+          ) : quickViewEmployee ? (
+            <>
+              <div className="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
+                <div>
+                  <h5 className="fw-bold mb-1">{getEmployeeName(quickViewEmployee)}</h5>
+                  <div className="text-muted small">ID: {getEmployeeId(quickViewEmployee)}</div>
+                </div>
+                <Badge bg={isEmployeeActive(quickViewEmployee) ? 'success' : 'secondary'} className="fw-normal">
+                  {getStatusLabel(isEmployeeActive(quickViewEmployee))}
+                </Badge>
+              </div>
+
+              <Row className="g-3">
+                {quickViewDetails.map(([label, value]) => (
+                  <Col md={6} key={label}>
+                    <div className="border rounded-2 p-3 h-100 bg-light">
+                      <div className="text-muted small mb-1">{label}</div>
+                      <div className="fw-semibold">{value || '-'}</div>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            </>
+          ) : null}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowQuickView(false)}>
+            إغلاق
+          </Button>
+          {quickViewEmployee && (
+            <Button variant="primary" onClick={() => navigate(`/profile/${getEmployeeId(quickViewEmployee)}`)}>
+              فتح الملف الشخصي
+            </Button>
+          )}
+        </Modal.Footer>
+      </Modal>
 
       {/* ────── Modal تأكيد تغيير الحالة ────── */}
       {showConfirmModal && (

@@ -25,6 +25,24 @@ namespace Infrastructure.Persistence.Configurations
 
             builder.HasIndex(e => e.NationalId)
                 .IsUnique();
+
+            builder.Property(e => e.Email)
+                .IsRequired()
+                .HasMaxLength(256)
+                .HasDefaultValue("");
+
+            builder.Property(e => e.Phone)
+                .IsRequired()
+                .HasMaxLength(11)
+                .HasDefaultValue("");
+
+            builder.Property(e => e.PicturePath)
+                .HasMaxLength(500);
+
+            builder.HasMany<PasswordResetOtp>()
+                .WithOne(o => o.Employee)
+                .HasForeignKey(o => o.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

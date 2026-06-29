@@ -1,19 +1,22 @@
-// src/services/apiClient.js
 import axios from "axios";
 
+const API_BASE_URL = "http://localhost:5179/api";
+
 const api = axios.create({
-  baseURL: "http://localhost:5179/api",
+  baseURL: API_BASE_URL,
   timeout: 15000,
 });
 
-// إضافة التوكن تلقائياً إن وجد
-api.interceptors.request.use((config) => {
+const attachToken = (config) => {
   const token = localStorage.getItem("token");
+
   if (token) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
-});
+};
 
 const normalizeBackendError = (error) => {
   const response = error?.response;
@@ -21,29 +24,23 @@ const normalizeBackendError = (error) => {
 
   const normalized = {
     status: response?.status || 0,
-    message: "حدث خطأ غير متوقع",
+    message: "Unexpected API error",
     errors: [],
     traceId: data?.traceId || null,
     raw: data || null,
   };
 
-  // Network / CORS / API down
   if (!response) {
-    normalized.message =
-      error?.message || "تعذر الاتصال بالخادم. تأكد من تشغيل الـ API";
+    normalized.message = error?.message || "Unable to connect to the API.";
     return normalized;
   }
 
-  // ASP.NET validation format
   if (data?.errors && typeof data.errors === "object" && !Array.isArray(data.errors)) {
-    const allErrors = [];
-
-    Object.entries(data.errors).forEach(([field, messages]) => {
+    normalized.errors = Object.entries(data.errors).flatMap(([field, messages]) => {
       if (Array.isArray(messages)) {
-        messages.forEach((msg) => allErrors.push(`${field}: ${msg}`));
-      } else if (messages) {
-        allErrors.push(`${field}: ${messages}`);
+        return messages.map((message) => `${field}: ${message}`);
       }
+      return messages ? [`${field}: ${messages}`] : [];
     });
 
     normalized.message =
@@ -51,33 +48,29 @@ const normalizeBackendError = (error) => {
       data?.Message ||
       data?.title ||
       data?.Title ||
-      "بيانات الإدخال غير صحيحة";
+      "Validation failed";
 
-    normalized.errors = allErrors;
     return normalized;
   }
 
-  // errors array
   if (Array.isArray(data?.errors) || Array.isArray(data?.Errors)) {
     normalized.message =
       data?.message ||
       data?.Message ||
       data?.title ||
       data?.Title ||
-      "حدثت أخطاء في البيانات";
-
+      "Validation failed";
     normalized.errors = data?.errors || data?.Errors || [];
     return normalized;
   }
 
-  // custom backend exception
   normalized.message =
     data?.message ||
     data?.Message ||
     data?.title ||
     data?.Title ||
     error?.message ||
-    "حدث خطأ غير متوقع";
+    "Unexpected API error";
 
   return normalized;
 };
@@ -96,89 +89,86 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    const normalizedError = normalizeBackendError(error);
+const clearSessionAndRedirect = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("tax_current_user");
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+};
 
-    console.group("API ERROR");
-    console.error("URL:", error?.config?.url);
-    console.error("Method:", error?.config?.method?.toUpperCase());
-    console.error("Status:", normalizedError.status);
-    console.error("Message:", normalizedError.message);
-    console.error("Errors:", normalizedError.errors);
-    console.error("TraceId:", normalizedError.traceId);
-    console.error("Raw Response:", normalizedError.raw);
-    console.groupEnd();
+const handleResponseError = async (error) => {
+  const originalRequest = error.config;
+  const normalizedError = normalizeBackendError(error);
 
-    if (normalizedError.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
+  console.group("API ERROR");
+  console.error("URL:", error?.config?.url);
+  console.error("Method:", error?.config?.method?.toUpperCase());
+  console.error("Status:", normalizedError.status);
+  console.error("Message:", normalizedError.message);
+  console.error("Errors:", normalizedError.errors);
+  console.error("TraceId:", normalizedError.traceId);
+  console.error("Raw Response:", normalizedError.raw);
+  console.groupEnd();
 
-      originalRequest._retry = true;
-      isRefreshing = true;
+  if (normalizedError.status === 401 && !originalRequest._retry) {
+    const refreshToken = localStorage.getItem("refreshToken");
 
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) {
-        try {
-          let newToken = null;
-          let newRefreshToken = null;
-
-          try {
-            const response = await axios.post("http://localhost:5179/api/auth/refresh", {
-              refreshToken: refreshToken
-            }, { timeout: 5000 });
-            
-            newToken = response.data.token || response.data.accessToken;
-            newRefreshToken = response.data.refreshToken;
-          } catch (backendErr) {
-            console.warn("Backend token refresh failed/unavailable. Falling back to mock refresh.", backendErr);
-            newToken = "mock-access-token-" + Date.now();
-            newRefreshToken = "mock-refresh-token-" + Date.now();
-          }
-
-          if (newToken) {
-            localStorage.setItem("token", newToken);
-            if (newRefreshToken) {
-              localStorage.setItem("refreshToken", newRefreshToken);
-            }
-
-            api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
-            processQueue(null, newToken);
-            isRefreshing = false;
-
-            return api(originalRequest);
-          }
-        } catch (refreshErr) {
-          processQueue(refreshErr, null);
-          isRefreshing = false;
-          localStorage.removeItem("token");
-          localStorage.removeItem("refreshToken");
-          localStorage.removeItem("tax_current_user");
-          window.location.href = "/login";
-          return Promise.reject(refreshErr);
-        }
-      } else {
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("tax_current_user");
-        window.location.href = "/login";
-      }
+    if (!refreshToken) {
+      clearSessionAndRedirect();
+      return Promise.reject(normalizedError);
     }
 
-    return Promise.reject(normalizedError);
-  }
-);
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      })
+        .then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        })
+        .catch((err) => Promise.reject(err));
+    }
 
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/refresh`,
+        { refreshToken },
+        { timeout: 5000 }
+      );
+
+      const newToken = response.data.token || response.data.accessToken;
+      const newRefreshToken = response.data.refreshToken;
+
+      if (!newToken) throw new Error("No token returned from refresh endpoint");
+
+      localStorage.setItem("token", newToken);
+      if (newRefreshToken) localStorage.setItem("refreshToken", newRefreshToken);
+
+      api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+      processQueue(null, newToken);
+      isRefreshing = false;
+
+      return api(originalRequest);
+    } catch (refreshErr) {
+      processQueue(refreshErr, null);
+      isRefreshing = false;
+      clearSessionAndRedirect();
+      return Promise.reject(refreshErr);
+    }
+  }
+
+  return Promise.reject(normalizedError);
+};
+
+api.interceptors.request.use(attachToken);
+api.interceptors.response.use((response) => response, handleResponseError);
+
+export { API_BASE_URL };
 export default api;

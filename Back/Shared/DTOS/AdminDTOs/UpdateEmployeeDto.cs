@@ -15,5 +15,13 @@ namespace Shared.DTOS.AdminDTOs
         public string? Department { get; set; }
 
         public string? OfficeId { get; set; }
+
+        [EmailAddress]
+        public string? Email { get; set; }
+
+        [RegularExpression(@"^\d{11}$", ErrorMessage = "Phone number must be exactly 11 digits")]
+        public string? Phone { get; set; }
+
+        public string? PicturePath { get; set; }
     }
 }

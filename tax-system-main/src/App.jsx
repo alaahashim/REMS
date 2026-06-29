@@ -112,6 +112,7 @@ function App() {
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/chatbot" element={<Chatbot />} />
                     <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/profile/:id" element={<ProfilePage />} />
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     
