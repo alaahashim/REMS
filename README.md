@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏠 Real Estate Management System (REMS)
+#  Real Estate Management System (REMS)
 
 ### Enterprise Real Estate Tax Management System
 
@@ -16,7 +16,7 @@ A full-stack web application developed to modernize and automate Egypt's Real Es
 
 ---
 
-# 📖 Overview
+#  Overview
 
 The **Real Estate Management System (REMS)** is an enterprise-level web application that digitizes the complete workflow of the Real Estate Tax Administration.
 
@@ -26,7 +26,7 @@ The project follows modern software engineering principles including **Clean Arc
 
 ---
 
-# ✨ Key Features
+#  Key Features
 
 ## 👤 Authentication & Authorization
 
@@ -38,7 +38,7 @@ The project follows modern software engineering principles including **Clean Arc
 
 ---
 
-## 🏢 Property Management
+##  Property Management
 
 - Register Properties
 - Register Residential Units
@@ -49,7 +49,7 @@ The project follows modern software engineering principles including **Clean Arc
 
 ---
 
-## 👥 Citizen Management
+##  Citizen Management
 
 - National ID Validation
 - Owner Information
@@ -58,7 +58,7 @@ The project follows modern software engineering principles including **Clean Arc
 
 ---
 
-## 💰 Tax Assessment
+##  Tax Assessment
 
 - Automatic Tax Calculation
 - Market Value Evaluation
@@ -68,7 +68,7 @@ The project follows modern software engineering principles including **Clean Arc
 
 ---
 
-## 📋 Inspection Management
+##  Inspection Management
 
 - Property Inspection
 - Inspection Scheduling
@@ -77,7 +77,7 @@ The project follows modern software engineering principles including **Clean Arc
 
 ---
 
-## ⚖️ Appeals & Exemptions
+##  Appeals & Exemptions
 
 - Submit Appeals
 - Appeal Review
@@ -86,7 +86,7 @@ The project follows modern software engineering principles including **Clean Arc
 
 ---
 
-## 💳 Financial Management
+##  Financial Management
 
 - Installment Plans
 - Payment Registration
@@ -96,7 +96,7 @@ The project follows modern software engineering principles including **Clean Arc
 
 ---
 
-## 📊 Reporting Dashboard
+##  Reporting Dashboard
 
 - Statistics
 - Tax Reports
@@ -106,7 +106,7 @@ The project follows modern software engineering principles including **Clean Arc
 
 ---
 
-# 👨‍💼 User Roles
+#  User Roles
 
 The system supports multiple user roles:
 
@@ -122,7 +122,7 @@ The system supports multiple user roles:
 
 ---
 
-# 🏗️ System Architecture
+#  System Architecture
 
 The backend follows **Clean Architecture**.
 
@@ -149,7 +149,7 @@ Main Design Patterns:
 
 ---
 
-# 🛠️ Tech Stack
+#  Tech Stack
 
 ## Backend
 
@@ -181,7 +181,7 @@ Main Design Patterns:
 
 ---
 
-# 📂 Project Structure
+#  Project Structure
 
 ```
 REMS
@@ -197,7 +197,7 @@ REMS
 
 ---
 
-# 🔄 System Workflow
+#  System Workflow
 
 ```
 Citizen Registration
@@ -226,7 +226,7 @@ Reports
 
 ---
 
-# 🚀 Getting Started
+#  Getting Started
 
 ## Clone Repository
 
@@ -260,7 +260,7 @@ npm run dev
 
 ---
 
-# 🔐 Authentication
+#  Authentication
 
 The application uses:
 
@@ -271,13 +271,13 @@ The application uses:
 
 ---
 
-# 📸 Screenshots
+#  Screenshots
 
 > Screenshots will be added soon.
 
 ---
 
-# 📈 Future Improvements
+#  Future Improvements
 
 - Email Notifications
 - SMS Integration
@@ -289,7 +289,7 @@ The application uses:
 
 ---
 
-# 👩‍💻 Developed By
+#  Developed By
 
 **Alaa Mohamed**
 
@@ -307,6 +307,6 @@ GitHub
 
 ---
 
-# ⭐ If you found this project useful
+#  If you found this project useful
 
-Please consider giving it a ⭐ on GitHub.
+Please consider giving it a  on GitHub.
